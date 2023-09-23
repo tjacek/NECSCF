@@ -5,13 +5,13 @@ import json
 import data,deep,hyper,utils
 
 class Experiment(object):
-    def __init__(self,X,y,split,params):
+    def __init__(self,X,y,split,params,hyper_params=None,model=None):
         self.X=X
         self.y=y
         self.split=split
         self.params=params
-        self.hyper_params=None
-        self.model=None
+        self.hyper_params=hyper_params
+        self.model=model
     
     def get_train(self):
         split_i=self.split.train
@@ -54,6 +54,27 @@ class Experiment(object):
         with open(f'{out_path}/hyper.json', 'w') as f:
             json.dump(self.hyper_params, f)
         self.model.save(f'{out_path}/nn')
+
+def read_exp(in_path):
+    split_raw=np.load(f'{in_path}/split.npz')
+    split=Split(train=split_raw['train'],
+                valid=split_raw['valid'],
+                test=split_raw['test'])
+    dataset=np.load(f'{in_path}/data.npz')
+    X,y=dataset['X'],dataset['y']
+    params=data.get_dataset_params(X,y)
+    class_dict=params['class_weights']
+    with open(f'{in_path}/hyper.json', 'r') as f:        
+        json_bytes = f.read()                      
+        hyper_params=json.loads(json_bytes)
+    model = tf.keras.models.load_model(f'{in_path}/nn',
+                                         compile=False)
+    return Experiment(X=X,
+                      y=y,
+                      split=split,
+                      params=params,
+                      hyper_params=hyper_params,
+                      model=model)
 
 class Split(object):
     def __init__(self,train,valid,test):
