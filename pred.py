@@ -1,5 +1,6 @@
 import numpy as np
 from sklearn import ensemble
+from sklearn import preprocessing
 import json
 import protocol,utils
 
@@ -8,7 +9,8 @@ def pred_exp(in_path,out_path):
     utils.make_dir(out_path)
     for path_i in utils.top_files(in_path):
         exp_i=protocol.read_exp(path_i)
-        y_true,y_pred= eval_exp(exp_i)
+        print(exp_i.params)
+        y_true,y_pred= nn_exp(exp_i)
         print(metric(y_true,y_pred))
         name_i=path_i.split('/')[-1]
         out_i=f'{out_path}/{name_i}'
@@ -27,6 +29,17 @@ def eval_exp(exp):
     votes=[clf_i.predict_proba(full_i)  
             for full_i,clf_i in zip(full_test,clfs)]
     y_pred=count_votes(votes)
+    print(y_pred)
+    print(y_test)
+    return y_test,y_pred
+
+def nn_exp(exp):
+#    x_train,y_train=exp.get_train()
+    x_test,y_test=exp.get_test()
+    votes=exp.model.predict(x_test)  
+    y_pred=count_votes(votes)
+    print(y_pred)
+    print(y_test)
     return y_test,y_pred
 
 def count_votes(votes):
@@ -35,9 +48,11 @@ def count_votes(votes):
     return np.argmax(votes,axis=1)
 
 def make_clf(X,y):
-	clf=ensemble.RandomForestClassifier(class_weight='balanced_subsample')
-	clf.fit(X,y)
-	return clf
+    print(X.shape)
+    clf=ensemble.RandomForestClassifier(class_weight='balanced_subsample')
+    X=preprocessing.scale(X)
+    clf.fit(X,y)
+    return clf
 
 def make_full(x,extractor):
     feats_train= extractor.predict(x)   
@@ -45,6 +60,7 @@ def make_full(x,extractor):
                 for feats_i in feats_train]
 
 if __name__ == '__main__':
-    pred_exp('out_h5','pred')
+    name='arrhythmia' #'vehicle'
+    pred_exp(f'../OML/models/{name}',
+             f'../OML/pred/{name}')
 
-#    print(metric(y_test,y_pred))
