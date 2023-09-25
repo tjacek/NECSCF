@@ -37,7 +37,7 @@ def nn_builder(params,hyper_params,input_layer=None,as_model=True,i=0,n_cats=Non
         hidden_j=hyper_params[f'units_{j}']
         x_i=Dense(hidden_j,activation='relu',
                     name=f"layer_{i}_{j}")(x_i)
-    if(hyper_params['layers']):
+    if(hyper_params['batch']):
         x_i=BatchNormalization(name=f'batch_{i}')(x_i)
     x_i=Dense(n_cats, activation='softmax',name=f'out_{i}')(x_i)
     if(as_model):
@@ -63,15 +63,16 @@ def weighted_loss(i,class_dict,alpha=0.5):
         for i in range(len(full_weights)) ]
     class_weights=np.array(class_weights,dtype=np.float32)
     return keras_loss(class_weights)
-#def weighted_loss(i,class_dict,alpha=0.5):
-#    one_i=class_dict[i]
-#    other_i=sum(class_dict.values())-one_i
-#    cat_size_i  = alpha*(1/one_i)
-#    other_size_i= (1.0-alpha) * (1/other_i)
-#    class_weights= [other_size_i for i in range(len(class_dict) )]
-#    class_weights[i]=cat_size_i
-#    class_weights=np.array(class_weights,dtype=np.float32)
-#    return keras_loss(class_weights)
+
+def unbalanced_loss(i,class_dict,alpha=0.5):
+    one_i=class_dict[i]
+    other_i=sum(class_dict.values())-one_i
+    cat_size_i  = alpha*(1/one_i)
+    other_size_i= (1.0-alpha) * (1/other_i)
+    class_weights= [other_size_i for i in range(len(class_dict) )]
+    class_weights[i]=cat_size_i
+    class_weights=np.array(class_weights,dtype=np.float32)
+    return keras_loss(class_weights)
 
 def keras_loss( class_weights):
     def loss(y_obs,y_pred):        

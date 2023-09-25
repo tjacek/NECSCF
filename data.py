@@ -12,7 +12,9 @@ def prepare_data(df,target=-1):
     X=df.to_numpy()
     X=np.delete(X,[target], axis=1)
     X=np.nan_to_num(X)
-    X=preprocessing.scale(X) # data preprocessing
+#    X=preprocessing.scale(X) # data preprocessing
+#    print(f'X:{np.mean(X)}')
+    X= preprocessing.RobustScaler().fit_transform(X)
     y=df.iloc[:,target]
     cats={ cat_i:i for i,cat_i in enumerate(y.unique())}
     y=y.to_numpy()

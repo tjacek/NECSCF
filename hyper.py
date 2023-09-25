@@ -76,8 +76,8 @@ def bayes_optim(exp,n_iter=5,verbose=1):
                 overwrite=True)
     stop_early = tf.keras.callbacks.EarlyStopping(monitor='val_loss', 
                                                   patience=5)
-    x_train,y_train=exp.get_train()
-    x_valid,y_valid=exp.get_valid()
+    x_train,y_train=exp.split.get_train()
+    x_valid,y_valid=exp.split.get_valid()
     tuner.search(x=x_train, 
                  y=y_train, 
                  epochs=150,

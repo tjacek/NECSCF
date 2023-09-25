@@ -11,7 +11,7 @@ def pred_exp(in_path,out_path):
         exp_i=protocol.read_exp(path_i)
         print(exp_i.params)
         y_true,y_pred= nn_exp(exp_i)
-        print(metric(y_true,y_pred))
+        print(f'acc:{metric(y_true,y_pred)}')
         name_i=path_i.split('/')[-1]
         out_i=f'{out_path}/{name_i}'
         np.savez(file=out_i,
@@ -19,15 +19,12 @@ def pred_exp(in_path,out_path):
                  pred=y_pred)
 
 def eval_exp(exp,verbose=0):
-    x_train,y_train=exp.split.get_train()
-    x_test,y_test=exp.split.get_test()
     extractor= exp.make_extractor()
-    full_train=make_full(x_train,extractor)
-    clfs=[make_clf(full_i,y_train) 
-            for full_i in full_train]
-    full_test=make_full(x_test,extractor)   
-    votes=[clf_i.predict_proba(full_i)  
-            for full_i,clf_i in zip(full_test,clfs)]
+    (x_train,y_train),(x_test,y_test)=exp.split.extract(extractor)
+    clfs=[make_clf(x_i,y_train) 
+            for x_i in x_train]
+    votes=[clf_i.predict_proba(x_i)  
+            for x_i,clf_i in zip(x_test,clfs)]
     y_pred=count_votes(votes)
     if(verbose):
         print(y_pred)
@@ -56,11 +53,10 @@ def count_votes(votes):
     return np.argmax(votes,axis=1)
 
 def make_clf(X,y):
-    print(X.dtype)
+#    print(X.shape)
     clf=ensemble.RandomForestClassifier(class_weight='balanced_subsample')
-    X=preprocessing.scale(X)
-#    preprocessing.MinMaxScaler().fit(X)
-    print(np.mean(X))
+#    X=preprocessing.scale(X)
+#    print(np.mean(X))
     clf.fit(X,y)
     return clf
 

@@ -1,5 +1,7 @@
 import numpy as np
 from sklearn.model_selection import RepeatedStratifiedKFold
+from sklearn.feature_selection import VarianceThreshold
+from sklearn import preprocessing
 import tensorflow as tf
 from tensorflow.keras import Input, Model
 import json
@@ -50,8 +52,8 @@ class Experiment(object):
         utils.make_dir(out_path)
         self.split.save(f'{out_path}/split')
         np.savez(file=f'{out_path}/data',
-                 X=self.X,
-                 y=self.y)
+                 X=self.split.X,
+                 y=self.split.y)
         with open(f'{out_path}/hyper.json', 'w') as f:
             json.dump(self.hyper_params, f)
         self.model.save(f'{out_path}/nn')
@@ -93,6 +95,22 @@ class Split(object):
 
     def get_test(self):
         return self.X[self.test],self.y[self.test]
+ 
+    def extract(self,extract):
+#        var_thres= VarianceThreshold(0.1)
+        cs=extract.predict(self.X)
+        train,test=[],[]
+        for cs_i in cs:
+            cs_i= preprocessing.RobustScaler().fit_transform(cs_i)
+#            cs_i=preprocessing.scale(cs_i)
+            full_i=np.concatenate([self.X,cs_i],axis=1)
+#            full_i= preprocessing.RobustScaler().fit_transform(full_i)
+            print(f'X:{np.mean(self.X)}')
+            print(f'cs_i:{np.mean(cs_i)}')
+            print(np.mean(full_i))
+            train.append(full_i[self.train])
+            test.append(full_i[self.test])
+        return (train,self.y[self.train]),(test,self.y[self.test])
 
     def save(self,out_path):
         np.savez(file=out_path,
@@ -112,7 +130,9 @@ def gen_split(X,y,n_iters=2):
         valid=k_folds[0]
         test=k_folds[1]
         train=np.concatenate(k_folds[2:])
-        yield Split(train=train,
+        yield Split(X=X,
+                    y=y,
+                    train=train,
         	        valid=valid,
         	        test=test)
 
@@ -126,9 +146,7 @@ def train_exp(in_path,out_path,n_iters=2,hyper=None,target=-1 ):
                                                   patience=5)
     utils.make_dir(out_path)
     for i,split_i in enumerate(gen_split(X,y,n_iters)):
-        exp_i=Experiment(X=X,
-                         y=y,
-        	             split=split_i,
+        exp_i=Experiment(split=split_i,
         	             params=params)	
         exp_i.find_hyper()
         exp_i.train(verbose=1,
