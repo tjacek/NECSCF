@@ -4,17 +4,6 @@ import keras
 from sklearn import preprocessing
 from tensorflow.keras.layers import Dense,BatchNormalization,Concatenate
 from tensorflow.keras import Input, Model
-#import loss
-
-#class NeuralEnsemble(object):
-#    def __init__(self,model,params,hyper_params):
-#        self.model=model
-#        self.params=params
-#        self.hyper_params=hyper_params
-#        self.pred_models=None
-#        self.extractors=None
-
-
 
 def ensemble_builder(params,hyper_params):
     input_layer = Input(shape=(params['dims']))
@@ -39,13 +28,11 @@ def ensemble_builder(params,hyper_params):
     return model
 
 def nn_builder(params,hyper_params,input_layer=None,as_model=True,i=0,n_cats=None):
-    print(hyper_params)
     if(input_layer is None):
         input_layer = Input(shape=(params['dims']))
     if(n_cats is None):
         n_cats=params['n_cats']
-    x_i=input_layer#Concatenate()([common,input_i])
-#    for j,hidden_j in enumerate(hyper_params['layers']):
+    x_i=input_layer
     for j in range(hyper_params['layers']):
         hidden_j=hyper_params[f'units_{j}']
         x_i=Dense(hidden_j,activation='relu',
@@ -58,14 +45,33 @@ def nn_builder(params,hyper_params,input_layer=None,as_model=True,i=0,n_cats=Non
     return x_i
 
 def weighted_loss(i,class_dict,alpha=0.5):
+    basic_weights={ cat_i:1.0/size_i
+        for cat_i,size_i in class_dict.items()}
     one_i=class_dict[i]
-    other_i=sum(class_dict.values())-one_i
-    cat_size_i  = alpha*(1/one_i)
-    other_size_i= (1.0-alpha) * (1/other_i)
-    class_weights= [other_size_i for i in range(len(class_dict) )]
-    class_weights[i]=cat_size_i
+    all_i=sum([ size_i 
+                for cat_i,size_i in class_dict.items() 
+                    if(cat_i!=i)])
+    main_i=  all_i/one_i
+    def helper(cat_i):
+        if(cat_i==i):
+            return alpha*main_i
+        else:
+            return (1.0-alpha)
+    full_weights={ cat_i: (weight_i*helper(cat_i))
+        for cat_i,weight_i in basic_weights.items()}
+    class_weights= [full_weights[i] 
+        for i in range(len(full_weights)) ]
     class_weights=np.array(class_weights,dtype=np.float32)
     return keras_loss(class_weights)
+#def weighted_loss(i,class_dict,alpha=0.5):
+#    one_i=class_dict[i]
+#    other_i=sum(class_dict.values())-one_i
+#    cat_size_i  = alpha*(1/one_i)
+#    other_size_i= (1.0-alpha) * (1/other_i)
+#    class_weights= [other_size_i for i in range(len(class_dict) )]
+#    class_weights[i]=cat_size_i
+#    class_weights=np.array(class_weights,dtype=np.float32)
+#    return keras_loss(class_weights)
 
 def keras_loss( class_weights):
     def loss(y_obs,y_pred):        
