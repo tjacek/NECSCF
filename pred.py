@@ -18,9 +18,9 @@ def pred_exp(in_path,out_path):
                  true=y_true,
                  pred=y_pred)
 
-def eval_exp(exp):
-    x_train,y_train=exp.get_train()
-    x_test,y_test=exp.get_test()
+def eval_exp(exp,verbose=0):
+    x_train,y_train=exp.split.get_train()
+    x_test,y_test=exp.split.get_test()
     extractor= exp.make_extractor()
     full_train=make_full(x_train,extractor)
     clfs=[make_clf(full_i,y_train) 
@@ -29,13 +29,21 @@ def eval_exp(exp):
     votes=[clf_i.predict_proba(full_i)  
             for full_i,clf_i in zip(full_test,clfs)]
     y_pred=count_votes(votes)
-    print(y_pred)
-    print(y_test)
+    if(verbose):
+        print(y_pred)
+        print(y_test)
+    return y_test,y_pred
+
+def common_exp(exp):
+    x_train,y_train=exp.split.get_train()
+    x_test,y_test=exp.split.get_test()
+    clf=make_clf(x_train,y_train)
+    y_pred= clf.predict(x_test)
     return y_test,y_pred
 
 def nn_exp(exp):
 #    x_train,y_train=exp.get_train()
-    x_test,y_test=exp.get_test()
+    x_test,y_test=exp.split.get_test()
     votes=exp.model.predict(x_test)  
     y_pred=count_votes(votes)
     print(y_pred)
@@ -48,15 +56,17 @@ def count_votes(votes):
     return np.argmax(votes,axis=1)
 
 def make_clf(X,y):
-    print(X.shape)
+    print(X.dtype)
     clf=ensemble.RandomForestClassifier(class_weight='balanced_subsample')
     X=preprocessing.scale(X)
+#    preprocessing.MinMaxScaler().fit(X)
+    print(np.mean(X))
     clf.fit(X,y)
     return clf
 
 def make_full(x,extractor):
     feats_train= extractor.predict(x)   
-    return [np.concatenate([x,feats_i],axis=1) 
+    return [ feats_i#np.concatenate([x,feats_i],axis=1) 
                 for feats_i in feats_train]
 
 if __name__ == '__main__':

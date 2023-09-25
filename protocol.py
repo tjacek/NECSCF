@@ -1,40 +1,32 @@
 import numpy as np
 from sklearn.model_selection import RepeatedStratifiedKFold
 import tensorflow as tf
+from tensorflow.keras import Input, Model
 import json
 import data,deep,hyper,utils
 
 class Experiment(object):
-    def __init__(self,X,y,split,params,hyper_params=None,model=None):
-        self.X=X
-        self.y=y
+    def __init__(self,split,params,hyper_params=None,model=None):
+
         self.split=split
         self.params=params
         self.hyper_params=hyper_params
         self.model=model
-    
-    def get_train(self):
-        split_i=self.split.train
-        return self.X[split_i],self.y[split_i]
-    
-    def get_valid(self):
-        split_i=self.split.valid
-        return self.X[split_i],self.y[split_i]
 
     def find_hyper(self,n_iter=5,verbose=1):
         self.hyper_params=hyper.bayes_optim(exp=self,
                                             n_iter=n_iter,
                                             verbose=verbose)
 
-    def train(self,epochs=150,verbose=0,callbacks=None):
+    def train(self,epochs=300,verbose=0,callbacks=None):
         if(self.model is None):
             self.model=deep.ensemble_builder(params=self.params,
                                              hyper_params=self.hyper_params)
             self.model.summary()
-        x_train,y_train=self.get_train()
+        x_train,y_train=self.split.get_train()
         y_train=[tf.keras.utils.to_categorical(y_train) 
                     for k in range(self.params['n_cats'])]
-        x_valid,y_valid=self.get_valid()
+        x_valid,y_valid=self.split.get_valid()
         y_valid=[tf.keras.utils.to_categorical(y_valid) 
                     for k in range(self.params['n_cats'])]
         self.model.fit(x=x_train,
@@ -44,6 +36,15 @@ class Experiment(object):
                        validation_data=(x_valid, y_valid),
                        verbose=verbose,
                        callbacks=callbacks)
+
+    def make_extractor(self):
+        names= [ layer.name for layer in self.model.layers]
+        n_cats=self.params['n_cats']
+        penult=names[-2*n_cats:-n_cats]
+        layers=[self.model.get_layer(name_i).output 
+                    for name_i in penult]
+        return Model(inputs=self.model.input,
+                        outputs=layers)
 
     def save(self,out_path):
         utils.make_dir(out_path)
@@ -56,12 +57,14 @@ class Experiment(object):
         self.model.save(f'{out_path}/nn')
 
 def read_exp(in_path):
-    split_raw=np.load(f'{in_path}/split.npz')
-    split=Split(train=split_raw['train'],
-                valid=split_raw['valid'],
-                test=split_raw['test'])
     dataset=np.load(f'{in_path}/data.npz')
     X,y=dataset['X'],dataset['y']
+    split_raw=np.load(f'{in_path}/split.npz')
+    split=Split(X=X,
+                y=y,
+                train=split_raw['train'],
+                valid=split_raw['valid'],
+                test=split_raw['test'])
     params=data.get_dataset_params(X,y)
     class_dict=params['class_weights']
     with open(f'{in_path}/hyper.json', 'r') as f:        
@@ -69,18 +72,27 @@ def read_exp(in_path):
         hyper_params=json.loads(json_bytes)
     model = tf.keras.models.load_model(f'{in_path}/nn',
                                          compile=False)
-    return Experiment(X=X,
-                      y=y,
-                      split=split,
+    return Experiment(split=split,
                       params=params,
                       hyper_params=hyper_params,
                       model=model)
 
 class Split(object):
-    def __init__(self,train,valid,test):
+    def __init__(self,X,y,train,valid,test):
+        self.X=X
+        self.y=y
         self.train=train
         self.valid=valid
         self.test=test
+    
+    def get_train(self):
+        return self.X[self.train],self.y[self.train]
+    
+    def get_valid(self):
+        return self.X[self.valid],self.y[self.valid]
+
+    def get_test(self):
+        return self.X[self.test],self.y[self.test]
 
     def save(self,out_path):
         np.savez(file=out_path,
@@ -104,11 +116,11 @@ def gen_split(X,y,n_iters=2):
         	        valid=valid,
         	        test=test)
 
-def train_exp(in_path,out_path,n_iters=2,hyper=None):
+def train_exp(in_path,out_path,n_iters=2,hyper=None,target=-1 ):
     if(hyper is None):
     	hyper={'layers':[150,150],'batch':True}
     df=data.from_arff(in_path)
-    X,y=data.prepare_data(df,target=-1)
+    X,y=data.prepare_data(df,target=target)
     params=data.get_dataset_params(X,y)
     stop_early = tf.keras.callbacks.EarlyStopping(monitor='val_loss', 
                                                   patience=5)
@@ -124,7 +136,9 @@ def train_exp(in_path,out_path,n_iters=2,hyper=None):
         exp_i.save(f'{out_path}/{i}')
 
 if __name__ == '__main__':
-    in_path='raw/mfeat-factors.arff'
+    name='arrhythmia'#cnae-9'
+    in_path=f'raw/{name}.arff'
     train_exp(in_path=in_path,
-    	      out_path='out',
-              n_iters=2)
+    	      out_path=f'../OML/models/{name}',
+              n_iters=10,
+              target=-1)
