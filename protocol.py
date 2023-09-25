@@ -1,3 +1,5 @@
+import utils
+utils.silence_warnings()
 import numpy as np
 from sklearn.model_selection import RepeatedStratifiedKFold
 from sklearn.feature_selection import VarianceThreshold
@@ -5,7 +7,7 @@ from sklearn import preprocessing
 import tensorflow as tf
 from tensorflow.keras import Input, Model
 import json
-import data,deep,hyper,utils
+import data,deep,hyper
 
 class Experiment(object):
     def __init__(self,split,params,hyper_params=None,model=None):
@@ -136,9 +138,19 @@ def gen_split(X,y,n_iters=2):
         	        valid=valid,
         	        test=test)
 
+def all_train(in_path,out_path,n_iters=2):
+    names={'arrhythmia':-1,'mfeat-factors':-1,'vehicle':-1,
+           'cnae-9':-1,'car':-1,'segment':-1,'fabert':0}
+    for name_i,target_i in names.items():
+        train_exp(in_path=f'{in_path}/{name_i}.arff',
+                  out_path=f'{out_path}/{name_i}',
+                  n_iters=n_iters,
+                  target=-1 )
+
+#@utils.log_time(task='TRAIN')
 def train_exp(in_path,out_path,n_iters=2,hyper=None,target=-1 ):
-    if(hyper is None):
-    	hyper={'layers':[150,150],'batch':True}
+#    if(hyper is None):
+#    	hyper={'layers':[150,150],'batch':True}
     df=data.from_arff(in_path)
     X,y=data.prepare_data(df,target=target)
     params=data.get_dataset_params(X,y)
@@ -154,9 +166,13 @@ def train_exp(in_path,out_path,n_iters=2,hyper=None,target=-1 ):
         exp_i.save(f'{out_path}/{i}')
 
 if __name__ == '__main__':
-    name='arrhythmia'#cnae-9'
-    in_path=f'raw/{name}.arff'
-    train_exp(in_path=in_path,
-    	      out_path=f'../OML/models/{name}',
-              n_iters=10,
-              target=-1)
+#    name='arrhythmia'#cnae-9'
+#    in_path=f'raw/{name}.arff'
+    utils.start_log('log.info')
+    all_train(in_path='raw', #'../OML/models',
+              out_path='../OML/models',
+              n_iters=2)
+#    train_exp(in_path=in_path,
+#    	      out_path=f'../OML/models/{name}',
+#              n_iters=10,
+#              target=-1)
