@@ -6,7 +6,7 @@ import argparse
 import data
 
 class MultiKTBuilder(object): 
-    def __init__(self,params):#,hidden=[(0.25,5),(0.25,5)]):
+    def __init__(self,params):
         self.params=params
         self.hidden=(1,10)
 
@@ -25,19 +25,50 @@ class MultiKTBuilder(object):
         model.compile('adam', 'sparse_categorical_crossentropy', metrics=['accuracy'])
         return model
 
-#def single_exp(data_path,hyper_path=None,n_iter=5):
-#    df=data.from_arff(data_path)
-#    X,y=data.prepare_data(df,target=-1)
-#    data_params=data.get_dataset_params(X,y)
-#    print(data_params)
-#    best=bayes_optim(X,y,data_params,n_iter)
-#    best=[tools.round_data(best_i,4) for best_i in best]
-#    with open(hyper_path,"a") as f:
-#        f.write(f'{str(best)}\n') 
-#    return best
+    def extract_hyper(self,tuner):
+        best_hps=tuner.get_best_hyperparameters(num_trials=10)[0]
+        best=  best_hps.values
+        return best
+
+class EffBuilder(object):
+    def __init__(self,params):
+        self.params=params
+        self.first=(1,10)
+        self.second=(3,20)
+
+    def __call__(self,hp):
+        model = tf.keras.Sequential()
+        dims=int(self.params['dims'])
+        first_hp=hp.Int('units_0', 
+                        min_value= dims*self.first[0], 
+                        max_value=dims*self.first[1],
+                        step=10)
+        model.add(tf.keras.layers.Dense(units=first_hp))
+        n_cats=int(self.params['n_cats'])
+        second_hp=hp.Int('units_1', 
+                          min_value=n_cats*self.second[0], 
+                          max_value=n_cats*self.second[1],
+                          step=10)
+        model.add(tf.keras.layers.Dense(units=second_hp))
+        batch=hp.Choice('batch', [True, False])
+        if(batch):
+            model.add(tf.keras.layers.BatchNormalization())
+        model.add(tf.keras.layers.Dense(self.params['n_cats'], 
+                                        activation='softmax'))
+        model.compile('adam', 
+                      'sparse_categorical_crossentropy', 
+                      metrics=['accuracy'])
+        return model
+
+    def extract_hyper(self,tuner):
+        best_hps=tuner.get_best_hyperparameters(num_trials=10)[0]
+        best=  best_hps.values
+        best['layers']=2
+        return best
 
 def bayes_optim(exp,n_iter=5,verbose=1):
-    model_builder= MultiKTBuilder(exp.params) 
+#    model_builder= MultiKTBuilder(exp.params) 
+    model_builder= EffBuilder(exp.params) 
 
     tuner=kt.BayesianOptimization(model_builder,
                 objective='val_loss',
@@ -56,15 +87,7 @@ def bayes_optim(exp,n_iter=5,verbose=1):
                  callbacks=[stop_early])
     
     tuner.results_summary()
-    best_hps=tuner.get_best_hyperparameters(num_trials=10)[0]
-    best=  best_hps.values
-    return best
-#    relative={key_i: (value_i/data_params['dims'])  
-#                for key_i,value_i in best.items()
-#                    if('unit' in key_i)}
-#    models=tuner.get_best_models()
-#    acc=get_metric_value(tuner,X,y)
-#    return best,relative,acc
+    return model_builder.extract_hyper(tuner)
 
 if __name__ == '__main__':
     single_exp('raw/mfeat-factors.arff')
