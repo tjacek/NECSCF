@@ -4,6 +4,30 @@ from sklearn import preprocessing
 import json
 import protocol,utils
 
+class OptimRF(object):
+    def __init__(self, arg):
+        self.clf=ensemble.RandomForestClassifier(class_weight='balanced_subsample')
+        self.search_space={'max_samples':(0.5,1),
+                           'max_features':(0.5,1),
+                           'n_estimators':(100,200)
+                          }
+
+    def find_params(self,split):
+        search = BayesSearchCV(estimator=clf,
+                               verbose=0,
+                               n_iter=5,
+                               search_spaces=self.search_spaces,
+                               n_jobs=1,cv=cv_gen,
+                               scoring=self.scoring)
+
+#    def fit(self,X,y):
+
+def all_pred(in_path,out_path):
+    for path_i in utils.top_files(in_path):
+        name_i=path_i.split('/')[-1]
+        pred_exp(in_path=f'{path_i}',
+                 out_path=f'{out_path}/{name_i}')
+
 def pred_exp(in_path,out_path):
     metric=utils.get_metric('acc')
     utils.make_dir(out_path)
@@ -52,21 +76,19 @@ def count_votes(votes):
     votes=np.sum(votes,axis=0)
     return np.argmax(votes,axis=1)
 
-def make_clf(X,y):
-#    print(X.shape)
+#def make_optim_clf(split):
+#    x_train,y_train=split.get_train()
+#    rf_opt = BayesianOptimization(bo_params_rf,)
+
+def make_clf(split):#X,y):
+    X,y=split.get_train()
     clf=ensemble.RandomForestClassifier(class_weight='balanced_subsample')
-#    X=preprocessing.scale(X)
-#    print(np.mean(X))
     clf.fit(X,y)
     return clf
 
-def make_full(x,extractor):
-    feats_train= extractor.predict(x)   
-    return [ feats_i#np.concatenate([x,feats_i],axis=1) 
-                for feats_i in feats_train]
-
 if __name__ == '__main__':
-    name='arrhythmia' #'vehicle'
-    pred_exp(f'../OML/models/{name}',
-             f'../OML/pred/{name}')
-
+#    name='arrhythmia' #'vehicle'
+#    pred_exp(f'../OML/models/{name}',
+#             f'../OML/pred/{name}')
+    all_pred(f'../OML/models',
+             f'../OML/pred')

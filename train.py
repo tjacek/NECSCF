@@ -98,15 +98,12 @@ class Split(object):
     def get_test(self):
         return self.X[self.test],self.y[self.test]
  
-    def extract(self,extract):
-#        var_thres= VarianceThreshold(0.1)
-        cs=extract.predict(self.X)
+    def extract(self,extractor):
+        cs=extractor.predict(self.X)
         train,test=[],[]
         for cs_i in cs:
             cs_i= preprocessing.RobustScaler().fit_transform(cs_i)
-#            cs_i=preprocessing.scale(cs_i)
             full_i=np.concatenate([self.X,cs_i],axis=1)
-#            full_i= preprocessing.RobustScaler().fit_transform(full_i)
             print(f'X:{np.mean(self.X)}')
             print(f'cs_i:{np.mean(cs_i)}')
             print(np.mean(full_i))
@@ -147,10 +144,8 @@ def all_train(in_path,out_path,n_iters=2):
                   n_iters=n_iters,
                   target=-1 )
 
-#@utils.log_time(task='TRAIN')
+@utils.log_time(task='TRAIN')
 def train_exp(in_path,out_path,n_iters=2,hyper=None,target=-1 ):
-#    if(hyper is None):
-#    	hyper={'layers':[150,150],'batch':True}
     df=data.from_arff(in_path)
     X,y=data.prepare_data(df,target=target)
     params=data.get_dataset_params(X,y)
@@ -170,7 +165,7 @@ if __name__ == '__main__':
 #    in_path=f'raw/{name}.arff'
     utils.start_log('log.info')
     all_train(in_path='raw', #'../OML/models',
-              out_path='../OML/models',
+              out_path='../OML/_models',
               n_iters=2)
 #    train_exp(in_path=in_path,
 #    	      out_path=f'../OML/models/{name}',
