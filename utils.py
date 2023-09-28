@@ -1,4 +1,5 @@
 import os,warnings
+
 import logging,time
 from sklearn.metrics import accuracy_score,balanced_accuracy_score
 from functools import wraps
@@ -9,7 +10,7 @@ def silence_warnings():
     import tensorflow as tf
     import logging
     logging.getLogger('tensorflow').setLevel(logging.ERROR)
-    tf.get_logger().setLevel('ERROR')
+    tf.get_logger().setLevel('WARNING')#'ERROR')
     def warn(*args, **kwargs):
         pass
     warnings.warn = warn
@@ -41,20 +42,32 @@ def by_col(df_i,name='clf'):
     return { clf_i:df_i[df_i[name]==clf_i]
               for clf_i in  df_i[name].unique()}
 
-def log_time(task='TRAIN'):
+def log_time(task='TRAIN',main_path='in_path'):
     def helper(fun):
         @wraps(fun)
         def decor_fun(*args, **kwargs):
-            name_i=kwargs['in_path'].split('/')[-1]
+            logger=logging.getLogger(__name__)
+            name_i=kwargs[main_path].split('/')[-1]
             start=time.time()
             result=fun(*args,**kwargs)
             diff=(time.time()-start)
-            logging.info(f'{task}-{name_i}-{diff:.4f}s')
+            logger.info(f'{task}-{name_i}-{diff:.4f}s')
             return result
         return decor_fun
     return helper
 
+class FileFilter:
+    def __call__(self, log):
+        if log.levelno < logging.WARNING:
+            return 1
+        else:
+            return 0
+
 def start_log(log_path):
-    logging.basicConfig(filename=log_path,#'{}/time.log'.format(dir_path), 
-        level=logging.INFO,filemode='a', 
-        format='%(process)d-%(levelname)s-%(message)s')
+    logging.basicConfig(level=logging.INFO,
+                        filemode='a', 
+                        format='%(process)d-%(levelname)s-%(message)s')
+    logger = logging.getLogger(__name__)
+    logger.addHandler(logging.FileHandler(log_path))
+    logger.info('test')
+    logging.warning('warn')
