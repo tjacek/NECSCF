@@ -3,6 +3,9 @@ utils.silence_warnings()
 import numpy as np
 from sklearn.model_selection import RepeatedStratifiedKFold
 from sklearn.feature_selection import VarianceThreshold
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
+from sklearn import ensemble
 from sklearn import preprocessing
 import tensorflow as tf
 from tensorflow.keras import Input, Model
@@ -98,18 +101,22 @@ class Split(object):
     def get_test(self):
         return self.X[self.test],self.y[self.test]
  
-    def extract(self,extractor):
+    def extract(self,extractor,use_valid=False):
         cs=extractor.predict(self.X)
-        train,test=[],[]
+        train,test,valid=[],[],[]
         for cs_i in cs:
             cs_i= preprocessing.RobustScaler().fit_transform(cs_i)
             full_i=np.concatenate([self.X,cs_i],axis=1)
-            print(f'X:{np.mean(self.X)}')
-            print(f'cs_i:{np.mean(cs_i)}')
-            print(np.mean(full_i))
             train.append(full_i[self.train])
             test.append(full_i[self.test])
-        return (train,self.y[self.train]),(test,self.y[self.test])
+            if(use_valid):
+                valid.append(full_i[self.valid])
+        train_tuple= (train,self.y[self.train])
+        test_tuple = (test,self.y[self.test])
+        if(use_valid):
+            valid_tuple=(valid,self.y[self.valid])
+            return train_tuple,valid_tuple,test_tuple
+        return train_tuple,test_tuple
 
     def save(self,out_path):
         np.savez(file=out_path,
@@ -119,6 +126,24 @@ class Split(object):
     
     def __str__(self):
     	return f'{len(self.train)},{len(self.valid)},{len(self.test)}'
+
+    def eval(self,clf_type):
+        clf=get_clf(clf_type)
+        x_train,y_train=self.get_train()
+        clf.fit(x_train,y_train)
+        x_test,y_test=self.get_test()
+        return y_test,clf.predict(x_test)
+
+def get_clf(name_i):
+    if(type(name_i)!=str):
+        return name_i
+    if(name_i=="SVC"):
+        return SVC(probability=True)
+    if(name_i=="RF"):
+        return ensemble.RandomForestClassifier(class_weight='balanced_subsample')
+    if(name_i=="LR"):
+        return LogisticRegression(solver='liblinear',
+            class_weight='balanced')
 
 def gen_split(X,y,n_iters=2):
     for i in range(n_iters):
@@ -136,8 +161,8 @@ def gen_split(X,y,n_iters=2):
         	        test=test)
 
 def all_train(in_path,out_path,n_iters=2):
-    names={'arrhythmia':-1,'mfeat-factors':-1,'vehicle':-1,
-           'cnae-9':-1,'car':-1,'segment':-1,'fabert':0}
+    names={'arrhythmia':-1}#,'mfeat-factors':-1,'vehicle':-1,
+#           'cnae-9':-1,'car':-1,'segment':-1,'fabert':0}
     for name_i,target_i in names.items():
         train_exp(in_path=f'{in_path}/{name_i}.arff',
                   out_path=f'{out_path}/{name_i}',

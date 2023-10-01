@@ -3,9 +3,15 @@ import pandas as pd
 from scipy.io import arff
 from sklearn import preprocessing
 from collections import Counter
+
 def get_dataset(data_path):
-    df=pd.read_csv(data_path,header=None) 
-    return prepare_data(df)
+    postfix=data_path.split('.')[-1]
+    if(postfix=='arff'):
+        df=from_arff(data_path)
+        return prepare_data(df)
+    else:
+        df=pd.read_csv(data_path,header=None) 
+        return prepare_data(df)
 
 def prepare_data(df,target=-1):
     to_numeric(df)
@@ -50,5 +56,7 @@ def convert(raw):
          return raw
 
 if __name__ == '__main__':
-    in_path='raw/compas.arff'
-    from_arff(in_path)
+    in_path='raw/arrhythmia.arff'
+    df=from_arff(in_path)
+    X,y=prepare_data(df,target=-1)
+    print(np.std(X,axis=1))
