@@ -3,12 +3,12 @@ from skopt.utils import use_named_args
 from skopt import gp_minimize
 from sklearn import ensemble
 from sklearn.metrics import accuracy_score
-import data,pred
+import data,pred,utils,train
 
 class EvalBayes(object):
     def __init__(self):
-        self.space=[#Integer(5,20,name='max_depth'),
-                    Integer(10,100,name='n_estimators'),
+        self.space=[Integer(5,20,name='max_depth'),
+                    Integer(10,200,name='n_estimators'),
                     Categorical(['balanced_subsample'],name='class_weight'),
                     Categorical(['gini','entropy'],name='criterion')]
 
@@ -19,7 +19,7 @@ class EvalBayes(object):
         (x_train,y_train),(x_valid,y_valid),(x_test,y_test)=data_tuples
         @use_named_args(self.space)
         def objective(**params):
-            print("call")
+#            print("call")
             y_pred=necscf(x_train,y_train,x_valid,params)
             return -accuracy_score(y_valid,y_pred)
         res_gp = gp_minimize(func=objective, 
@@ -44,6 +44,16 @@ def necscf(x_train,y_train,x_test,params):
     y_pred=pred.count_votes(votes)
     return y_pred
 
+def eval_optim(spilt):
+    x_train,y_train=spilt.get_train()
+    x_valid,y_valid=spilt.get_valid()
+
+    clf=ensemble.RandomForestClassifier()
+    clf.fit(x_train,y_train)
+    y_pred=clf.predict(x_valid)
+    print("Base score=%.4f" % accuracy_score(y_valid,y_pred))
+    optim_rf(spilt)
+
 def optim_rf(spilt,verbose=0):
     space=[Integer(5,20,name='max_depth'),
            Integer(5,20,name='n_estimators')] 
@@ -67,24 +77,25 @@ def optim_rf(spilt,verbose=0):
     print("Best score=%.4f" % res_gp.fun)
     return res_gp.x,res.fun
 
-def eval_optim(spilt):
-    x_train,y_train=spilt.get_train()
-    x_valid,y_valid=spilt.get_valid()
-
-    clf=ensemble.RandomForestClassifier()
-    clf.fit(x_train,y_train)
-    y_pred=clf.predict(x_valid)
-    print("Base score=%.4f" % accuracy_score(y_valid,y_pred))
-    optim_rf(spilt)
-
-if __name__ == '__main__':
-    name='arrhythmia'
+def single_clf(name='arrhythmia'):
     in_path=f'raw/{name}.arff'
     target=-1
     df=data.from_arff(in_path)
     X,y=data.prepare_data(df,target=target)
     spilt=train.gen_split(X=X,
-    	                  y=y,
-    	                  n_iters=1)
+                          y=y,
+                          n_iters=1)
     spilt=list(spilt)[0]
     eval_optim(spilt)
+
+def mult_clf(in_path):
+    metric=utils.get_metric('acc')
+    eval_exp=EvalBayes()
+    for path_i in utils.top_files(in_path):
+        exp_i=train.read_exp(f'{path_i}/0')
+        y_true,y_pred= eval_exp(exp_i)
+        acc_i=metric(y_true,y_pred)
+        print(f'{path_i} acc:{acc_i:.4f}')
+
+if __name__ == '__main__':
+    mult_clf('../OML/models')
