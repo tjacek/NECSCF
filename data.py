@@ -9,6 +9,9 @@ def get_dataset(data_path):
     if(postfix=='arff'):
         df=from_arff(data_path)
         return prepare_data(df)
+    elif(postfix=='npz'):
+        np_data=np.load(data_path)
+        return np_data['X'],np_data['y']
     else:
         df=pd.read_csv(data_path,header=None) 
         return prepare_data(df)

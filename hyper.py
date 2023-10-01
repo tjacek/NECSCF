@@ -1,9 +1,11 @@
+import numpy as np
 import tensorflow.keras
 import tensorflow as tf
 from tensorflow.keras import Input, Model
 import keras_tuner as kt
+from sklearn.utils import class_weight
 import argparse
-import data
+import base,deep,data
 
 class MultiKTBuilder(object): 
     def __init__(self,params):
@@ -66,9 +68,9 @@ class EffBuilder(object):
         best['layers']=2
         return best
 
-def bayes_optim(exp,n_iter=5,verbose=1):
-#    model_builder= MultiKTBuilder(exp.params) 
-    model_builder= EffBuilder(exp.params) 
+def bayes_optim(split,params,n_iter=5,verbose=1):
+#    model_builder= MultiKTBuilder(params) 
+    model_builder= EffBuilder(params) 
 
     tuner=kt.BayesianOptimization(model_builder,
                 objective='val_loss',
@@ -76,18 +78,38 @@ def bayes_optim(exp,n_iter=5,verbose=1):
                 overwrite=True)
     stop_early = tf.keras.callbacks.EarlyStopping(monitor='val_loss', 
                                                   patience=5)
-    x_train,y_train=exp.split.get_train()
-    x_valid,y_valid=exp.split.get_valid()
+    x_train,y_train=split.get_train()
+    x_valid,y_valid=split.get_valid()
+#    class_weights = class_weight.compute_class_weight(class_weight='balanced',
+#                                                      classes=np.unique(y_train),
+#                                                      y=y_train)
     tuner.search(x=x_train, 
                  y=y_train, 
                  epochs=150,
-                 batch_size=exp.params['batch'], 
+                 batch_size=params['batch'], 
                  validation_data=(x_valid, y_valid),
                  verbose=verbose,
-                 callbacks=[stop_early])
+                 callbacks=[stop_early])#,
+#                 class_weight=exp.params['class_weights'])
     
     tuner.results_summary()
     return model_builder.extract_hyper(tuner)
+
+def find_alpha(split,params,hyper_dict):
+    stop_early = deep.get_early_stop()
+    alpha=[0.25,0.5,0.75]
+    acc=[]
+    for alpha_i in alpha:
+        exp_i=base.Experiment(split=split,
+                              params=params,
+                              hyper_params=hyper_dict,
+                              model=None)
+        exp_i.train(verbose=0,
+                    callbacks=stop_early,
+                    alpha=alpha_i)
+        acc.append( exp_i.eval('RF'))
+    print("Acc")
+    raise Exception(acc)
 
 if __name__ == '__main__':
     single_exp('raw/mfeat-factors.arff')
