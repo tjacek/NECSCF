@@ -56,6 +56,20 @@ def log_time(task='TRAIN',main_path='in_path'):
         return decor_fun
     return helper
 
+def dir_fun(fun):
+    @wraps(fun)
+    def decor_fun(*args, **kwargs):
+        in_path,out_path= args[0],args[1]
+        make_dir(out_path)
+        for path_i in top_files(in_path):
+            name_i=path_i.split('/')[-1]
+            out_i=f'{out_path}/{name_i}'
+            new_args=list(args)
+            new_args[0]=path_i
+            new_args[1]=out_i
+            fun(*new_args,**kwargs)
+    return decor_fun
+
 class FileFilter:
     def __call__(self, log):
         if log.levelno < logging.WARNING:
