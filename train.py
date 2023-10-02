@@ -8,10 +8,8 @@ import base,data,deep,hyper
 def find_hyper(data_path,model_path,alpha_optim=True):
     X,y=data.get_dataset(data_path)
     params=data.get_dataset_params(X,y)
-
     split_i= base.single_split(X=X, 
                                y=y)
-#    split_i.is_valid()
     hyper_dict=hyper.bayes_optim(split=split_i,
                                  params=params,
                                  n_iter=5,

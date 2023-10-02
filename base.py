@@ -73,8 +73,9 @@ class Experiment(object):
             self.model.save(f'{out_path}/nn')
 
 def read_exp(in_path):
-    split=base.read_split(in_path)
-    params=data.get_dataset_params(X,y)
+    split=read_split(in_path)
+    params=data.get_dataset_params(X=split.X,
+                                   y=split.y)
     class_dict=params['class_weights']
     with open(f'{in_path}/hyper.json', 'r') as f:        
         json_bytes = f.read()                      
@@ -120,13 +121,13 @@ class Split(object):
             return train_tuple,valid_tuple,test_tuple
         return train_tuple,test_tuple
 
-    def is_valid(self):
-        train_cats=set(self.y[self.train])
-        test_cats=set(self.y[self.test])
-        valid_cats=set(self.y[self.valid])
-        if( len(train_cats.intersection(test_cats))>0  or 
-            len(train_cats.intersection(valid_cats))>0   ):
-            raise Exception(f'{train_cats},{test_cats},{valid_cats}')
+#    def is_valid(self):
+#        train_cats=set(self.y[self.train])
+#        test_cats=set(self.y[self.test])
+#        valid_cats=set(self.y[self.valid])
+#        if( len(train_cats.intersection(test_cats))>0  or 
+#            len(train_cats.intersection(valid_cats))>0   ):
+#            raise Exception(f'{train_cats},{test_cats},{valid_cats}')
 
     def save(self,out_path):
         np.savez(file=out_path,
@@ -200,11 +201,12 @@ def split_data(X,y):
 def single_split(X,y):
     return list(gen_split(X,y))[0]
 
-def read_split(in_path):
+def read_split(in_path):#data_path,split_path):
+#    raise Exception(in_path)
     dataset=np.load(f'{in_path}/data.npz')
     X,y=dataset['X'],dataset['y']
     split_raw=np.load(f'{in_path}/split.npz')
-    split=Split(X=X,
+    return Split(X=X,
                 y=y,
                 train=split_raw['train'],
                 valid=split_raw['valid'],
