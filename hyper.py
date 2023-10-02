@@ -95,10 +95,10 @@ def bayes_optim(split,params,n_iter=5,verbose=1):
     tuner.results_summary()
     return model_builder.extract_hyper(tuner)
 
-def find_alpha(split,params,hyper_dict):
+def find_alpha(split,params,hyper_dict,verbose=1):
     stop_early = deep.get_early_stop()
     alpha=[0.25,0.5,0.75]
-    acc=[]
+    acc,all_exp=[],[]
     for alpha_i in alpha:
         exp_i=base.Experiment(split=split,
                               params=params,
@@ -108,8 +108,12 @@ def find_alpha(split,params,hyper_dict):
                     callbacks=stop_early,
                     alpha=alpha_i)
         acc.append( exp_i.eval('RF'))
-    print("Acc")
-    raise Exception(acc)
+        all_exp.append(exp_i)
+    if(verbose):
+        print('Acc:')
+        print(acc)
+    best=np.argmax(acc)
+    return  alpha[best],all_exp[best]
 
 if __name__ == '__main__':
     single_exp('raw/mfeat-factors.arff')

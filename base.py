@@ -24,15 +24,11 @@ class Experiment(object):
                                             use_valid=True)
         x_train,y_train=train
         x_valid,y_valid=valid
-
- #       if(max(y_train)!=max(y_valid)):
- #       raise Exception(f'{set(y_train)},{set(y_valid)}')
         y_pred=simple_necscf(x_train=x_train,
                              y_train=y_train,
                              x_test=x_valid,
                              clf_type="RF")
         accuracy=utils.get_metric('acc')
-#        raise Exception(list(zip(y_pred,y_valid)))
         return accuracy(y_pred,y_valid)
 
     def train(self,epochs=300,verbose=0,callbacks=None,alpha=0.5):
@@ -40,7 +36,8 @@ class Experiment(object):
             self.model=deep.ensemble_builder(params=self.params,
                                              hyper_params=self.hyper_params,
                                              alpha=alpha)
-#            self.model.summary()
+            if(verbose):
+                self.model.summary()
         x_train,y_train=self.split.get_train()
         y_train=[tf.keras.utils.to_categorical(y_train) 
                     for k in range(self.params['n_cats'])]

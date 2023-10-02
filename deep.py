@@ -5,7 +5,7 @@ from sklearn import preprocessing
 from tensorflow.keras.layers import Dense,BatchNormalization,Concatenate
 from tensorflow.keras import Input, Model
 
-def ensemble_builder(params,hyper_params):
+def ensemble_builder(params,hyper_params,alpha=0.5):
     input_layer = Input(shape=(params['dims']))
     class_dict=params['class_weights']
     single_cls,loss,metrics=[],{},{}
@@ -19,7 +19,7 @@ def ensemble_builder(params,hyper_params):
         single_cls.append(nn_i)
         loss[f'out_{i}']=weighted_loss(i=i,
                                        class_dict=class_dict,
-                                       alpha=0.5)
+                                       alpha=alpha)
         metrics[f'out_{i}']= 'accuracy'
     model= Model(inputs=input_layer, outputs=single_cls)
     model.compile(loss=loss,
@@ -88,3 +88,7 @@ def keras_loss( class_weights):
         )
         return losses
     return loss
+
+def get_early_stop():
+    return tf.keras.callbacks.EarlyStopping(monitor='val_loss', 
+                                            patience=5)
