@@ -8,7 +8,7 @@ from sklearn.svm import SVC
 from sklearn import ensemble
 from sklearn import preprocessing
 from collections import defaultdict
-import json
+import json,random
 import utils,deep,data
 
 class Experiment(object):
@@ -90,7 +90,7 @@ def read_exp(in_path):
 class Split(object):
     def __init__(self,X,y,train,valid,test):
         self.X=X
-        self.y=y #tf.keras.utils.to_categorical(y)#y
+        self.y=y
         self.train=train
         self.valid=valid
         self.test=test
@@ -120,14 +120,6 @@ class Split(object):
             valid_tuple=(valid,self.y[self.valid])
             return train_tuple,valid_tuple,test_tuple
         return train_tuple,test_tuple
-
-#    def is_valid(self):
-#        train_cats=set(self.y[self.train])
-#        test_cats=set(self.y[self.test])
-#        valid_cats=set(self.y[self.valid])
-#        if( len(train_cats.intersection(test_cats))>0  or 
-#            len(train_cats.intersection(valid_cats))>0   ):
-#            raise Exception(f'{train_cats},{test_cats},{valid_cats}')
 
     def save(self,out_path):
         np.savez(file=out_path,
@@ -181,12 +173,12 @@ def gen_split(X,y,n_iters=2):
                     test=test_i)
 
 def split_data(X,y):
-#    params=data.get_dataset_params(X,y)
     by_cat=defaultdict(lambda :[])
     for i,cat_i in enumerate( y):
         by_cat[cat_i].append(i)
     train,valid,test=[],[],[]
     for cat_i,samples_i in by_cat.items():
+        random.shuffle(samples_i)
         for j,index in enumerate(samples_i):
             mod_j= j % 5
             if(mod_j==4):
@@ -197,12 +189,10 @@ def split_data(X,y):
                 train.append(index)
     return train,valid,test   
 
-
 def single_split(X,y):
     return list(gen_split(X,y))[0]
 
-def read_split(in_path):#data_path,split_path):
-#    raise Exception(in_path)
+def read_split(in_path):
     dataset=np.load(f'{in_path}/data.npz')
     X,y=dataset['X'],dataset['y']
     split_raw=np.load(f'{in_path}/split.npz')
@@ -213,7 +203,6 @@ def read_split(in_path):#data_path,split_path):
                 test=split_raw['test'])
 
 def simple_necscf(x_train,y_train,x_test,clf_type):
-#    y_train=tf.keras.utils.to_categorical(y_train)
     votes=[]
     for train_i,test_i in zip(x_train,x_test):
             clf_i=get_clf(clf_type)#ensemble.RandomForestClassifier(**params)
@@ -223,7 +212,6 @@ def simple_necscf(x_train,y_train,x_test,clf_type):
     return y_pred
 
 def count_votes(votes):
-#    print( f'Votes{[vote_i for vote_i in votes]}')
     votes=np.array(votes)
     votes=np.sum(votes,axis=0)
     return np.argmax(votes,axis=1)
