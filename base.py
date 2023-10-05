@@ -11,6 +11,14 @@ from collections import defaultdict
 import json,random
 import utils,deep,data
 
+class AlgParams(obejct):
+    def __init__(self,epochs=300,callbacks=None):
+        if(callbacks is None):
+            callbacks=tf.keras.callbacks.EarlyStopping(monitor='val_loss', 
+                                                        patience=5)
+        self.epochs=epochs
+        self.callbacks=callbacks
+
 class Experiment(object):
     def __init__(self,split,params,hyper_params=None,model=None):
         self.split=split
@@ -27,11 +35,11 @@ class Experiment(object):
         y_pred=simple_necscf(x_train=x_train,
                              y_train=y_train,
                              x_test=x_valid,
-                             clf_type="RF")
+                             clf_type=clf_type)
         accuracy=utils.get_metric('acc')
         return accuracy(y_pred,y_valid)
 
-    def train(self,epochs=300,verbose=0,callbacks=None,alpha=0.5):
+    def train(self,alg_params,verbose=0,alpha=0.5):#epochs=300,verbose=0,callbacks=None,alpha=0.5):
         if(self.model is None):
             self.model=deep.ensemble_builder(params=self.params,
                                              hyper_params=self.hyper_params,
@@ -47,10 +55,10 @@ class Experiment(object):
         self.model.fit(x=x_train,
                        y=y_train,
                        batch_size=self.params['batch'],
-                       epochs=epochs,
+                       epochs=alg_params.epochs,
                        validation_data=(x_valid, y_valid),
                        verbose=verbose,
-                       callbacks=callbacks)
+                       callbacks=alg_params.callbacks)#callbacks)
 
     def make_extractor(self):
         names= [ layer.name for layer in self.model.layers]
