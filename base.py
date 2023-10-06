@@ -12,10 +12,11 @@ import json,random
 import utils,deep,data
 
 class AlgParams(obejct):
-    def __init__(self,epochs=300,callbacks=None):
+    def __init__(self,hyper_type='eff',epochs=300,callbacks=None):
         if(callbacks is None):
             callbacks=tf.keras.callbacks.EarlyStopping(monitor='val_loss', 
                                                         patience=5)
+        self.hyper_type=hyper_type
         self.epochs=epochs
         self.callbacks=callbacks
 
@@ -39,7 +40,7 @@ class Experiment(object):
         accuracy=utils.get_metric('acc')
         return accuracy(y_pred,y_valid)
 
-    def train(self,alg_params,verbose=0,alpha=0.5):#epochs=300,verbose=0,callbacks=None,alpha=0.5):
+    def train(self,alg_params,verbose=0,alpha=0.5):
         if(self.model is None):
             self.model=deep.ensemble_builder(params=self.params,
                                              hyper_params=self.hyper_params,
@@ -58,7 +59,7 @@ class Experiment(object):
                        epochs=alg_params.epochs,
                        validation_data=(x_valid, y_valid),
                        verbose=verbose,
-                       callbacks=alg_params.callbacks)#callbacks)
+                       callbacks=alg_params.callbacks)
 
     def make_extractor(self):
         names= [ layer.name for layer in self.model.layers]

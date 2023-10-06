@@ -68,16 +68,16 @@ class EffBuilder(object):
         best['layers']=2
         return best
 
-def bayes_optim(split,params,n_iter=5,verbose=1):
+def bayes_optim(alg_params,split,params,n_iter=5,verbose=1):
 #    model_builder= MultiKTBuilder(params) 
-    model_builder= EffBuilder(params) 
-
+#    model_builder= EffBuilder(params) 
+    model_builder.get_builder(alg_params,params)
     tuner=kt.BayesianOptimization(model_builder,
                 objective='val_loss',
                 max_trials=n_iter,
                 overwrite=True)
-    stop_early = tf.keras.callbacks.EarlyStopping(monitor='val_loss', 
-                                                  patience=5)
+#    stop_early = tf.keras.callbacks.EarlyStopping(monitor='val_loss', 
+#                                                  patience=5)
     x_train,y_train=split.get_train()
     x_valid,y_valid=split.get_valid()
 #    class_weights = class_weight.compute_class_weight(class_weight='balanced',
@@ -89,14 +89,20 @@ def bayes_optim(split,params,n_iter=5,verbose=1):
                  batch_size=params['batch'], 
                  validation_data=(x_valid, y_valid),
                  verbose=verbose,
-                 callbacks=[stop_early])#,
+                 callbacks=[alg_params.callback])#,
 #                 class_weight=exp.params['class_weights'])
     
     tuner.results_summary()
     return model_builder.extract_hyper(tuner)
 
+def get_builder(alg_params,params):
+    if(alg_params.hyper_type=='eff'):
+        return EffBuilder(params)
+    if(alg_params.hyper_type=='multi'):
+        return MultiKTBuilder(params)
+    return alg_params.hyper_type(params)
+
 def find_alpha(split,params,hyper_dict,verbose=1):
-    stop_early = deep.get_early_stop()
     alpha=[0.25,0.5,0.75]
     acc,all_exp=[],[]
     for alpha_i in alpha:
