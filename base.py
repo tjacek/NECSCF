@@ -12,14 +12,20 @@ import json,random
 import utils,deep,data
 
 class AlgParams(obejct):
-    def __init__(self,hyper_type='eff',epochs=300,callbacks=None):
+    def __init__(self,hyper_type='eff',epochs=300,callbacks=None,alpha=None):
         if(callbacks is None):
             callbacks=tf.keras.callbacks.EarlyStopping(monitor='val_loss', 
                                                         patience=5)
+        if(alpha is None):
+            alpha=[0.25,0.5,0.75]
         self.hyper_type=hyper_type
         self.epochs=epochs
         self.callbacks=callbacks
+        self.alpha=alpha
 
+    def optim_alpha(self):
+        return type(self.alpha)==list 
+        
 class Experiment(object):
     def __init__(self,split,params,hyper_params=None,model=None):
         self.split=split
