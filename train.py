@@ -16,7 +16,7 @@ def train_models(data_path,model_path,multi=True):
         hyper_dict=hyper.bayes_optim(alg_params=alg_params,
                                  split=split_i,
                                  params=params,
-                                 n_iter=5,
+#                                 n_iter=5,
                                  verbose=0)
         exp_i=train_exp(alg_params=alg_params,
                     split_i=split_i,

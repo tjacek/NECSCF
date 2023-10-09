@@ -69,15 +69,11 @@ class EffBuilder(object):
         return best
 
 def bayes_optim(alg_params,split,params,n_iter=5,verbose=1):
-#    model_builder= MultiKTBuilder(params) 
-#    model_builder= EffBuilder(params) 
     model_builder.get_builder(alg_params,params)
     tuner=kt.BayesianOptimization(model_builder,
                 objective='val_loss',
-                max_trials=n_iter,
+                max_trials= alg_params.bayes_iter,
                 overwrite=True)
-#    stop_early = tf.keras.callbacks.EarlyStopping(monitor='val_loss', 
-#                                                  patience=5)
     x_train,y_train=split.get_train()
     x_valid,y_valid=split.get_valid()
 #    class_weights = class_weight.compute_class_weight(class_weight='balanced',
