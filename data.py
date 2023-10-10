@@ -58,8 +58,18 @@ def convert(raw):
     except:
          return raw
 
+def gini(params):
+    class_sizes=list(params['class_weights'].values())
+    class_sizes.sort()
+    height,area = 0,0
+    for value in class_sizes:
+        height += value
+        area += height - value / 2.
+    fair_area = height * len(class_sizes) / 2.
+    return (fair_area - area) / fair_area
+
 if __name__ == '__main__':
     in_path='raw/arrhythmia.arff'
-    df=from_arff(in_path)
-    X,y=prepare_data(df,target=-1)
-    print(np.std(X,axis=1))
+    X,y=get_dataset(in_path)
+    params=get_dataset_params(X,y)
+    print(gini(params))
