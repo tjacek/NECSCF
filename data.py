@@ -3,6 +3,7 @@ import pandas as pd
 from scipy.io import arff
 from sklearn import preprocessing
 from collections import Counter
+import utils
 
 def get_dataset(data_path):
     postfix=data_path.split('.')[-1]
@@ -68,8 +69,27 @@ def gini(params):
     fair_area = height * len(class_sizes) / 2.
     return (fair_area - area) / fair_area
 
+def show_prop(in_path):
+    @utils.dir_fun
+    def helper(in_path,out_path):
+        X,y=get_dataset(in_path)
+        params=get_dataset_params(X,y)
+        params['gini']=gini(params)
+        return params
+    result_dict=helper(in_path,'out')
+    import pandas as pd
+    raw_dict={ name_i:[]
+         for name_i in ['dataset','n_cats','dims','batch','gini']}
+    for name_i,dict_i in result_dict.items():
+        raw_dict['dataset'].append(name_i)
+        for name_j in ['n_cats','dims','batch','gini']:
+            raw_dict[name_j].append(dict_i[name_j])
+    import pandas as pd
+    df=pd.DataFrame.from_dict(raw_dict)
+    print(df)
 if __name__ == '__main__':
-    in_path='raw/arrhythmia.arff'
-    X,y=get_dataset(in_path)
-    params=get_dataset_params(X,y)
-    print(gini(params))
+    show_prop('raw')
+#    in_path='raw/arrhythmia.arff'
+#    X,y=get_dataset(in_path)
+#    params=get_dataset_params(X,y)
+#    print(gini(params))
