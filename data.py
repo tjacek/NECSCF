@@ -86,10 +86,30 @@ def show_prop(in_path):
             raw_dict[name_j].append(dict_i[name_j])
     import pandas as pd
     df=pd.DataFrame.from_dict(raw_dict)
-    print(df)
+    return df
+
+def show_hyper(in_path):
+    import json
+    @utils.dir_fun
+    def helper(in_path,out_path):
+        with open(f'{in_path}/hyper.json', 'r') as f:        
+            json_bytes = f.read()                      
+            return json.loads(json_bytes)
+    result_dict=helper(in_path,in_path)
+    cols=list(result_dict.values())[0].keys()
+    raw_dict={ name_i:[] for name_i in cols}
+    raw_dict['dataset']=[]
+    for name_i,dict_i in result_dict.items():
+        raw_dict['dataset'].append(name_i)
+        for name_j in cols:
+            raw_dict[name_j].append(dict_i[name_j])
+    import pandas as pd
+    df=pd.DataFrame.from_dict(raw_dict)
+    df=df[['dataset','units_0','units_1','batch','alpha']]
+    return df
+
 if __name__ == '__main__':
-    show_prop('raw')
-#    in_path='raw/arrhythmia.arff'
-#    X,y=get_dataset(in_path)
-#    params=get_dataset_params(X,y)
-#    print(gini(params))
+    df=show_hyper('../OML_reduce/models')
+    print(df.to_latex())
+#    df=show_prop('raw')
+#    print(df[[ 'dataset','n_cats','batch', 'dims','gini' ]].to_latex())
