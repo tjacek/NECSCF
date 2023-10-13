@@ -77,16 +77,9 @@ def show_prop(in_path):
         params['gini']=gini(params)
         return params
     result_dict=helper(in_path,'out')
-    import pandas as pd
-    raw_dict={ name_i:[]
-         for name_i in ['dataset','n_cats','dims','batch','gini']}
-    for name_i,dict_i in result_dict.items():
-        raw_dict['dataset'].append(name_i)
-        for name_j in ['n_cats','dims','batch','gini']:
-            raw_dict[name_j].append(dict_i[name_j])
-    import pandas as pd
-    df=pd.DataFrame.from_dict(raw_dict)
-    return df
+    cols=['n_cats','dims','batch','gini']
+    df=to_df(result_dict,cols)
+    return df[[ 'dataset','n_cats','batch', 'dims','gini' ]]
 
 def show_hyper(in_path):
     import json
@@ -97,6 +90,17 @@ def show_hyper(in_path):
             return json.loads(json_bytes)
     result_dict=helper(in_path,in_path)
     cols=list(result_dict.values())[0].keys()
+    df=to_df(result_dict,cols)
+    df=df[['dataset','units_0','units_1','batch','alpha']]
+    return df
+
+def show_imb(in_path):
+    @utils.dir_fun
+    def helper(in_path,out_path):
+        print(in_path)
+    helper(in_path,out_path)
+
+def to_df(result_dict,cols):
     raw_dict={ name_i:[] for name_i in cols}
     raw_dict['dataset']=[]
     for name_i,dict_i in result_dict.items():
@@ -105,11 +109,10 @@ def show_hyper(in_path):
             raw_dict[name_j].append(dict_i[name_j])
     import pandas as pd
     df=pd.DataFrame.from_dict(raw_dict)
-    df=df[['dataset','units_0','units_1','batch','alpha']]
-    return df
+    return df  
 
 if __name__ == '__main__':
-    df=show_hyper('../OML_reduce/models')
+#    df=show_hyper('../OML_reduce/models')
+#    print(df.to_latex())
+    df=show_prop('raw')
     print(df.to_latex())
-#    df=show_prop('raw')
-#    print(df[[ 'dataset','n_cats','batch', 'dims','gini' ]].to_latex())
