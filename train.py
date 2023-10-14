@@ -2,13 +2,14 @@ import utils
 utils.silence_warnings()
 import numpy as np
 import json
+from sklearn.metrics import confusion_matrix
 import base,data,deep,hyper
 
-#@utils.dir_fun
 def train_models(data_path,model_path,multi=True):
     alg_params=base.AlgParams(hyper_type='eff')
     @utils.log_time()
     def helper(in_path,model_path):
+        
         X,y=data.get_dataset(in_path)
         params=data.get_dataset_params(X,y)
         split_i= base.single_split(X=X, 
@@ -18,7 +19,7 @@ def train_models(data_path,model_path,multi=True):
                                  params=params,
 #                                 n_iter=5,
                                  verbose=0)
-        exp_i=train_exp(alg_params=alg_params,
+        exp_i=make_exp(alg_params=alg_params,
                     split_i=split_i,
                     params=params,
                     hyper_dict=hyper_dict)
@@ -44,6 +45,13 @@ def make_exp(alg_params,split_i,params,hyper_dict):
                     alpha=0.5)
     return exp_i
 
+def raw_rf(split_i):
+    clf=get_clf("RF")
+    x_train,y_train=split_i.get_train()
+    clf.fit(x_train,y_train)
+    x_valid,y_valid=self.get_valid()
+    y_pred=clf.predict(x_valid)
+    return confusion_matrix(y_train,y_pred)
 if __name__ == '__main__':
 
 #    utils.start_log('log.info')
