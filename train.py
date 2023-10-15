@@ -45,13 +45,16 @@ def make_exp(alg_params,split_i,params,hyper_dict):
                     alpha=0.5)
     return exp_i
 
-def raw_rf(split_i):
+def raw_rf(split_i,n_select=5):    
     clf=get_clf("RF")
     x_train,y_train=split_i.get_train()
     clf.fit(x_train,y_train)
     x_valid,y_valid=self.get_valid()
     y_pred=clf.predict(x_valid)
-    return confusion_matrix(y_train,y_pred)
+    cf=confusion_matrix(y_train,y_pred)
+    np.fill_diagonal(cf,0)
+    return np.armax(np.sum(cf ,axis=0))
+
 if __name__ == '__main__':
 
 #    utils.start_log('log.info')
