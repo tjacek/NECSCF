@@ -7,9 +7,8 @@ import base,data,deep,hyper
 
 def train_models(data_path,model_path,multi=True):
     alg_params=base.AlgParams(hyper_type='eff')
-    @utils.log_time()
+    @utils.log_time(main_path=0)
     def helper(in_path,model_path):
-        
         X,y=data.get_dataset(in_path)
         params=data.get_dataset_params(X,y)
         split_i= base.single_split(X=X, 
@@ -25,7 +24,7 @@ def train_models(data_path,model_path,multi=True):
                     hyper_dict=hyper_dict)
         exp_i.save(model_path)
     if(multi):
-        helper=@utils.dir_fun(helper)
+        helper=utils.dir_fun(helper)
     helper(data_path,model_path)
 #    model_path=model_path.split('.')[0]
 
@@ -56,5 +55,7 @@ def raw_rf(split_i,n_select=5):
     return np.armax(np.sum(cf ,axis=0))
 
 if __name__ == '__main__':
-
-#    utils.start_log('log.info')
+    utils.start_log('log.info')
+    train_models(data_path='redu',
+                 model_path='../OML_select',
+                 multi=True)

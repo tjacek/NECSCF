@@ -11,8 +11,9 @@ from collections import defaultdict
 import json,random
 import utils,deep,data
 
-class AlgParams(obejct):
-    def __init__(self,hyper_type='eff',epochs=300,callbacks=None,alpha=None):
+class AlgParams(object):
+    def __init__(self,hyper_type='eff',epochs=300,callbacks=None,alpha=None,
+                    bayes_iter=5,rest_clf=None):
         if(callbacks is None):
             callbacks=tf.keras.callbacks.EarlyStopping(monitor='val_loss', 
                                                         patience=5)
@@ -22,6 +23,8 @@ class AlgParams(obejct):
         self.epochs=epochs
         self.callbacks=callbacks
         self.alpha=alpha
+        self.bayes_iter=bayes_iter
+        self.rest_clf=rest_clf
 
     def optim_alpha(self):
         return type(self.alpha)==list 
