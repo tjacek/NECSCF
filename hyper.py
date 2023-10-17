@@ -69,7 +69,7 @@ class EffBuilder(object):
         return best
 
 def bayes_optim(alg_params,split,params,n_iter=5,verbose=1):
-    model_builder.get_builder(alg_params,params)
+    model_builder=get_builder(alg_params,params)
     tuner=kt.BayesianOptimization(model_builder,
                 objective='val_loss',
                 max_trials= alg_params.bayes_iter,
@@ -85,7 +85,7 @@ def bayes_optim(alg_params,split,params,n_iter=5,verbose=1):
                  batch_size=params['batch'], 
                  validation_data=(x_valid, y_valid),
                  verbose=verbose,
-                 callbacks=[alg_params.callback])#,
+                 callbacks=[alg_params.callbacks])#,
 #                 class_weight=exp.params['class_weights'])
     
     tuner.results_summary()
@@ -98,7 +98,7 @@ def get_builder(alg_params,params):
         return MultiKTBuilder(params)
     return alg_params.hyper_type(params)
 
-def find_alpha(split,params,hyper_dict,verbose=1):
+def find_alpha(alg_params,split,params,hyper_dict,verbose=1):
     alpha=[0.25,0.5,0.75]
     acc,all_exp=[],[]
     for alpha_i in alpha:
@@ -107,7 +107,7 @@ def find_alpha(split,params,hyper_dict,verbose=1):
                               hyper_params=hyper_dict,
                               model=None)
         exp_i.train(verbose=0,
-                    callbacks=stop_early,
+                    alg_params=alg_params,
                     alpha=alpha_i)
         acc.append( exp_i.eval('RF'))
         all_exp.append(exp_i)
