@@ -85,7 +85,8 @@ def bayes_optim(alg_params,split,params,n_iter=5,verbose=1):
                  batch_size=params['batch'], 
                  validation_data=(x_valid, y_valid),
                  verbose=verbose,
-                 callbacks=[alg_params.callbacks])#,
+                 callbacks=[alg_params.get_callback()])
+#[alg_params.callbacks])#,
 #                 class_weight=exp.params['class_weights'])
     
     tuner.results_summary()

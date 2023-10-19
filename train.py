@@ -16,7 +16,6 @@ def train_models(data_path,model_path,multi=True):
         hyper_dict=hyper.bayes_optim(alg_params=alg_params,
                                  split=split_i,
                                  params=params,
-#                                 n_iter=5,
                                  verbose=0)
         exp_i=make_exp(alg_params=alg_params,
                     split_i=split_i,
@@ -29,10 +28,11 @@ def train_models(data_path,model_path,multi=True):
 #    model_path=model_path.split('.')[0]
 
 def make_exp(alg_params,split_i,params,hyper_dict):
-    if(alg_params.alpha_optim()):
-        alpha_i,exp_i=hyper.find_alpha(split=split_i,
-                                   params=params,
-                                   hyper_dict=hyper_dict)
+    if(alg_params.optim_alpha()):
+        alpha_i,exp_i=hyper.find_alpha(alg_params=alg_params,
+                                       split=split_i,
+                                       params=params,
+                                       hyper_dict=hyper_dict)
         exp_i.hyper_params['alpha']=alpha_i
     else:
         exp_i=base.Experiment(split=split_i,

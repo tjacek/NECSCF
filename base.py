@@ -14,21 +14,24 @@ import utils,deep,data
 class AlgParams(object):
     def __init__(self,hyper_type='eff',epochs=300,callbacks=None,alpha=None,
                     bayes_iter=5,rest_clf=None):
-        if(callbacks is None):
-            callbacks=tf.keras.callbacks.EarlyStopping(monitor='val_loss', 
-                                                        patience=5)
+#        if(callbacks is None):
+#            callbacks=tf.keras.callbacks.EarlyStopping(monitor='val_loss', 
+#                                                        patience=5)
         if(alpha is None):
             alpha=[0.25,0.5,0.75]
         self.hyper_type=hyper_type
         self.epochs=epochs
-        self.callbacks=callbacks
+#        self.callbacks=callbacks
         self.alpha=alpha
         self.bayes_iter=bayes_iter
         self.rest_clf=rest_clf
 
     def optim_alpha(self):
         return type(self.alpha)==list 
-        
+
+    def get_callback(self):
+        return tf.keras.callbacks.EarlyStopping(monitor='val_loss', 
+                                                patience=5)
 class Experiment(object):
     def __init__(self,split,params,hyper_params=None,model=None):
         self.split=split
@@ -68,7 +71,7 @@ class Experiment(object):
                        epochs=alg_params.epochs,
                        validation_data=(x_valid, y_valid),
                        verbose=verbose,
-                       callbacks=alg_params.callbacks)
+                       callbacks=alg_params.get_callback())
 
     def make_extractor(self):
         names= [ layer.name for layer in self.model.layers]
@@ -88,7 +91,9 @@ class Experiment(object):
         with open(f'{out_path}/hyper.json', 'w') as f:
             json.dump(self.hyper_params, f)
         if(not (self.model is None)):
-            self.model.save(f'{out_path}/nn')
+            self.model.save_weights(filepath=f'{out_path}/nn',
+                                    save_format='h5')
+
 
 def read_exp(in_path):
     split=read_split(in_path)
