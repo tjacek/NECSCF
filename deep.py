@@ -2,8 +2,8 @@ import numpy as np
 import tensorflow as tf
 import keras
 from sklearn import preprocessing
-from tensorflow.keras.layers import Concatenate,Dense,BatchNormalization,
-from tensorflow.keras import Input, Model
+from keras.layers import Concatenate,Dense,BatchNormalization
+from keras import Input, Model
 
 def ensemble_builder(params,hyper_params=None,alpha=0.5):
     if(hyper_params is None):
@@ -36,7 +36,7 @@ def nn_builder(params,hyper_params,input_layer=None,as_model=True,i=0,n_cats=Non
         n_cats=params['n_cats']
     x_i=input_layer
     for j in range(hyper_params['layers']):
-        hidden_j=int(params['dims']* hyper_params[f'units_{j}'])
+        hidden_j=int(params['dims'][0]* hyper_params[f'units_{j}'])
         x_i=Dense(hidden_j,activation='relu',
                     name=f"layer_{i}_{j}")(x_i)
     if(hyper_params['batch']):
