@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-import dataset,deep
+import base,dataset,deep,utils
 
 class NECSCF(object):
     def __init__(self, model=None):
@@ -25,11 +25,25 @@ class NECSCF(object):
 
     def predict(self,X):
     	y=self.model.predict(X)
-    	y=np.sum(np.array(y),axis=2)
-    	return np.argmax(y,axis=0)
+    	y=np.sum(np.array(y),axis=0)
+    	return np.argmax(y,axis=1)
 
-data=dataset.read_csv("../uci/cmc")
-clf=NECSCF()
-clf.fit(data.X,data.y)
-clf.predict(data.X)
+@utils.elapsed_time
+def ensemble_exp(in_path,
+                 n_splits=3,
+                 n_repeats=1):
+    data=dataset.read_csv(in_path)
+    protocol=base.get_protocol("unaggr")(n_splits,n_repeats)
+    splits=protocol.get_split(data)
+    results=[]
+    for split_k in splits:
+        clf_k=NECSCF()
+        results.append(split_k.eval(data,clf_k))
+    acc=np.mean([result_j.get_acc() for result_j in results])
+    balance=np.mean([result_j.get_balanced() for result_j in results])
+    print(f"{acc},{balance}")
+
+ensemble_exp(in_path="../uci/cmc")
+#clf.fit(data.X,data.y)
+#clf.predict(data.X)
 #model.summary()

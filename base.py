@@ -1,3 +1,6 @@
+import numpy as np
+from sklearn.model_selection import RepeatedStratifiedKFold
+
 class UnaggrSplit(object):
     def __init__(self,n_splits,n_repeats):
         self.n_splits=n_splits
@@ -56,3 +59,10 @@ class AggrSplit(object):
             all_pred=np.concatenate(all_pred)
             all_test=np.concatenate(all_test)
             return dataset.Result(all_pred,all_test)
+
+def get_protocol(prot_type):
+    if(prot_type=="aggr"):
+        return AggrSplit
+    if(prot_type=="unaggr"):
+        return UnaggrSplit
+    raise Exception(f"No protocol{prot_type}")
