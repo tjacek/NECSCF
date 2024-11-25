@@ -1,6 +1,26 @@
 import numpy as np
 import tensorflow as tf
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 import base,dataset,deep,utils
+
+
+class ClfFactory(object):
+    def __init__(self,clf_type="RF"):
+        self.clf_type=clf_type
+    
+    def init(self,data):
+        pass
+
+    def __call__(self):
+        return get_clf(self.clf_type)
+
+def get_clf(clf_type):
+    if(clf_type=="RF"): 
+        return RandomForestClassifier(class_weight="balanced")#_subsample")
+    if(clf_type=="LR"):
+        return LogisticRegression(solver='liblinear')
+    raise Exception(f"Unknow clf type:{clf_type}")
 
 class ClassEnsFactory(object):
     def __init__(self,hyper_params=None):
