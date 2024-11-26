@@ -63,6 +63,33 @@ class ClassEns(object):
     	y=np.sum(np.array(y),axis=0)
     	return np.argmax(y,axis=1)
 
+def clf_exp(in_path,
+            n_splits=10,
+            n_repeats=1):
+    data=dataset.read_csv(in_path)
+    protocol=base.get_protocol("unaggr")(n_splits,n_repeats)
+    splits=protocol.get_split(data)
+    @utils.elapsed_time
+    def helper(clf_factory):
+        clf_factory.init(data)
+        results=[]
+        for split_k in splits:
+            clf_k=clf_factory()
+            results.append(split_k.eval(data,clf_k))
+        acc=np.mean([result_j.get_acc() for result_j in results])
+        balance=np.mean([result_j.get_balanced() for result_j in results])
+        return acc,balance
+    clfs={'RF':ClfFactory('RF'),
+           'class_ens':ClassEnsFactory()}
+    acc_dict,balance_dict={},{}
+    for clf_type_i,clf_i in clfs.items():
+        acc_i,balance_i=helper(clf_i)
+        acc_dict[clf_type_i]=acc_i
+        balance_dict[clf_type_i]=balance_i
+    print(acc_dict)
+    print(balance_dict)
+        
+
 @utils.elapsed_time
 def ensemble_exp(in_path,
                  n_splits=10,
@@ -80,7 +107,7 @@ def ensemble_exp(in_path,
     balance=np.mean([result_j.get_balanced() for result_j in results])
     print(f"{acc},{balance}")
 
-ensemble_exp(in_path="../uci/wine-quality-red")
+clf_exp(in_path="../uci/wine-quality-red")
 #clf.fit(data.X,data.y)
 #clf.predict(data.X)
 #model.summary()
