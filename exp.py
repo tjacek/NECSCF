@@ -4,6 +4,18 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 import base,dataset,deep,utils
 
+class DataSplits(object):
+    def __init__(self,data,splits):
+        self.data=data
+        self.splits=splits
+        
+    def __call__(self,clf_factory):
+        clf_factory.init(self.data)
+        results=[]
+        for split_k in self.splits:
+            clf_k=clf_factory()
+            results.append(split_k.eval(self.data,clf_k))
+        return results
 
 class ClfFactory(object):
     def __init__(self,clf_type="RF"):
@@ -25,7 +37,8 @@ def get_clf(clf_type):
 class ClassEnsFactory(object):
     def __init__(self,hyper_params=None):
         if(hyper_params is None):
-           hyper_params={'layers':1,'units_0':2,'batch':True}
+           hyper_params={'layers':2, 'units_0':2,
+                         'units_1':1,'batch':False}
         self.params=None
         self.hyper_params=hyper_params
     
@@ -68,45 +81,21 @@ def clf_exp(in_path,
             n_repeats=1):
     data=dataset.read_csv(in_path)
     protocol=base.get_protocol("unaggr")(n_splits,n_repeats)
-    splits=protocol.get_split(data)
-    @utils.elapsed_time
-    def helper(clf_factory):
-        clf_factory.init(data)
-        results=[]
-        for split_k in splits:
-            clf_k=clf_factory()
-            results.append(split_k.eval(data,clf_k))
-        acc=np.mean([result_j.get_acc() for result_j in results])
-        balance=np.mean([result_j.get_balanced() for result_j in results])
-        return acc,balance
+    splits=DataSplits( data=data,
+                       splits=protocol.get_split(data))
+     
     clfs={'RF':ClfFactory('RF'),
            'class_ens':ClassEnsFactory()}
     acc_dict,balance_dict={},{}
     for clf_type_i,clf_i in clfs.items():
-        acc_i,balance_i=helper(clf_i)
-        acc_dict[clf_type_i]=acc_i
-        balance_dict[clf_type_i]=balance_i
+        results=splits(clf_i)
+        acc_dict[clf_type_i]=np.mean([result_j.get_acc() 
+                                        for result_j in results])
+        balance_dict[clf_type_i]=np.mean([result_j.get_balanced() 
+                                        for result_j in results])
     print(acc_dict)
     print(balance_dict)
         
-
-@utils.elapsed_time
-def ensemble_exp(in_path,
-                 n_splits=10,
-                 n_repeats=1):
-    data=dataset.read_csv(in_path)
-    protocol=base.get_protocol("unaggr")(n_splits,n_repeats)
-    splits=protocol.get_split(data)
-    clf_factory=ClassEnsFactory()
-    clf_factory.init(data)
-    results=[]
-    for split_k in splits:
-        clf_k=clf_factory()
-        results.append(split_k.eval(data,clf_k))
-    acc=np.mean([result_j.get_acc() for result_j in results])
-    balance=np.mean([result_j.get_balanced() for result_j in results])
-    print(f"{acc},{balance}")
-
 clf_exp(in_path="../uci/wine-quality-red")
 #clf.fit(data.X,data.y)
 #clf.predict(data.X)

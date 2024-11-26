@@ -4,10 +4,11 @@ import keras
 from sklearn import preprocessing
 from keras.layers import Concatenate,Dense,BatchNormalization
 from keras import Input, Model
-
+ 
 def ensemble_builder(params,hyper_params=None,alpha=0.5):
     if(hyper_params is None):
-        hyper_params={'layers':1,'units_0':2,'batch':True}
+        hyper_params={'layers':2, 'units_0':2,
+                      'units_1':1,'batch':False}
     input_layer = Input(shape=(params['dims']))
     class_dict=params['class_weights']
     single_cls,loss,metrics=[],{},{}
@@ -91,6 +92,6 @@ def keras_loss( class_weights):
         return losses
     return loss
 
-def get_early_stop():
+def get_callback():
     return tf.keras.callbacks.EarlyStopping(monitor='val_loss', 
                                             patience=5)
