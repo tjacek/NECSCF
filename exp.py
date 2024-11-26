@@ -35,12 +35,13 @@ def get_clf(clf_type):
     raise Exception(f"Unknow clf type:{clf_type}")
 
 class ClassEnsFactory(object):
-    def __init__(self,hyper_params=None):
+    def __init__(self,hyper_params=None,selected_classes=None):
         if(hyper_params is None):
            hyper_params={'layers':2, 'units_0':2,
                          'units_1':1,'batch':False}
         self.params=None
         self.hyper_params=hyper_params
+        self.selected_classes=selected_classes
     
     def init(self,data):
         self.params={'dims': (data.dim(),),
@@ -49,14 +50,17 @@ class ClassEnsFactory(object):
 
     def __call__(self):
         return ClassEns(params=self.params,
-                        hyper_params=self.hyper_params)
+                        hyper_params=self.hyper_params,
+                        selected_classes=self.selected_classes)
 
 class ClassEns(object):
     def __init__(self, params,
                        hyper_params,
+                       selected_classes,
                        model=None):
         self.params=params
         self.hyper_params=hyper_params
+        self.selected_classes=selected_classes
         self.model = model
 
     def fit(self,X,y):
@@ -64,7 +68,8 @@ class ClassEns(object):
         if(self.model is None):
             self.model=deep.ensemble_builder(params=self.params,
 	                                         hyper_params=self.hyper_params,
-	                                         alpha=0.5)
+	                                         selected_classes=self.selected_classes,
+                                             alpha=0.5)
         y=[tf.one_hot(y,depth=self.params['n_cats'])
                 for i in range(data.n_cats())]
         self.model.fit(x=X,
@@ -84,8 +89,9 @@ def clf_exp(in_path,
     splits=DataSplits( data=data,
                        splits=protocol.get_split(data))
      
+    selected_classes=None#[0,1,2]
     clfs={'RF':ClfFactory('RF'),
-           'class_ens':ClassEnsFactory()}
+           'class_ens':ClassEnsFactory(selected_classes=selected_classes)}
     acc_dict,balance_dict={},{}
     for clf_type_i,clf_i in clfs.items():
         results=splits(clf_i)

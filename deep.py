@@ -5,14 +5,19 @@ from sklearn import preprocessing
 from keras.layers import Concatenate,Dense,BatchNormalization
 from keras import Input, Model
  
-def ensemble_builder(params,hyper_params=None,alpha=0.5):
+def ensemble_builder(params,
+                     hyper_params=None,
+                     selected_classes=None,
+                     alpha=0.5):
     if(hyper_params is None):
         hyper_params={'layers':2, 'units_0':2,
                       'units_1':1,'batch':False}
     input_layer = Input(shape=(params['dims']))
     class_dict=params['class_weights']
     single_cls,loss,metrics=[],{},{}
-    for i in range(params['n_cats']):
+    if(selected_classes is None):
+        selected_classes=range(params['n_cats'])
+    for i in selected_classes:
         nn_i=nn_builder(params=params,
                         hyper_params=hyper_params,
                         input_layer=input_layer,
