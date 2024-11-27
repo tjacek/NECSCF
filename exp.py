@@ -89,7 +89,8 @@ def clf_exp(in_path,
     splits=DataSplits( data=data,
                        splits=protocol.get_split(data))
      
-    selected_classes=None#[0,1,2]
+    selected_classes=selection(data)#[0,1,2]
+#    raise Exception(selected_classes)
     clfs={'RF':ClfFactory('RF'),
            'class_ens':ClassEnsFactory(selected_classes=selected_classes)}
     acc_dict,balance_dict={},{}
@@ -101,7 +102,11 @@ def clf_exp(in_path,
                                         for result_j in results])
     print(acc_dict)
     print(balance_dict)
-        
+
+def selection(data):
+    sizes=data.class_percent()
+    return [ i for i,size_i in sizes.items()
+                  if(size_i<0.25) ]
 clf_exp(in_path="../uci/wine-quality-red")
 #clf.fit(data.X,data.y)
 #clf.predict(data.X)
