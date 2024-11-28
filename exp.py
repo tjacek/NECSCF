@@ -1,5 +1,10 @@
+def warn(*args, **kwargs):
+    pass
+import warnings
+warnings.warn = warn
 import numpy as np
 import tensorflow as tf
+import itertools
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 import base,dataset,deep,utils
@@ -81,6 +86,7 @@ class ClassEns(object):
     	y=np.sum(np.array(y),axis=0)
     	return np.argmax(y,axis=1)
 
+
 def clf_exp(in_path,
             n_splits=10,
             n_repeats=1):
@@ -104,7 +110,21 @@ def selection(data):
     sizes=data.class_percent()
     return [ i for i,size_i in sizes.items()
                   if(size_i<0.25) ]
-clf_exp(in_path="../uci/wine-quality-red")
+
+def selection_exp(in_path):
+    data=dataset.read_csv(in_path)
+    for subset_i in iter_subsets(data):
+        print(subset_i)
+
+def iter_subsets(data):
+    cats= range(data.n_cats())
+    for i in range(1,data.n_cats()):
+        cats_i=itertools.combinations(cats, i)
+        for cats_j in cats_i:
+            yield cats_j
+    yield cats
+
+selection_exp(in_path="../uci/wine-quality-red")
 #clf.fit(data.X,data.y)
 #clf.predict(data.X)
 #model.summary()
