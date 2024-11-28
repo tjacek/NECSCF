@@ -15,7 +15,7 @@ class DataSplits(object):
         for split_k in self.splits:
             clf_k=clf_factory()
             results.append(split_k.eval(self.data,clf_k))
-        return results
+        return dataset.ResultGroup(results)
 
 class ClfFactory(object):
     def __init__(self,clf_type="RF"):
@@ -96,10 +96,8 @@ def clf_exp(in_path,
     acc_dict,balance_dict={},{}
     for clf_type_i,clf_i in clfs.items():
         results=splits(clf_i)
-        acc_dict[clf_type_i]=np.mean([result_j.get_acc() 
-                                        for result_j in results])
-        balance_dict[clf_type_i]=np.mean([result_j.get_balanced() 
-                                        for result_j in results])
+        acc_dict[clf_type_i]=np.mean(results.get_acc())
+        balance_dict[clf_type_i]=np.mean(results.get_balanced() )
     print(acc_dict)
     print(balance_dict)
 

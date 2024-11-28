@@ -87,6 +87,18 @@ class Result(object):
         y_pair=np.array([self.y_pred,self.y_true])
         np.savez(out_path,y_pair)
 
+class ResultGroup(object):
+    def __init__(self,results):
+        self.results=results
+
+    def get_acc(self):
+        return [result_j.get_acc() 
+                    for result_j in self.results]
+
+    def get_balanced(self):
+        return [result_j.get_balanced() 
+                    for result_j in self.results]
+
 class WeightDict(dict):
     def __init__(self, arg=[]):
         super(WeightDict, self).__init__(arg)
