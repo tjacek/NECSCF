@@ -38,10 +38,10 @@ class ClassEnsFactory(object):
     def __init__(self,hyper_params=None,selected_classes=None):
         if(hyper_params is None):
            hyper_params={'layers':2, 'units_0':2,
-                         'units_1':1,'batch':False}
+                         'units_1':1,'batch':False,
+                         'selected_classes':selected_classes}
         self.params=None
         self.hyper_params=hyper_params
-        self.selected_classes=selected_classes
     
     def init(self,data):
         self.params={'dims': (data.dim(),),
@@ -50,34 +50,34 @@ class ClassEnsFactory(object):
 
     def __call__(self):
         return ClassEns(params=self.params,
-                        hyper_params=self.hyper_params,
-                        selected_classes=self.selected_classes)
+                        hyper_params=self.hyper_params)
 
 class ClassEns(object):
     def __init__(self, params,
                        hyper_params,
-                       selected_classes,
-                       model=None):
+                       model=None,
+                       verbose=0):
         self.params=params
         self.hyper_params=hyper_params
-        self.selected_classes=selected_classes
         self.model = model
+        self.verbose=verbose
 
     def fit(self,X,y):
         data=dataset.Dataset(X,y)
         if(self.model is None):
             self.model=deep.ensemble_builder(params=self.params,
 	                                         hyper_params=self.hyper_params,
-	                                         selected_classes=self.selected_classes,
                                              alpha=0.5)
         y=[tf.one_hot(y,depth=self.params['n_cats'])
                 for i in range(data.n_cats())]
         self.model.fit(x=X,
         	           y=y,
-        	           callbacks=deep.get_callback())
+        	           callbacks=deep.get_callback(),
+                       verbose=self.verbose)
 
     def predict(self,X):
-    	y=self.model.predict(X)
+    	y=self.model.predict(X,
+                             verbose=self.verbose)
     	y=np.sum(np.array(y),axis=0)
     	return np.argmax(y,axis=1)
 
@@ -90,7 +90,6 @@ def clf_exp(in_path,
                        splits=protocol.get_split(data))
      
     selected_classes=selection(data)#[0,1,2]
-#    raise Exception(selected_classes)
     clfs={'RF':ClfFactory('RF'),
            'class_ens':ClassEnsFactory(selected_classes=selected_classes)}
     acc_dict,balance_dict={},{}

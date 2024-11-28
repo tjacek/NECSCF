@@ -14,9 +14,10 @@ def ensemble_builder(params,
                       'units_1':1,'batch':False}
     input_layer = Input(shape=(params['dims']))
     class_dict=params['class_weights']
-    single_cls,loss,metrics=[],{},{}
+    selected_classes=hyper_params['selected_classes']
     if(selected_classes is None):
         selected_classes=range(params['n_cats'])
+    single_cls,loss,metrics=[],{},{}
     for i in selected_classes:
         nn_i=nn_builder(params=params,
                         hyper_params=hyper_params,
