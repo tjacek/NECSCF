@@ -22,17 +22,18 @@ class DataSplits(object):
             results.append(split_k.eval(self.data,clf_k))
         return dataset.ResultGroup(results)
 
-    def get_clf(self,clf_factory):
+    def get_clfs(self,clf_factory):
         clf_factory.init(self.data)
         for split_k in self.splits:
+            print("OK")
             clf_k=clf_factory()
-            yield split_k.eval(self.data,clf_k)
+            yield split_k.fit_clf(self.data,clf_k)
 
-    def pred(self,clfs):
-        results=[]
-        for split_k,clf_k in zip(self.splits,clfs):
-            results.append(split_k.eval(self.data,clf_k))
-        return results
+#    def pred(self,clfs):
+#        results=[]
+#        for split_k,clf_k in zip(self.splits,clfs):
+#            results.append(split_k.eval(self.data,clf_k))
+#        return results
 
 class ClfFactory(object):
     def __init__(self,clf_type="RF"):
@@ -98,6 +99,23 @@ class ClassEns(object):
     	y=np.sum(np.array(y),axis=0)
     	return np.argmax(y,axis=1)
 
+    def select_predict(self,X,select_cats):
+        y=self.model.predict(X,
+                             verbose=self.verbose)
+        y=[y[cat_i] for cat_i in select_cats]
+        y=np.sum(np.array(y),axis=0)
+        return np.argmax(y,axis=1)       
+
+
+class SelectedEns(object):
+    def __init__(self,ens,select_cats):
+        self.ens=ens
+        self.select_cats=select_cats
+
+    def predict(self,X):
+        return self.ens.predict(X=X,
+                                select_cats=self.select_cats)
+
 def clf_exp(in_path,
             n_splits=10,
             n_repeats=1):
@@ -122,9 +140,17 @@ def selection(data):
     return [ i for i,size_i in sizes.items()
                   if(size_i<0.25) ]
 
-def selection_exp(in_path):
+def selection_exp(in_path,
+                  n_splits=10,
+                  n_repeats=1):
     data=dataset.read_csv(in_path)
+    protocol=base.get_protocol("unaggr")(n_splits,n_repeats)
+    splits=DataSplits( data=data,
+                       splits=protocol.get_split(data))
+    clf_factory=ClassEnsFactory(selected_classes=None)
+    clfs=list(splits.get_clfs(clf_factory))
     for subset_i in iter_subsets(data):
+        s_clfs=[SelectedEns(clfs,subset_i) for clf_j in clfs]
         print(subset_i)
 
 def iter_subsets(data):
@@ -135,7 +161,7 @@ def iter_subsets(data):
             yield cats_j
     yield cats
 
-clf_exp(in_path="../uci/wine-quality-red")
+selection_exp(in_path="../uci/wine-quality-red")
 #clf.fit(data.X,data.y)
 #clf.predict(data.X)
 #model.summary()
