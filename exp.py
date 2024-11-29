@@ -22,6 +22,18 @@ class DataSplits(object):
             results.append(split_k.eval(self.data,clf_k))
         return dataset.ResultGroup(results)
 
+    def get_clf(self,clf_factory):
+        clf_factory.init(self.data)
+        for split_k in self.splits:
+            clf_k=clf_factory()
+            yield split_k.eval(self.data,clf_k)
+
+    def pred(self,clfs):
+        results=[]
+        for split_k,clf_k in zip(self.splits,clfs):
+            results.append(split_k.eval(self.data,clf_k))
+        return results
+
 class ClfFactory(object):
     def __init__(self,clf_type="RF"):
         self.clf_type=clf_type
