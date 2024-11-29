@@ -98,7 +98,6 @@ class ClassEns(object):
     	y=np.sum(np.array(y),axis=0)
     	return np.argmax(y,axis=1)
 
-
 def clf_exp(in_path,
             n_splits=10,
             n_repeats=1):
@@ -136,7 +135,7 @@ def iter_subsets(data):
             yield cats_j
     yield cats
 
-selection_exp(in_path="../uci/wine-quality-red")
+clf_exp(in_path="../uci/wine-quality-red")
 #clf.fit(data.X,data.y)
 #clf.predict(data.X)
 #model.summary()

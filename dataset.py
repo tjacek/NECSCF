@@ -24,23 +24,10 @@ class Dataset(object):
     def __call__(self,fun):
         return Dataset(X=fun(self.X),
                        y=self.y)
-    
-#    def split(self,train_index,test_index):
-#        X_train=self.X[train_index]
-#        y_train=self.y[train_index]
-#        X_test=self.X[test_index]
-#        y_test=self.y[test_index]
-#        return (X_train,y_train),(X_test,y_test)        
+                           
     def eval(self,train_index,test_index,clf,as_result=True):
         clf=self.fit_clf(train_index,clf)
-        return self.pred(test_index,as_result=as_result)
-#    def eval(self,train_index,test_index,clf,as_result=True):
-#        (X_train,y_train),(X_test,y_test)=self.split(train_index,test_index)
-#        clf.fit(X_train,y_train) 
-#        y_pred=clf.predict(X_test)
-#        return Result(y_pred,y_test)
-#        else:
-#            return y_pred,y_test
+        return self.pred(test_index,clf,as_result=as_result)
     
     def fit_clf(self,train,clf):
         X_train,y_train=self.X[train],self.y[train]
