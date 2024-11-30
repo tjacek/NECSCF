@@ -29,11 +29,11 @@ class DataSplits(object):
             clf_k=clf_factory()
             yield split_k.fit_clf(self.data,clf_k)
 
-#    def pred(self,clfs):
-#        results=[]
-#        for split_k,clf_k in zip(self.splits,clfs):
-#            results.append(split_k.eval(self.data,clf_k))
-#        return results
+    def pred(self,clfs):
+        results=[]
+        for split_k,clf_k in zip(self.splits,clfs):
+            results.append(split_k.pred(self.data,clf_k))
+        return dataset.ResultGroup(results)
 
 class ClfFactory(object):
     def __init__(self,clf_type="RF"):
@@ -106,15 +106,14 @@ class ClassEns(object):
         y=np.sum(np.array(y),axis=0)
         return np.argmax(y,axis=1)       
 
-
 class SelectedEns(object):
     def __init__(self,ens,select_cats):
         self.ens=ens
         self.select_cats=select_cats
 
     def predict(self,X):
-        return self.ens.predict(X=X,
-                                select_cats=self.select_cats)
+        return self.ens.select_predict(X=X,
+                                       select_cats=self.select_cats)
 
 def clf_exp(in_path,
             n_splits=10,
@@ -150,8 +149,11 @@ def selection_exp(in_path,
     clf_factory=ClassEnsFactory(selected_classes=None)
     clfs=list(splits.get_clfs(clf_factory))
     for subset_i in iter_subsets(data):
-        s_clfs=[SelectedEns(clfs,subset_i) for clf_j in clfs]
+        s_clfs=[SelectedEns(clf_j,subset_i) for clf_j in clfs]
+        results=splits.pred(s_clfs)
         print(subset_i)
+        print(np.mean(results.get_acc()))
+        print(np.mean(results.get_balanced()))
 
 def iter_subsets(data):
     cats= range(data.n_cats())
@@ -159,7 +161,7 @@ def iter_subsets(data):
         cats_i=itertools.combinations(cats, i)
         for cats_j in cats_i:
             yield cats_j
-    yield cats
+    yield list(cats)
 
 selection_exp(in_path="../uci/wine-quality-red")
 #clf.fit(data.X,data.y)

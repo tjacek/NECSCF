@@ -32,6 +32,7 @@ class UnaggrSplit(object):
 
         def pred(self,data,clf):
             return data.pred(self.test_index,
+                             clf=clf,
                              as_result=True)
 
 class AggrSplit(object):
@@ -74,19 +75,6 @@ class AggrSplit(object):
             all_pred=np.concatenate(all_pred)
             all_test=np.concatenate(all_test)
             return dataset.Result(all_pred,all_test)
-
-#        def eval(self,data,clf):
-#            all_pred,all_test=[],[]
-#            for train_t,test_t in self.indexes:
-#                pred_t,test_t=data.eval(train_index=train_t,
-#                                        test_index=test_t,
-#                                        clf=clf,
-#                                        as_result=False)
-#                all_pred.append(pred_t)
-#                all_test.append(test_t)
-#            all_pred=np.concatenate(all_pred)
-#            all_test=np.concatenate(all_test)
-#            return dataset.Result(all_pred,all_test)
 
 def get_protocol(prot_type):
     if(prot_type=="aggr"):
