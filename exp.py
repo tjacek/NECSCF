@@ -7,6 +7,7 @@ import tensorflow as tf
 import itertools
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
+import pandas as pd
 import base,dataset,deep,utils
 
 class DataSplits(object):
@@ -148,12 +149,17 @@ def selection_exp(in_path,
                        splits=protocol.get_split(data))
     clf_factory=ClassEnsFactory(selected_classes=None)
     clfs=list(splits.get_clfs(clf_factory))
+    lines=[]
     for subset_i in iter_subsets(data):
         s_clfs=[SelectedEns(clf_j,subset_i) for clf_j in clfs]
         results=splits.pred(s_clfs)
-        print(subset_i)
-        print(np.mean(results.get_acc()))
-        print(np.mean(results.get_balanced()))
+        mean_i,balance_i=np.mean(results.get_acc()),np.mean(results.get_balanced())
+        lines.append([str(subset_i),mean_i,balance_i])
+    df=pd.DataFrame.from_records(lines)
+    return df   
+#        print(subset_i)
+#        print(np.mean(results.get_acc()))
+#        print(np.mean(results.get_balanced()))
 
 def iter_subsets(data):
     cats= range(data.n_cats())
