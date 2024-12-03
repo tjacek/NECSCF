@@ -155,6 +155,7 @@ def selection_exp(in_path,
         results=splits.pred(s_clfs)
         mean_i,balance_i=np.mean(results.get_acc()),np.mean(results.get_balanced())
         lines.append([str(subset_i),mean_i,balance_i])
+        print(lines[-1])
     df=pd.DataFrame.from_records(lines,columns=['subset','acc','balance'])
     return df   
 
@@ -166,8 +167,8 @@ def iter_subsets(data):
             yield cats_j
     yield list(cats)
 
-df=selection_exp(in_path="../uci/wine-quality-red")
-df.to_csv('subset.csv')
+df=selection_exp(in_path="../uci/cleveland")
+df.to_csv('subset2.csv')
 #clf.fit(data.X,data.y)
 #clf.predict(data.X)
 #model.summary()
