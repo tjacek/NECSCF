@@ -7,8 +7,7 @@ from keras import Input, Model
  
 def ensemble_builder(params,
                      hyper_params=None,
-                     selected_classes=None,
-                     alpha=0.5):
+                     selected_classes=None):
     if(hyper_params is None):
         hyper_params={'layers':2, 'units_0':2,
                       'units_1':1,'batch':False}
@@ -58,11 +57,11 @@ def nn_builder(params,
         return Model(inputs=input_layer, outputs=x_i)
     return x_i
 
-def weighted_loss(i,class_dict,alpha=0.5):
+def weighted_loss(i,class_dict):
     n_cats=len(class_dict)
     class_weights=np.zeros(n_cats,dtype=np.float32)
     for i in range(n_cats):
-        class_weights[i]=class_dict[i]
+        class_weights[i]=1.0/class_dict[i]
     if(not (i is None)):
         class_weights[i]*=  (len(class_dict)/2)
     return keras_loss(class_weights)

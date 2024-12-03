@@ -85,8 +85,7 @@ class ClassEns(object):
         data=dataset.Dataset(X,y)
         if(self.model is None):
             self.model=deep.ensemble_builder(params=self.params,
-	                                         hyper_params=self.hyper_params,
-                                             alpha=0.5)
+	                                         hyper_params=self.hyper_params)
         y=[tf.one_hot(y,depth=self.params['n_cats'])
                 for i in range(data.n_cats())]
         self.model.fit(x=X,
