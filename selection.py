@@ -14,7 +14,11 @@ class SubsetEval(object):
         cat_metric=[ self.metrics[i,metric_index]
                         for i,subset_i in enumerate(self.subsets)
                             if(cat in subset_i)]
-        return np.mean(cat_metric)-mean
+        return (np.mean(cat_metric)-mean)
+
+    def best(self):
+        k=np.argmax(self.metrics[:,0])
+        return self.metrics[k,0],self.subsets[k]
 
 def get_subset(in_path):
     df=pd.read_csv(in_path)
@@ -26,9 +30,10 @@ def get_subset(in_path):
     return SubsetEval(subsets=subsets,
     	              metrics=np.array(metrics))
 
-def plot_shapley(data_path,subset_path="subset2.csv"):
+def plot_shapley(data_path,subset_path="subset.csv"):
     data=dataset.read_csv(data_path)
     sub_eval=get_subset(subset_path)
+    raise Exception(sub_eval.best())
     shapley=[ sub_eval.compute_shapley(cat_i) 
                 for cat_i in range(data.n_cats())]
     print(shapley)
@@ -40,4 +45,4 @@ def plot_shapley(data_path,subset_path="subset2.csv"):
     plt.ylabel("Shapley")
     plt.show()
 
-plot_shapley("../uci/cleveland")
+plot_shapley("../uci/wine-quality-red")
