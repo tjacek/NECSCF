@@ -9,12 +9,9 @@ def ensemble_builder(params,
                      hyper_params=None,
                      selected_classes=None,
                      full=True):
-    if(hyper_params is None):
-        hyper_params={'layers':2, 'units_0':2,
-                      'units_1':1,'batch':False}
     input_layer = Input(shape=(params['dims']))
     class_dict=params['class_weights']
-    selected_classes=hyper_params['selected_classes']
+#    selected_classes=hyper_params['selected_classes']
     if(selected_classes is None):
         selected_classes=list(range(params['n_cats']))   
     single_cls,loss,metrics=[],{},{}
@@ -48,9 +45,9 @@ def ensemble_builder(params,
 
 def single_builder(params,
                    hyper_params=None):
-    if(hyper_params is None):
-        hyper_params={'layers':2, 'units_0':2,
-                      'units_1':1,'batch':False}
+#    if(hyper_params is None):
+#        hyper_params={'layers':2, 'units_0':2,
+#                      'units_1':1,'batch':False}
     input_layer = Input(shape=(params['dims']))
     class_dict=params['class_weights']
     nn=nn_builder(params=params,
@@ -61,7 +58,7 @@ def single_builder(params,
     loss=weighted_loss(specific=None,
                        class_dict=class_dict)
     model= Model(inputs=input_layer, 
-                 outputs=single_cls)
+                 outputs=nn)
     model.compile(loss=loss,
                   optimizer='adam',
                   metrics=['accuracy'])
