@@ -149,7 +149,7 @@ def selection_exp(in_path,
     clf_factory=ClassEnsFactory(selected_classes=None)
     clfs=list(splits.get_clfs(clf_factory))
     lines=[]
-    for subset_i in iter_subsets(data):
+    for subset_i in iter_subsets(data.n_cats()+1):
         s_clfs=[SelectedEns(clf_j,subset_i) for clf_j in clfs]
         results=splits.pred(s_clfs)
         mean_i,balance_i=np.mean(results.get_acc()),np.mean(results.get_balanced())
@@ -158,15 +158,15 @@ def selection_exp(in_path,
     df=pd.DataFrame.from_records(lines,columns=['subset','acc','balance'])
     return df   
 
-def iter_subsets(data):
-    cats= range(data.n_cats())
-    for i in range(1,data.n_cats()):
+def iter_subsets(n_clfs):
+    cats= range(n_clfs)
+    for i in range(1,n_clfs):
         cats_i=itertools.combinations(cats, i)
         for cats_j in cats_i:
             yield cats_j
     yield list(cats)
 
-df=selection_exp(in_path="../uci/cleveland")
+df=selection_exp(in_path="../uci/wine-quality-red")
 df.to_csv('subset2.csv')
 #clf.fit(data.X,data.y)
 #clf.predict(data.X)
