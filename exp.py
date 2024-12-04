@@ -5,53 +5,8 @@ warnings.warn = warn
 import numpy as np
 import tensorflow as tf
 import itertools
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.linear_model import LogisticRegression
 import pandas as pd
 import base,dataset,deep,utils
-
-class DataSplits(object):
-    def __init__(self,data,splits):
-        self.data=data
-        self.splits=splits
-        
-    def __call__(self,clf_factory):
-        clf_factory.init(self.data)
-        results=[]
-        for split_k in self.splits:
-            clf_k=clf_factory()
-            results.append(split_k.eval(self.data,clf_k))
-        return dataset.ResultGroup(results)
-
-    def get_clfs(self,clf_factory):
-        clf_factory.init(self.data)
-        for split_k in self.splits:
-            print("OK")
-            clf_k=clf_factory()
-            yield split_k.fit_clf(self.data,clf_k)
-
-    def pred(self,clfs):
-        results=[]
-        for split_k,clf_k in zip(self.splits,clfs):
-            results.append(split_k.pred(self.data,clf_k))
-        return dataset.ResultGroup(results)
-
-class ClfFactory(object):
-    def __init__(self,clf_type="RF"):
-        self.clf_type=clf_type
-    
-    def init(self,data):
-        pass
-
-    def __call__(self):
-        return get_clf(self.clf_type)
-
-def get_clf(clf_type):
-    if(clf_type=="RF"): 
-        return RandomForestClassifier(class_weight="balanced")#_subsample")
-    if(clf_type=="LR"):
-        return LogisticRegression(solver='liblinear')
-    raise Exception(f"Unknow clf type:{clf_type}")
 
 class ClassEnsFactory(object):
     def __init__(self,hyper_params=None,selected_classes=None):
@@ -124,7 +79,7 @@ def clf_exp(in_path,
                        splits=protocol.get_split(data))
      
     selected_classes=selection(data)#[0,1,2]
-    clfs={'RF':ClfFactory('RF'),
+    clfs={'RF':base.ClfFactory('RF'),
            'class_ens':ClassEnsFactory(selected_classes=selected_classes)}
     acc_dict,balance_dict={},{}
     for clf_type_i,clf_i in clfs.items():
@@ -165,6 +120,14 @@ def iter_subsets(n_clfs):
         for cats_j in cats_i:
             yield cats_j
     yield list(cats)
+
+def single_exp(in_path,
+                  n_splits=10,
+                  n_repeats=1):
+    data=dataset.read_csv(in_path)
+    protocol=base.get_protocol("unaggr")(n_splits,n_repeats)
+    splits=DataSplits( data=data,
+                       splits=protocol.get_split(data))   
 
 df=selection_exp(in_path="../uci/wine-quality-red")
 df.to_csv('subset2.csv')

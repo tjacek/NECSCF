@@ -7,7 +7,8 @@ from keras import Input, Model
  
 def ensemble_builder(params,
                      hyper_params=None,
-                     selected_classes=None):
+                     selected_classes=None,
+                     full=True):
     if(hyper_params is None):
         hyper_params={'layers':2, 'units_0':2,
                       'units_1':1,'batch':False}
@@ -15,30 +16,60 @@ def ensemble_builder(params,
     class_dict=params['class_weights']
     selected_classes=hyper_params['selected_classes']
     if(selected_classes is None):
-        selected_classes=range(params['n_cats'])
+        selected_classes=list(range(params['n_cats']))   
     single_cls,loss,metrics=[],{},{}
     for i in selected_classes:
         nn_i=nn_builder(params=params,
                         hyper_params=hyper_params,
                         input_layer=input_layer,
-                        as_model=False,
                         i=i,
                         n_cats=params['n_cats'])
         single_cls.append(nn_i)
-        loss[f'out_{i}']=weighted_loss(i=i,
-                                       class_dict=class_dict,
-                                       alpha=alpha)
+        loss[f'out_{i}']=weighted_loss(specific=i,
+                                       class_dict=class_dict)
         metrics[f'out_{i}']= 'accuracy'
-    model= Model(inputs=input_layer, outputs=single_cls)
+    if(full):
+        k=len(selected_classes)
+        nn_k=nn_builder(params=params,
+                        hyper_params=hyper_params,
+                        input_layer=input_layer,
+                        i=k,
+                        n_cats=params['n_cats'])
+        single_cls.append(nn_k)
+        loss[f'out_{k}']=weighted_loss(specific=None,
+                                       class_dict=class_dict)
+        metrics[f'out_{k}']= 'accuracy'
+    model= Model(inputs=input_layer, 
+                 outputs=single_cls)
     model.compile(loss=loss,
                   optimizer='adam',
                   metrics=metrics)
     return model
 
+def single_builder(params,
+                   hyper_params=None):
+    if(hyper_params is None):
+        hyper_params={'layers':2, 'units_0':2,
+                      'units_1':1,'batch':False}
+    input_layer = Input(shape=(params['dims']))
+    class_dict=params['class_weights']
+    nn=nn_builder(params=params,
+                    hyper_params=hyper_params,
+                    input_layer=input_layer,
+                    i=0,
+                    n_cats=params['n_cats'])
+    loss=weighted_loss(specific=None,
+                       class_dict=class_dict)
+    model= Model(inputs=input_layer, 
+                 outputs=single_cls)
+    model.compile(loss=loss,
+                  optimizer='adam',
+                  metrics=['accuracy'])
+    return model
+
 def nn_builder(params,
                hyper_params,
                input_layer=None,
-               as_model=True,
                i=0,
                n_cats=None):
     if(input_layer is None):
@@ -53,48 +84,16 @@ def nn_builder(params,
     if(hyper_params['batch']):
         x_i=BatchNormalization(name=f'batch_{i}')(x_i)
     x_i=Dense(n_cats, activation='softmax',name=f'out_{i}')(x_i)
-    if(as_model):
-        return Model(inputs=input_layer, outputs=x_i)
     return x_i
 
-def weighted_loss(i,class_dict):
+def weighted_loss(specific,class_dict):
     n_cats=len(class_dict)
     class_weights=np.zeros(n_cats,dtype=np.float32)
     for i in range(n_cats):
         class_weights[i]=1.0/class_dict[i]
-    if(not (i is None)):
-        class_weights[i]*=  (len(class_dict)/2)
+    if(not (specific is None)):
+        class_weights[specific]*=  (len(class_dict)/2)
     return keras_loss(class_weights)
-
-#def weighted_loss(i,class_dict,alpha=0.5):
-#    basic_weights={ cat_i: 1.0/size_i
-#        for cat_i,size_i in class_dict.items()}
-#    one_i=class_dict[i]
-#    all_i=sum([ size_i 
-#                for cat_i,size_i in class_dict.items() 
-#                    if(cat_i!=i)])
-#    main_i=  all_i/one_i
-#    def helper(cat_i):
-#        if(cat_i==i):
-#            return alpha*main_i
-#        else:
-#            return (1.0-alpha)
-#    full_weights={ cat_i: (weight_i*helper(cat_i))
-#        for cat_i,weight_i in basic_weights.items()}
-#    class_weights= [full_weights[i] 
-#        for i in range(len(full_weights)) ]
-#    class_weights=np.array(class_weights,dtype=np.float32)
-#    return keras_loss(class_weights)
-
-#def unbalanced_loss(i,class_dict,alpha=0.5):
-#    one_i=class_dict[i]
-#    other_i=sum(class_dict.values())-one_i
-#    cat_size_i  = alpha*(1/one_i)
-#    other_size_i= (1.0-alpha) * (1/other_i)
-#    class_weights= [other_size_i for i in range(len(class_dict) )]
-#    class_weights[i]=cat_size_i
-#    class_weights=np.array(class_weights,dtype=np.float32)
-#    return keras_loss(class_weights)
 
 def keras_loss( class_weights):
     def loss(y_obs,y_pred):        

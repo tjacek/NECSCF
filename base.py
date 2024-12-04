@@ -1,6 +1,31 @@
 import numpy as np
 from sklearn.model_selection import RepeatedStratifiedKFold
 
+class DataSplits(object):
+    def __init__(self,data,splits):
+        self.data=data
+        self.splits=splits
+        
+    def __call__(self,clf_factory):
+        clf_factory.init(self.data)
+        results=[]
+        for split_k in self.splits:
+            clf_k=clf_factory()
+            results.append(split_k.eval(self.data,clf_k))
+        return dataset.ResultGroup(results)
+
+    def get_clfs(self,clf_factory):
+        clf_factory.init(self.data)
+        for split_k in self.splits:
+            clf_k=clf_factory()
+            yield split_k.fit_clf(self.data,clf_k)
+
+    def pred(self,clfs):
+        results=[]
+        for split_k,clf_k in zip(self.splits,clfs):
+            results.append(split_k.pred(self.data,clf_k))
+        return dataset.ResultGroup(results)
+
 class UnaggrSplit(object):
     def __init__(self,n_splits,n_repeats):
         self.n_splits=n_splits
@@ -82,3 +107,20 @@ def get_protocol(prot_type):
     if(prot_type=="unaggr"):
         return UnaggrSplit
     raise Exception(f"No protocol{prot_type}")
+
+class ClfFactory(object):
+    def __init__(self,clf_type="RF"):
+        self.clf_type=clf_type
+    
+    def init(self,data):
+        pass
+
+    def __call__(self):
+        return get_clf(self.clf_type)
+
+def get_clf(clf_type):
+    if(clf_type=="RF"): 
+        return RandomForestClassifier(class_weight="balanced")#_subsample")
+    if(clf_type=="LR"):
+        return LogisticRegression(solver='liblinear')
+    raise Exception(f"Unknow clf type:{clf_type}")
