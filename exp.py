@@ -84,6 +84,7 @@ def clf_exp(in_path,
           'class_ens':ens.ClassEnsFactory()}#selected_classes=selected_classes)}
     acc_dict,balance_dict={},{}
     for clf_type_i,clf_i in clfs.items():
+        print(clf_type_i)
         results=splits(clf_i)
         acc_dict[clf_type_i]=np.mean(results.get_acc())
         balance_dict[clf_type_i]=np.mean(results.get_balanced() )
@@ -102,7 +103,7 @@ def selection_exp(in_path,
     protocol=base.get_protocol("unaggr")(n_splits,n_repeats)
     splits=base.DataSplits( data=data,
                             splits=protocol.get_split(data))
-    clf_factory=ClassEnsFactory(selected_classes=None)
+    clf_factory=ens.ClassEnsFactory(selected_classes=None)
     clfs=list(splits.get_clfs(clf_factory))
     lines=[]
     for subset_i in iter_subsets(data.n_cats()+1):
@@ -122,5 +123,5 @@ def iter_subsets(n_clfs):
             yield cats_j
     yield list(cats)
 
-clf_exp(in_path="../uci/wine-quality-red")
+selection_exp(in_path="../uci/wine-quality-red")
 #df.to_csv('subset2.csv')
