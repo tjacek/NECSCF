@@ -1,5 +1,9 @@
 import numpy as np
 from sklearn.model_selection import RepeatedStratifiedKFold
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from tqdm import tqdm
+import dataset
 
 class DataSplits(object):
     def __init__(self,data,splits):
@@ -9,7 +13,7 @@ class DataSplits(object):
     def __call__(self,clf_factory):
         clf_factory.init(self.data)
         results=[]
-        for split_k in self.splits:
+        for split_k in tqdm(self.splits):
             clf_k=clf_factory()
             results.append(split_k.eval(self.data,clf_k))
         return dataset.ResultGroup(results)
@@ -60,6 +64,9 @@ class UnaggrSplit(object):
                              clf=clf,
                              as_result=True)
 
+        def save(self,out_path):
+            return np.savez(out_path,self.train_index,self.test_index)
+
 class AggrSplit(object):
     def __init__(self,n_splits,n_repeats):
         self.n_splits=n_splits
@@ -101,6 +108,9 @@ class AggrSplit(object):
             all_test=np.concatenate(all_test)
             return dataset.Result(all_pred,all_test)
 
+        def save(self,out_path):
+            return np.savez(out_path,self.indexes)
+
 def get_protocol(prot_type):
     if(prot_type=="aggr"):
         return AggrSplit
@@ -124,3 +134,13 @@ def get_clf(clf_type):
     if(clf_type=="LR"):
         return LogisticRegression(solver='liblinear')
     raise Exception(f"Unknow clf type:{clf_type}")
+
+
+def get_splits(data_path,
+               n_splits=10,
+               n_repeats=1):
+    data=dataset.read_csv(data_path)
+    protocol=get_protocol("unaggr")(n_splits,n_repeats)
+    splits=DataSplits(data=data,
+                      splits=protocol.get_split(data))
+    return splits

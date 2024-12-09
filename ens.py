@@ -3,7 +3,7 @@ import tensorflow as tf
 import dataset,deep
 
 class DeepFactory(object):
-    def __init__(self,hyper_params=None,selected_classes=None):
+    def __init__(self,hyper_params=None):
         if(hyper_params is None):
            hyper_params={'layers':2, 'units_0':2,
                          'units_1':1,'batch':False}
@@ -85,4 +85,7 @@ class ClassEns(object):
                              verbose=self.verbose)
         y=[y[cat_i] for cat_i in select_cats]
         y=np.sum(np.array(y),axis=0)
-        return np.argmax(y,axis=1)       
+        return np.argmax(y,axis=1)
+
+    def save(self,out_path):
+        self.model.save(out_path) 
