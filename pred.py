@@ -2,15 +2,27 @@ import utils
 utils.silence_warnings()
 import numpy as np
 import tensorflow as tf
-import base
+import base,dataset,ens
 
-def pred(model_path):
+def pred(data_path,model_path):
+    data=dataset.read_csv(data_path)
+    ens_factory=ens.ClassEnsFactory()
+    ens_factory.init(data)
+    acc=[]
+    for split_i,clf_i in model_iter(model_path,ens_factory):
+        result_i=split_i.pred(data,clf_i)
+        acc.append(result_i.get_acc())
+    print(np.mean(acc))
+
+def model_iter(model_path,ens_factory):
     for path_i in utils.top_files(model_path):
         raw_split=np.load(f"{path_i}/split.npz")
         split_i=base.UnaggrSplit.Split(train_index=raw_split["arr_0"],
                                        test_index=raw_split["arr_1"])
         model_i=tf.keras.models.load_model(f"{path_i}/model.h5")
-        print(type(model_i))
+        clf_i=ens_factory()
+        clf_i.model=model_i
+        yield split_i,clf_i
 
 #def all_pred(in_path,out_path):
 #    metric=utils.get_metric('acc')
@@ -55,4 +67,5 @@ def pred(model_path):
 #    return clf
 
 if __name__ == '__main__':
-    pred(model_path="exp")
+    pred(data_path="../uci/wine-quality-red",
+         model_path="exp")
