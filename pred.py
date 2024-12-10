@@ -19,7 +19,10 @@ def selection_pred(data_path,model_path):
         acc_j=np.mean([ result.get_acc() for result in results[j]])
         print(f"{subset_j}:{acc_j}")
 
+@utils.DirFun({"data_path":0,"model_path":1},
+              input_arg='data_path')
 def simple_pred(data_path,model_path):
+    print(data_path)
     data=dataset.read_csv(data_path)
     ens_factory=ens.ClassEnsFactory()
     ens_factory.init(data)
@@ -27,7 +30,7 @@ def simple_pred(data_path,model_path):
     for split_i,clf_i in model_iter(model_path,ens_factory):
         result_i=split_i.pred(data,clf_i)
         acc.append(result_i.get_acc())
-    print(np.mean(acc))
+    return np.mean(acc)
 
 def model_iter(model_path,ens_factory):
     for path_i in utils.top_files(model_path):
@@ -63,5 +66,6 @@ def model_iter(model_path,ens_factory):
 #    return y_test,y_pred
 
 if __name__ == '__main__':
-    selection_pred(data_path="../uci/wine-quality-red",
-                   model_path="exp")
+    acc_dir=simple_pred(data_path="../uci",
+                        model_path="test_exp")
+    print(acc_dir)
