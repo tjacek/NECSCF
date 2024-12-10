@@ -2,9 +2,24 @@ import utils
 utils.silence_warnings()
 import numpy as np
 import tensorflow as tf
-import base,dataset,ens
+from tqdm import tqdm
+import base,dataset,ens,exp
 
-def pred(data_path,model_path):
+def selection_pred(data_path,model_path):
+    data=dataset.read_csv(data_path)
+    ens_factory=ens.ClassEnsFactory()
+    ens_factory.init(data)
+    subsets=list(exp.iter_subsets(data.n_cats()+1))
+    results=[[] for _ in subsets]
+    for split_i,clf_i in tqdm(model_iter(model_path,ens_factory)):
+        for j,subset_j in enumerate(subsets):
+            clf_j=exp.SelectedEns(clf_i,subset_j)
+            results[j].append(split_i.pred(data,clf_j))
+    for j,subset_j in enumerate(subsets):   
+        acc_j=np.mean([ result.get_acc() for result in results[j]])
+        print(f"{subset_j}:{acc_j}")
+
+def simple_pred(data_path,model_path):
     data=dataset.read_csv(data_path)
     ens_factory=ens.ClassEnsFactory()
     ens_factory.init(data)
@@ -47,25 +62,6 @@ def model_iter(model_path,ens_factory):
 #                              clf_type="RF")
 #    return y_test,y_pred
 
-#def common_exp(exp):
-#    x_train,y_train=exp.split.get_train()
-#    x_test,y_test=exp.split.get_test()
-#    clf=make_clf(x_train,y_train)
-#    y_pred= clf.predict(x_test)
-#    return y_test,y_pred
-
-#def nn_exp(exp):
-#    x_test,y_test=exp.split.get_test()
-#    votes=exp.model.predict(x_test)  
-#    y_pred=base.count_votes(votes)
-#    return y_test,y_pred
-
-#def make_clf(split):#X,y):
-#    X,y=split.get_train()
-#    clf=ensemble.RandomForestClassifier(class_weight='balanced_subsample')
-#    clf.fit(X,y)
-#    return clf
-
 if __name__ == '__main__':
-    pred(data_path="../uci/wine-quality-red",
-         model_path="exp")
+    selection_pred(data_path="../uci/wine-quality-red",
+                   model_path="exp")
