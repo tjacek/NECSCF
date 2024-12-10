@@ -1,6 +1,6 @@
 import os.path
 from functools import wraps
-import time
+import time,json
 
 def make_dir(path):
     if(not os.path.isdir(path)):
@@ -13,6 +13,11 @@ def top_files(path):
         paths=path
     paths=sorted(paths)
     return paths
+
+def read_json(in_path):
+    with open(in_path, 'r') as file:
+        data = json.load(file)
+        return data    
 
 class DirFun(object):
     def __init__(self,
@@ -70,3 +75,9 @@ def elapsed_time(fun):
         print(f"Time:{end-start:.4f}")
         return value
     return helper
+
+def silence_warnings():
+    def warn(*args, **kwargs):
+        pass
+    import warnings
+    warnings.warn = warn

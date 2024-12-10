@@ -1,44 +1,28 @@
 import numpy as np
 import argparse
-import utils
+import dataset,pred,utils,ens
 
-def all_exp(in_path,stats=False):
-#    for path_i in utils.top_files(in_path):
-#        name_i=path_i.split('/')[-1]
-    metric=utils.get_metric('acc')
-    @utils.dir_fun
-    def helper(in_path,out_path):
-        result_i=np.load(in_path)
-        acc_i=metric(result_i['true'],result_i['pred'])
-        print(f'{in_path}:{acc_i:.4f}')
-#        result_i=get_stats(in_path,#path_i,
-#        	               verbose=0,
-#                           stats=stats)
-#        if(stats):
-#            mean_i,std_i=result_i
-#            print(f'{name_i},{mean_i:.4f},{std_i:.4f}')
-#        else:
-#            result_i.sort()
-#            print(name_i+','.join([f'{acc_j:.4}' 
-#                        for acc_j in result_i][-2:]))
-    helper(in_path,'out')   
+def all_exp(data_path,exp_path,json_path):
+    purity_dict=utils.read_json(json_path)
+#    @utils.dir_fun
+    def helper(data_path,exp_path):
+        name=data_path.split("/")[-1]
+        order= purity_dict[name]
+        clf_selection=selection(order)
+        data=dataset.read_csv(data_path)
+        ens_factory=ens.ClassEnsFactory()
+        ens_factory.init(data)
+        acc=[]
+        for split_i,clf_i in pred.model_iter(exp_path,ens_factory):
+            result_i=split_i.pred(data,clf_i)
+            acc.append(result_i.get_acc())
+            print(acc[-1])
+    helper(data_path,exp_path)   
 
-def get_stats(in_path,verbose=1,stats=False):
-    metric=utils.get_metric('acc')
-    acc=[]
-    for path_i in utils.top_files(in_path):
-        result_i=np.load(path_i)
-        acc_i=metric(result_i['true'],result_i['pred'])
-        acc.append(acc_i)
-    if(not stats):
-        return acc
-    mean_i,std_i=np.mean(acc),np.std(acc)
-    if(verbose):
-        print(f'Mean:{mean_i}')
-        print(f'Std:{std_i}')
-    return mean_i,np.max(acc)#std_i
+def selection(order):
+    return [order[:i+1] for i in range(len(order))]
 
-#name='cnae-9'
 if __name__ == '__main__':
-#    all_exp('../OML_reduce/pred',False)
-    all_exp('../OML_reduce/pred_optim',False)
+    all_exp("../uci/wine-quality-red",
+            'test_exp/wine-quality-red',
+            "purity.json")
