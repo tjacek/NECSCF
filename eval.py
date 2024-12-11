@@ -11,19 +11,25 @@ def all_exp(data_path,
             exp_path,
             json_path,
             out_path,
-            n_iters=2):
+            n_iters=2,
+            reverse=False,
+            full=True):
     purity_dict=utils.read_json(json_path)
+    if(reverse):
+        for value_i in purity_dict.values():
+            value_i.reverse()
     @utils.DirFun({"data_path":0,"model_path":1},
                   input_arg='data_path')
     def helper(data_path,exp_path):
         name=data_path.split("/")[-1]
         print(name)
         order= purity_dict[name]
-        clf_selection=selection(order)
+        clf_selection=selection(order,
+                                full=full)
         data=dataset.read_csv(data_path)
         ens_factory=ens.ClassEnsFactory()
         ens_factory.init(data)
-        acc=[[] for _ in order]
+        acc=[[] for _ in clf_selection]
         for split_i,clf_i in pred.model_iter(exp_path,ens_factory):
             for j,subset_j in enumerate(clf_selection):
                 clf_j=exp.SelectedEns(clf_i,subset_j)
@@ -49,27 +55,16 @@ def all_exp(data_path,
         plt.savefig(f"{out_path}/{i}")
         plt.show()
         plt.clf() 
-    
-#    for k in range(n_iters):
-#        _, ax_k = plt.subplots()
-#        all_subplots.append(ax_k)
-#    for i,(name_i,acc_i) in enumerate(acc.items()):
-#        x_order=np.arange(acc_i.shape[0])+1
-#        k=(i % n_iters)
-#        all_subplots[k].plot(x_order,acc_i,
-#                             label=name_i.split("/")[-1])
-#    for k,ax_k in enumerate(all_subplots):
-#        plt.xlabel("n_clf")
-#        plt.ylabel("acc")
-#        ax_k.legend()
-#    plt.savefig(f"{out_path}/{k}")
-#    plt.show()
 
-def selection(order):
-    return [order[:i+1] for i in range(len(order))]
-
+def selection(order,full=False):
+    subsets= [order[:i+1] for i in range(len(order))]
+    if(full):
+        size=len(subsets)
+        subsets=[ subset_i+[size] for subset_i in subsets]
+        subsets=[[size]]+subsets
+    return subsets
 if __name__ == '__main__':
     all_exp("../uci/",#wine-quality-red,
             "full_models",#wine-quality-red',
             "purity.json",
-            "acc_plot")
+            "base_full")
