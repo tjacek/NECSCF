@@ -1,13 +1,23 @@
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
+import utils
+utils.silence_warnings()
 import numpy as np
 import argparse
-import dataset,ens,exp,pred,utils
+import matplotlib.pyplot as plt
+import dataset,ens,exp,pred
 
-def all_exp(data_path,exp_path,json_path):
+def all_exp(data_path,
+            exp_path,
+            json_path,
+            out_path,
+            n_iters=2):
     purity_dict=utils.read_json(json_path)
     @utils.DirFun({"data_path":0,"model_path":1},
                   input_arg='data_path')
     def helper(data_path,exp_path):
         name=data_path.split("/")[-1]
+        print(name)
         order= purity_dict[name]
         clf_selection=selection(order)
         data=dataset.read_csv(data_path)
@@ -22,6 +32,22 @@ def all_exp(data_path,exp_path,json_path):
         return np.mean(acc,axis=1)
     acc=helper(data_path,exp_path)   
     print(acc)
+#    utils.make_dir(out_path)
+    all_subplots=[]
+    for k in range(n_iters):
+        _, ax_k = plt.subplots()
+        all_subplots.append(ax_k)
+    for i,(name_i,acc_i) in enumerate(acc.items()):
+        x_order=np.arange(acc_i.shape[0])+1
+        k=(i % n_iters)
+        all_subplots[k].plot(x_order,acc_i,
+                             label=name_i.split("/")[-1])
+    for k,ax_k in enumerate(all_subplots):
+        plt.xlabel("n_clf")
+        plt.ylabel("acc")
+        ax_k.legend()
+    plt.savefig(f"{out_path}/{k}")
+    plt.show()
 
 def selection(order):
     return [order[:i+1] for i in range(len(order))]
@@ -29,4 +55,5 @@ def selection(order):
 if __name__ == '__main__':
     all_exp("../uci/",#wine-quality-red,
             "test_exp",#wine-quality-red',
-            "purity.json")
+            "purity.json",
+            "acc_plot")
