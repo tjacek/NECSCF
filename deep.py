@@ -92,6 +92,7 @@ def weighted_loss(specific,class_dict):
         class_weights[specific]*=  (len(class_dict)/2)
     return keras_loss(class_weights)
 
+@keras.saving.register_keras_serializable(name="weighted_loss")
 def keras_loss( class_weights):
     def loss(y_obs,y_pred):        
         y_obs = tf.dtypes.cast(y_obs,tf.int32)

@@ -19,18 +19,38 @@ def selection_pred(data_path,model_path):
         acc_j=np.mean([ result.get_acc() for result in results[j]])
         print(f"{subset_j}:{acc_j}")
 
-@utils.DirFun({"data_path":0,"model_path":1},
-              input_arg='data_path')
-def simple_pred(data_path,model_path):
-    print(data_path)
+
+def simple_pred(data_path,exp_path):
     data=dataset.read_csv(data_path)
+    split_path=f"{exp_path}/splits"
+    model_path=f"{exp_path}/class_ens"
     ens_factory=ens.ClassEnsFactory()
     ens_factory.init(data)
     acc=[]
-    for split_i,clf_i in model_iter(model_path,ens_factory):
+    for i,path_i in enumerate(utils.top_files(model_path)):
+        split_i=f"{split_path}/{i}.npz"
+        raw_split=np.load(split_i)
+        split_i=base.UnaggrSplit.Split(train_index=raw_split["arr_0"],
+                                       test_index=raw_split["arr_1"])
+        model_i=tf.keras.models.load_model(f"{model_path}/{i}.keras")
+        clf_i=ens_factory()
+        clf_i.model=model_i
         result_i=split_i.pred(data,clf_i)
         acc.append(result_i.get_acc())
     return np.mean(acc)
+
+#@utils.DirFun({"data_path":0,"model_path":1},
+#              input_arg='data_path')
+#def simple_pred(data_path,model_path):
+#    print(data_path)
+#    data=dataset.read_csv(data_path)
+#    ens_factory=ens.ClassEnsFactory()
+#    ens_factory.init(data)
+#    acc=[]
+#    for split_i,clf_i in model_iter(model_path,ens_factory):
+#        result_i=split_i.pred(data,clf_i)
+#        acc.append(result_i.get_acc())
+#    return np.mean(acc)
 
 def model_iter(model_path,ens_factory):
     for path_i in utils.top_files(model_path):
@@ -42,30 +62,7 @@ def model_iter(model_path,ens_factory):
         clf_i.model=model_i
         yield split_i,clf_i
 
-#def all_pred(in_path,out_path):
-#    metric=utils.get_metric('acc')
-#    @utils.dir_fun
-#    def helper(in_path,out_path):
-#        exp_i=base.read_exp(in_path)
-#        y_true,y_pred=nescf_eval(exp_i)
-#        print(f'{out_path} Acc:{metric(y_true,y_pred):.4f}')
-#        np.savez(file=out_path,
-#                 true=y_true,
-#                 pred=y_pred)
-#    helper(in_path,out_path)
-
-#def nescf_eval(exp):
-#    extractor=exp.make_extractor() 
-#    train,test=exp.split.extract(extractor=extractor,
-#                                 use_valid=False)
-#    (x_train,y_train),(x_test,y_test)=train,test
-#    y_pred=base.simple_necscf(x_train=x_train,
-#                              y_train=y_train,
-#                              x_test=x_test,
-#                              clf_type="RF")
-#    return y_test,y_pred
-
 if __name__ == '__main__':
-    acc_dir=simple_pred(data_path="../uci",
-                        model_path="test_exp")
+    acc_dir=simple_pred(data_path="../uci/cleveland",
+                        exp_path="exp_deep/cleveland")
     print(acc_dir)

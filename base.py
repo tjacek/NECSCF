@@ -57,7 +57,7 @@ class UnaggrSplit(object):
                              as_result=True)
        
         def fit_clf(self,data,clf):
-           return data.fit_clf(self.train_index,clf)
+            return data.fit_clf(self.train_index,clf)
 
         def pred(self,data,clf):
             return data.pred(self.test_index,
@@ -135,12 +135,12 @@ def get_clf(clf_type):
         return LogisticRegression(solver='liblinear')
     raise Exception(f"Unknow clf type:{clf_type}")
 
-
 def get_splits(data_path,
                n_splits=10,
-               n_repeats=1):
+               n_repeats=1,
+               split_type="unaggr"):
     data=dataset.read_csv(data_path)
-    protocol=get_protocol("unaggr")(n_splits,n_repeats)
+    protocol=get_protocol(split_type)(n_splits,n_repeats)
     splits=DataSplits(data=data,
                       splits=protocol.get_split(data))
     return splits
