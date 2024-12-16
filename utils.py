@@ -81,3 +81,15 @@ def silence_warnings():
         pass
     import warnings
     warnings.warn = warn
+
+def selected_subsets(order,full=False):
+    subsets= [order[:i+1] for i in range(len(order))]
+    if(full):
+        size=len(subsets)
+        subsets=[ subset_i+[size] for subset_i in subsets]
+        subsets=[[size]]+subsets
+    return subsets
+
+def to_id_dir(path_dict,index=-1):
+    return { path_i.split("/")[index] :value_i 
+            for path_i,value_i in path_dict.items()}
