@@ -4,21 +4,25 @@ import numpy as np
 import tensorflow as tf
 from tqdm import tqdm
 import gc,json
+import multiprocessing
 import base,dataset,ens,exp
 
 def order_pred(data_path:str,
                exp_path:str,
                json_path:str,
                out_path:str,
-               full=False):
+               full=False,
+               reverse=False):
     card_dict=utils.read_json(json_path)
-    @utils.DirFun({"data_path":0,"exp_path":1},
-                  input_arg='data_path')
-    def helper(data_path,exp_path):
+#    @utils.DirFun({"data_path":0,"exp_path":1},
+#                  input_arg='data_path')
+    def helper(data_path,exp_path,queue):
         name=data_path.split("/")[-1]
         print(name)
         card= card_dict[name]
         order=np.argsort(card)
+        if(reverse):
+            order=np.flip(order)
         clf_selection=utils.selected_subsets(order,
                                              full=full)
         data=dataset.read_csv(data_path)
@@ -28,16 +32,26 @@ def order_pred(data_path:str,
         m_iter=  model_iter(exp_path,ens_factory)
         for i in tqdm(range(10)):
             split_i,clf_i=next(m_iter)
-#        for split_i,clf_i in model_iter(exp_path,ens_factory):
+#        for split_i,clf_i in tqdm(model_iter(exp_path,ens_factory)):
             for j,subset_j in enumerate(clf_selection):
                 clf_j=exp.SelectedEns(clf_i,subset_j)
                 acc[j].append(split_i.pred(data,clf_j).get_acc())
         acc=np.array(acc)
-        return np.mean(acc,axis=1).tolist()
-    acc_dict=helper(data_path,exp_path)
+        queue.put(np.mean(acc,axis=1).tolist())
+    acc_dict={}#helper(data_path,exp_path)
+    for path_i in utils.top_files(data_path):
+        id_i=path_i.split("/")[-1]
+        exp_i=f"{exp_path}/{id_i}"
+        queue = multiprocessing.Queue()
+        p_i=multiprocessing.Process(target=helper, 
+                                    args=(path_i,exp_i,queue))
+        p_i.start()
+        p_i.join()
+        acc_dict[id_i]=queue.get()
     with open(out_path, 'w', encoding='utf-8') as f:
         json.dump(acc_dict, f, ensure_ascii=False, indent=4)
     return acc_dict
+
 #def selection_pred(data_path,model_path):
 #    data=dataset.read_csv(data_path)
 #    ens_factory=ens.ClassEnsFactory()
