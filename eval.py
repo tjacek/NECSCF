@@ -7,9 +7,31 @@ import argparse
 import matplotlib.pyplot as plt
 import dataset,ens,exp,pred
 
-def all_exp(json_path,
+def acc_plot(json_path:str,
             n_iters=2):
     acc_dict=utils.read_json(json_path)
+    make_plot(acc_dict,
+              x_label="n_clf",      
+              y_label="acc",
+              n_iters=n_iters)
+
+def diff_plot(first_json:str,
+              second_json:str,
+              n_iters=2):
+    first_dict=utils.read_json(first_json)
+    second_dict=utils.read_json(second_json)
+    diff_dict={ key_i:[ first_j-second_j  
+                    for first_j,second_j in zip(diff_i,second_dict[key_i])]
+                        for key_i,diff_i in first_dict.items()}
+    make_plot(diff_dict,
+              x_label="n_clf",
+              y_label="diff",
+              n_iters=n_iters)
+
+def make_plot(acc_dict,
+              x_label="n_clf",
+              y_label="acc",
+              n_iters=2):
     all_subplots=[[] for k in range(n_iters)]
     for i,name_i in enumerate(acc_dict.keys()):
         all_subplots[(i%n_iters)].append(name_i)
@@ -20,11 +42,11 @@ def all_exp(json_path,
             x_order=np.arange(len(acc_j))+1
             ax_k.plot(x_order,acc_j,
                       label=name_j.split("/")[-1])
-        plt.xlabel("n_clf")
-        plt.ylabel("acc")
+        plt.xlabel(x_label)
+        plt.ylabel(y_label)
         plt.legend()
         plt.show()
         plt.clf() 
 
 if __name__ == '__main__':
-    all_exp("acc/base.json")
+    diff_plot("acc/base.json","acc/reversed.json")
