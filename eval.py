@@ -7,6 +7,14 @@ import argparse
 import matplotlib.pyplot as plt
 import dataset,ens,exp,pred
 
+class Cond(object):
+    def __init__(self,thres):
+        self.thres=thres
+
+    def __call__(self,feats):
+        feats=np.array(feats)
+        return sum((feats<thres)astype(int))>0
+
 def acc_plot(json_path:str,
             n_iters=2):
     acc_dict=utils.read_json(json_path)
