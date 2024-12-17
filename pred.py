@@ -7,6 +7,23 @@ import gc,json
 import multiprocessing
 import base,dataset,ens,exp
 
+def order_exp(data_path:str,
+              exp_path:str,
+              json_path:str,
+              out_path:str):
+    utils.make_dir(out_path)
+    exp_types={"base_full":(True,False),
+               "base":(False,False),
+               "reversed":(False,True),
+               "reversed_full":(True,True)}
+    for name_i,(full_i,reverse_i) in exp_types.items():
+        order_pred(data_path=data_path,
+                   exp_path=exp_path,
+                   json_path=json_path,
+                   out_path=f"{out_path}/{name_i}.json",
+                   full=full_i,
+                   reverse=reverse_i)
+
 def order_pred(data_path:str,
                exp_path:str,
                json_path:str,
@@ -14,8 +31,6 @@ def order_pred(data_path:str,
                full=False,
                reverse=False):
     card_dict=utils.read_json(json_path)
-#    @utils.DirFun({"data_path":0,"exp_path":1},
-#                  input_arg='data_path')
     def helper(data_path,exp_path,queue):
         name=data_path.split("/")[-1]
         print(name)
@@ -23,7 +38,7 @@ def order_pred(data_path:str,
         order=np.argsort(card)
         if(reverse):
             order=np.flip(order)
-        clf_selection=utils.selected_subsets(order,
+        clf_selection=utils.selected_subsets(order.tolist(),
                                              full=full)
         data=dataset.read_csv(data_path)
         ens_factory=ens.ClassEnsFactory()
@@ -90,8 +105,8 @@ def model_iter(exp_path,ens_factory):
         yield split_i,clf_i
 
 if __name__ == '__main__':
-    acc_dir=order_pred(data_path="../uci",
-                       exp_path="exp_deep",
-                       json_path="ord/purity.json",
-                       out_path="acc/purity.json")
+    acc_dir=order_exp(data_path="../uci",
+                      exp_path="exp_deep",
+                      json_path="ord/purity.json",
+                      out_path="acc")
     print(acc_dir)
