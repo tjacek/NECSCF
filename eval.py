@@ -8,24 +8,19 @@ import matplotlib.pyplot as plt
 from scipy import stats
 import dataset,ens,exp,pred
 
-#class Cond(object):
-#    def __init__(self,thres):
-#        self.thres=thres
-
-#    def __call__(self,feats):
-#        feats=np.array(feats)
-#        return sum((feats<thres)astype(int))>0
-
 def acc_plot(json_path:str,
-            n_iters=2):
+             title="acc_plot",
+             n_iters=2):
     acc_dict=utils.read_json(json_path)
     make_plot(acc_dict,
+              title=title,
               x_label="n_clf",      
               y_label="acc",
               n_iters=n_iters)
 
 def diff_plot(first_json:str,
               second_json:str,
+              title="acc_plot",
               n_iters=2):
     first_dict=utils.read_json(first_json)
     second_dict=utils.read_json(second_json)
@@ -33,11 +28,13 @@ def diff_plot(first_json:str,
                     for first_j,second_j in zip(diff_i,second_dict[key_i])]
                         for key_i,diff_i in first_dict.items()}
     make_plot(diff_dict,
+              title=title,
               x_label="n_clf",
               y_label="diff",
               n_iters=n_iters)
 
 def make_plot(acc_dict,
+              title="acc_plot",
               x_label="n_clf",
               y_label="acc",
               n_iters=2):
@@ -51,6 +48,7 @@ def make_plot(acc_dict,
             x_order=np.arange(len(acc_j))+1
             ax_k.plot(x_order,acc_j,
                       label=name_j.split("/")[-1])
+        plt.title(title)
         plt.xlabel(x_label)
         plt.ylabel(y_label)
         plt.legend()
@@ -71,5 +69,8 @@ def stat_test(x_path,y_path):
     print(stat_dict)
 
 if __name__ == '__main__':
-#    diff_plot("acc/base.json","acc/reversed.json")
-    stat_test("results/RF","results/class_ens")
+    acc_plot("acc/reversed_full.json",
+             title="reversed_full")
+#    diff_plot("acc/base_full.json","acc/reversed_full.json",
+#              title="Low purity - high purity  (full)")
+#    stat_test("results/RF","results/class_ens")
