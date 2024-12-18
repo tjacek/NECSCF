@@ -44,10 +44,10 @@ def order_pred(data_path:str,
         ens_factory=ens.ClassEnsFactory()
         ens_factory.init(data)
         acc=[[] for _ in clf_selection]
-        m_iter=  model_iter(exp_path,ens_factory)
-        for i in tqdm(range(10)):
-            split_i,clf_i=next(m_iter)
-#        for split_i,clf_i in tqdm(model_iter(exp_path,ens_factory)):
+#        m_iter=  model_iter(exp_path,ens_factory)
+#        for i in tqdm(range(10)):
+#            split_i,clf_i=next(m_iter)
+        for split_i,clf_i in tqdm(model_iter(exp_path,ens_factory)):
             for j,subset_j in enumerate(clf_selection):
                 clf_j=exp.SelectedEns(clf_i,subset_j)
                 acc[j].append(split_i.pred(data,clf_j).get_acc())
@@ -67,6 +67,25 @@ def order_pred(data_path:str,
         json.dump(acc_dict, f, ensure_ascii=False, indent=4)
     return acc_dict
 
+def result_pred(data_path,exp_path,out_path):
+    def helper(data_path,exp_path,out_path):
+        print(data_path)
+        data=dataset.read_csv(data_path)
+        ens_factory=ens.ClassEnsFactory()
+        ens_factory.init(data)
+        utils.make_dir(out_path)
+        for j,(split_j,clf_j) in tqdm(enumerate(model_iter(exp_path,ens_factory))):
+            result_j=split_j.pred(data,clf_j)
+            result_j.save(f"{out_path}/{j}")
+    utils.make_dir(out_path)
+    for path_i in utils.top_files(data_path):
+        id_i=path_i.split("/")[-1]
+        exp_i=f"{exp_path}/{id_i}"
+        out_i=f"{out_path}/{id_i}"
+        p_i=multiprocessing.Process(target=helper, 
+                                    args=(path_i,exp_i,out_i))
+        p_i.start()
+        p_i.join()
 #def selection_pred(data_path,model_path):
 #    data=dataset.read_csv(data_path)
 #    ens_factory=ens.ClassEnsFactory()
@@ -105,8 +124,10 @@ def model_iter(exp_path,ens_factory):
         yield split_i,clf_i
 
 if __name__ == '__main__':
-    acc_dir=order_exp(data_path="../uci",
-                      exp_path="exp_deep",
-                      json_path="ord/purity.json",
-                      out_path="acc")
-    print(acc_dir)
+#    acc_dir=order_exp(data_path="../uci",
+#                      exp_path="exp_deep",
+#                      json_path="ord/purity.json",
+#                      out_path="acc")
+    result_pred(data_path="../uci",
+                exp_path="exp_deep",
+                out_path="result")
