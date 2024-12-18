@@ -44,9 +44,6 @@ def order_pred(data_path:str,
         ens_factory=ens.ClassEnsFactory()
         ens_factory.init(data)
         acc=[[] for _ in clf_selection]
-#        m_iter=  model_iter(exp_path,ens_factory)
-#        for i in tqdm(range(10)):
-#            split_i,clf_i=next(m_iter)
         for split_i,clf_i in tqdm(model_iter(exp_path,ens_factory)):
             for j,subset_j in enumerate(clf_selection):
                 clf_j=exp.SelectedEns(clf_i,subset_j)
@@ -86,6 +83,21 @@ def result_pred(data_path,exp_path,out_path):
                                     args=(path_i,exp_i,out_i))
         p_i.start()
         p_i.join()
+
+def clf_pred(data_path,exp_path,out_path):
+    @utils.DirFun({"in_path":0,"exp_path":1,"out_path":2})
+    def helper(in_path,exp_path,out_path):
+        print(in_path)
+        data=dataset.read_csv(in_path)
+        clf_factory=base.ClfFactory(clf_type="RF")
+        clf_factory.init(data)
+        utils.make_dir(out_path)
+        for j,split_j in tqdm(enumerate(split_iter(exp_path))):
+            clf_j=clf_factory()
+            result_j=split_j.eval(data,clf_j)
+            result_j.save(f"{out_path}/{j}")
+        gc.collect()
+    helper(data_path,exp_path,out_path)
 #def selection_pred(data_path,model_path):
 #    data=dataset.read_csv(data_path)
 #    ens_factory=ens.ClassEnsFactory()
@@ -123,11 +135,20 @@ def model_iter(exp_path,ens_factory):
         clf_i.model=model_i
         yield split_i,clf_i
 
+def split_iter(exp_path):
+    split_path=f"{exp_path}/splits"
+    for i,path_i in enumerate(utils.top_files(split_path)):
+        split_i=f"{split_path}/{i}.npz"
+        raw_split=np.load(split_i)
+        split_i=base.UnaggrSplit.Split(train_index=raw_split["arr_0"],
+                                       test_index=raw_split["arr_1"])
+        yield split_i
+
 if __name__ == '__main__':
 #    acc_dir=order_exp(data_path="../uci",
 #                      exp_path="exp_deep",
 #                      json_path="ord/purity.json",
 #                      out_path="acc")
-    result_pred(data_path="../uci",
+    clf_pred(data_path="../uci",
                 exp_path="exp_deep",
-                out_path="result")
+                out_path="results/RF")
