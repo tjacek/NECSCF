@@ -5,15 +5,16 @@ utils.silence_warnings()
 import numpy as np
 import argparse
 import matplotlib.pyplot as plt
+from scipy import stats
 import dataset,ens,exp,pred
 
-class Cond(object):
-    def __init__(self,thres):
-        self.thres=thres
+#class Cond(object):
+#    def __init__(self,thres):
+#        self.thres=thres
 
-    def __call__(self,feats):
-        feats=np.array(feats)
-        return sum((feats<thres)astype(int))>0
+#    def __call__(self,feats):
+#        feats=np.array(feats)
+#        return sum((feats<thres)astype(int))>0
 
 def acc_plot(json_path:str,
             n_iters=2):
@@ -56,5 +57,19 @@ def make_plot(acc_dict,
         plt.show()
         plt.clf() 
 
+def stat_test(x_path,y_path):
+    @utils.DirFun({"x_path":0,"y_path":1},input_arg='x_path')
+    def helper(x_path,y_path):
+        print((x_path,y_path))
+        x_results=dataset.read_result_group(x_path)
+        y_results=dataset.read_result_group(y_path)
+        diff=np.mean(x_results.get_acc())-np.mean(y_results.get_acc())
+        pvalue=stats.ttest_ind(x_results.get_acc(),y_results.get_acc(),
+                               equal_var=False)[1]
+        return diff,pvalue
+    stat_dict=helper(x_path,y_path)
+    print(stat_dict)
+
 if __name__ == '__main__':
-    diff_plot("acc/base.json","acc/reversed.json")
+#    diff_plot("acc/base.json","acc/reversed.json")
+    stat_test("results/RF","results/class_ens")
