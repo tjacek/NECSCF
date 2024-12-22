@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-import dataset,deep
+import base,dataset,deep
 
 class DeepFactory(object):
     def __init__(self,hyper_params=None):
@@ -71,12 +71,14 @@ class ClassEns(object):
                 for _ in range(data.n_cats()+1)]
         self.model.fit(x=X,
                        y=y,
+                       batch_size=self.params['dims'][0],
                        callbacks=deep.get_callback(),
                        verbose=self.verbose)
+        tf.keras.backend.clear_session()
 
     def predict(self,X):
-        y=self.model.predict(X,
-                             verbose=self.verbose)
+        y=self.model(X, training=False)
+#                             verbose=self.verbose)
         y=np.sum(np.array(y),axis=0)
         return np.argmax(y,axis=1)
 
@@ -89,3 +91,22 @@ class ClassEns(object):
 
     def save(self,out_path):
         self.model.save(out_path) 
+
+class NECSCF(object):
+    def __init__(self,model):
+        self.model=all_splits
+        self.clfs=[]
+
+    def fit(X,y,clf_type="RF"):
+        feats=self.get_features(X)
+        self.clfs=[]
+        for feat_i in feats:
+            clf_i=base.get_clf(clf_type)
+            clf_i.fit(feat_i,y)
+            self.clfs.append(clf_i)
+
+    def pred(self,X):
+        feats=self.get_features(X)
+        votes=[clf_i.pred(feat_i) for feat_i,clf_i in zip(feats,self.clfs)]
+        y=np.sum(np.array(y),axis=0)
+        return np.argmax(y,axis=1)
