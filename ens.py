@@ -2,6 +2,13 @@ import numpy as np
 import tensorflow as tf
 import base,dataset,deep
 
+def get_ens(ens_type:str):
+    if(ens_type=="deep"):
+        return DeepFactory
+    if(ens_type=="class_ens"):
+        return ClassEns
+    raise Exception(f"Unknow ens type{ens_type}")
+
 class DeepFactory(object):
     def __init__(self,hyper_params=None):
         if(hyper_params is None):
