@@ -99,6 +99,15 @@ class ClassEns(object):
     def save(self,out_path):
         self.model.save(out_path) 
 
+class SelectedEns(object):
+    def __init__(self,ens,select_cats):
+        self.ens=ens
+        self.select_cats=select_cats
+
+    def predict(self,X):
+        return self.ens.select_predict(X=X,
+                                       select_cats=self.select_cats)
+
 class NECSCF(object):
     def __init__(self,model):
         self.model=all_splits

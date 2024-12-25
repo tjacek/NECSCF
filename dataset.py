@@ -3,6 +3,7 @@ import numpy as np
 from sklearn.decomposition import PCA
 from sklearn import preprocessing
 from sklearn.metrics import accuracy_score,classification_report,balanced_accuracy_score
+import utils
 
 class Dataset(object):
     def __init__(self,X,y=None):
@@ -97,6 +98,11 @@ class ResultGroup(object):
         return [result_j.get_balanced() 
                     for result_j in self.results]
 
+    def save(self,out_path):
+        utils.make_dir(out_path)
+        for i,result_i in enumerate(self.results):
+            result_i.save(f"{out_path}/{i}")
+
 class WeightDict(dict):
     def __init__(self, arg=[]):
         super(WeightDict, self).__init__(arg)
@@ -122,6 +128,11 @@ def read_result(in_path:str):
     return Result(y_pred=y_pred,
                   y_true=y_true)
 
+def read_result_group(in_path:str):
+    results= [ read_result(path_i) 
+                 for path_i in utils.top_files(in_path)]
+    return ResultGroup(results)
+    
 def compare_results(first_path,second_path):
     first,second=read_result(first_path),read_result(second_path)
     comp=first.true_pos() + (2*second.true_pos())
