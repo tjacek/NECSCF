@@ -3,7 +3,7 @@ from sklearn.model_selection import RepeatedStratifiedKFold
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from tqdm import tqdm
-import dataset
+import dataset,utils
 
 class DataSplits(object):
     def __init__(self,data,splits):
@@ -141,6 +141,16 @@ def get_splits(data_path,
                split_type="unaggr"):
     data=dataset.read_csv(data_path)
     protocol=get_protocol(split_type)(n_splits,n_repeats)
-    splits=DataSplits(data=data,
+    return DataSplits(data=data,
                       splits=protocol.get_split(data))
-    return splits
+
+def read_data_split(data_path,split_path):
+    data=dataset.read_csv(data_path)
+    splits=[ read_split(path_i) for path_i in utils.top_files(split_path)]
+    return DataSplits(data=data,
+                      splits=splits)    
+ 
+def read_split(in_path):
+    raw_split=np.load(in_path)
+    return UnaggrSplit.Split(train_index=raw_split["arr_0"],
+                             test_index=raw_split["arr_1"])
