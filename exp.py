@@ -12,7 +12,7 @@ import preproc
 
 def single_exp(in_path,out_path):
     utils.make_dir(out_path)
-
+    data_split=get_splits(in_path)
     clf_factory=ens.ClassEnsFactory()
     clf_factory.init(data_split.data)
     result_group=data_split(clf_factory)
