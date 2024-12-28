@@ -4,10 +4,10 @@ import numpy as np
 import argparse
 import base
 
-def gen_splits(data_path,
-               out_path,
-               n_splits=10,
-               n_repeats=10):
+def make_splits(data_path,
+                out_path,
+                n_splits=10,
+                n_repeats=10):
     utils.make_dir(out_path)
     @utils.DirFun({"in_path":0,"out_path":1})
     def helper(in_path,out_path):
@@ -23,7 +23,7 @@ def gen_splits(data_path,
     helper(data_path,out_path)
 
 if __name__ == '__main__':
-    gen_splits(data_path="../uci",
-               out_path="exp_deep",
-               n_splits=10,
-               n_repeats=10)
+    make_splits(data_path="../uci",
+                out_path="exp_deep",
+                n_splits=10,
+                n_repeats=10)

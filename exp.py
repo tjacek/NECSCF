@@ -6,39 +6,32 @@ import numpy as np
 import tensorflow as tf
 import itertools
 import pandas as pd
+import os
 import base,dataset,deep,ens,utils
 import preproc
 
 def single_exp(in_path,out_path):
     utils.make_dir(out_path)
-    data_split=base.get_splits(data_path=in_path,
-                               n_splits=10,
-                               n_repeats=1,
-                               split_type="unaggr")
-    split_path=f"{out_path}/splits"
-    utils.make_dir(split_path)
-    for i,split_i in enumerate(data_split.splits):
-        split_i.save(f"{split_path}/{i}")
+
     clf_factory=ens.ClassEnsFactory()
     clf_factory.init(data_split.data)
     result_group=data_split(clf_factory)
     result_group.save(f"{out_path}/class_ens")
-#    data=dataset.read_csv(in_path)
-#    protocol=base.get_protocol("unaggr")(n_splits,n_repeats)
-#    splits=base.DataSplits( data=data,
-#                            splits=protocol.get_split(data))
-#    clfs={'RF':base.ClfFactory('RF'),
-#          'deep':ens.DeepFactory(),
-#          'class_ens':ens.ClassEnsFactory()}
-#    acc_dict,balance_dict={},{}
-#    for clf_type_i,clf_i in clfs.items():
-#        print(clf_type_i)
-#        results=splits(clf_i)
-#        acc_dict[clf_type_i]=np.mean(results.get_acc())
-#        balance_dict[clf_type_i]=np.mean(results.get_balanced() )
-#    print(acc_dict)
-#    print(balance_dict)
 
+def get_splits(in_path):
+    split_path=f"{out_path}/splits"
+    if(os.path.isdir(split_path)):
+        return base.read_split(split_path)
+    else:
+        data_split=base.make_splits(data_path=in_path,
+                                    n_splits=10,
+                                    n_repeats=1,
+                                    split_type="unaggr")
+        utils.make_dir(split_path)
+        for i,split_i in enumerate(data_split.splits):
+            split_i.save(f"{split_path}/{i}")
+        return data_split
+       
 #def selection(data):
 #    sizes=data.class_percent()
 #    return [ i for i,size_i in sizes.items()
