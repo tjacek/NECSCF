@@ -10,19 +10,29 @@ import os
 import base,dataset,deep,ens,utils
 import preproc
 
-def single_exp(in_path,out_path):
+def single_exp(in_path,
+               out_path,
+               ens_type="class_ens"):
     utils.make_dir(out_path)
-    data_split=get_splits(in_path)
-    clf_factory=ens.ClassEnsFactory()
-    clf_factory.init(data_split.data)
-    result_group=data_split(clf_factory)
-    result_group.save(f"{out_path}/class_ens")
+    data_split=get_splits(in_path,out_path)
+    result_path=f"{out_path}/{ens_type}"
+    if(os.path.isdir(result_path)):
+        print(f"Train ens{ens_type}")
+        clf_factory=ens.get_ens(ens_type)()#ClassEnsFactory()
+        clf_factory.init(data_split.data)
+        result_group=data_split(clf_factory)
+        result_group.save(result_path)
+    else:
+        result_group=dataset.read_result_group(result_path)
+    print(f"Acc:{result_group.get_acc()}")
+    print(f"Balance{result_group.get_acc()}")
 
-def get_splits(in_path):
+def get_splits(in_path,out_path):
     split_path=f"{out_path}/splits"
     if(os.path.isdir(split_path)):
-        return base.read_split(split_path)
+        return base.read_data_split(in_path,split_path)
     else:
+        print("Make splits")
         data_split=base.make_splits(data_path=in_path,
                                     n_splits=10,
                                     n_repeats=1,

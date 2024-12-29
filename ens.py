@@ -6,7 +6,7 @@ def get_ens(ens_type:str):
     if(ens_type=="deep"):
         return DeepFactory
     if(ens_type=="class_ens"):
-        return ClassEns
+        return ClassEnsFactory
     raise Exception(f"Unknow ens type{ens_type}")
 
 class DeepFactory(object):
