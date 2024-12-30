@@ -7,8 +7,7 @@ import tensorflow as tf
 import itertools
 import pandas as pd
 import os
-import base,dataset,deep,ens,utils
-import preproc
+import base,dataset,deep,ens,preproc,utils
 
 def single_exp(in_path,
                out_path,
@@ -17,15 +16,24 @@ def single_exp(in_path,
     data_split=get_splits(in_path,out_path)
     result_path=f"{out_path}/{ens_type}"
     if(os.path.isdir(result_path)):
+        result_group=dataset.read_result_group(result_path)
+    else:
         print(f"Train ens{ens_type}")
         clf_factory=ens.get_ens(ens_type)()#ClassEnsFactory()
         clf_factory.init(data_split.data)
         result_group=data_split(clf_factory)
         result_group.save(result_path)
-    else:
-        result_group=dataset.read_result_group(result_path)
     print(f"Acc:{result_group.get_acc()}")
     print(f"Balance{result_group.get_acc()}")
+
+def eval_exp(exp_path="single_exp"):
+    for path_i in utils.top_files(exp_path):
+        id_i=path_i.split("/")[-1]
+        if(id_i!="splits"):
+            results_i=dataset.read_result_group(path_i)
+            print(id_i)
+            print(f"Acc:{np.mean(results_i.get_acc())}")
+            print(f"Balance{np.mean(results_i.get_balanced())}")            
 
 def get_splits(in_path,out_path):
     split_path=f"{out_path}/splits"
@@ -41,7 +49,7 @@ def get_splits(in_path,out_path):
         for i,split_i in enumerate(data_split.splits):
             split_i.save(f"{split_path}/{i}")
         return data_split
-       
+
 #def selection(data):
 #    sizes=data.class_percent()
 #    return [ i for i,size_i in sizes.items()
@@ -74,5 +82,7 @@ def get_splits(in_path,out_path):
 #    yield list(cats)
 
 if __name__ == '__main__':
-    single_exp(in_path="../uci/vehicle",
-               out_path="single_exp")
+#    single_exp(in_path="../uci/vehicle",
+#               out_path="single_exp",
+#               ens_type="deep")
+    eval_exp(exp_path="single_exp")
