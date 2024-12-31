@@ -59,18 +59,21 @@ def stat_test(x_path,y_path):
     @utils.DirFun({"x_path":0,"y_path":1},input_arg='x_path')
     def helper(x_path,y_path):
         print((x_path,y_path))
-        x_results=dataset.read_result_group(x_path)
-        y_results=dataset.read_result_group(y_path)
-        diff=np.mean(x_results.get_acc())-np.mean(y_results.get_acc())
-        pvalue=stats.ttest_ind(x_results.get_acc(),y_results.get_acc(),
+        x_acc=dataset.read_result_group(x_path).get_acc()
+        y_acc=dataset.read_result_group(y_path).get_acc()
+        mean_x,mean_y=np.mean(x_acc),np.mean(y_acc)
+        diff= mean_x-mean_y
+        pvalue=stats.ttest_ind(x_acc,y_acc,
                                equal_var=False)[1]
-        return diff,pvalue
+        return mean_x,mean_y,diff,pvalue
     stat_dict=helper(x_path,y_path)
-    print(stat_dict)
+    for name_i,stats_i in stat_dict.items():
+        print(name_i)
+        print(",".join([f"{stat_j:.4f}" for stat_j in stats_i]))
 
 if __name__ == '__main__':
-    acc_plot("acc/reversed_full.json",
-             title="reversed_full")
+#    acc_plot("acc/reversed_full.json",
+#             title="reversed_full")
 #    diff_plot("acc/base_full.json","acc/reversed_full.json",
 #              title="Low purity - high purity  (full)")
-#    stat_test("results/RF","results/class_ens")
+    stat_test("results/RF","results/class_ens")
