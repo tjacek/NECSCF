@@ -72,6 +72,8 @@ class Result(object):
         return balanced_accuracy_score(self.y_pred,self.y_true)
 
     def get_metric(self,metric):
+        if(type(metric)==str):
+            metric=get_metric(metric)
         return metric(self.y_pred,self.y_true)
 
     def report(self):
@@ -85,6 +87,7 @@ class Result(object):
     def save(self,out_path):
         y_pair=np.array([self.y_pred,self.y_true])
         np.savez(out_path,y_pair)
+
 
 class ResultGroup(object):
     def __init__(self,results):
@@ -102,6 +105,14 @@ class ResultGroup(object):
         utils.make_dir(out_path)
         for i,result_i in enumerate(self.results):
             result_i.save(f"{out_path}/{i}")
+
+def get_metric(metric_type):
+    if(metric_type=="acc"):
+        return accuracy_score
+    if(metric_type=="balance"):
+        return balanced_accuracy_score
+    raise Exception(f"Unknow metric type{ens_type}")
+
 
 class WeightDict(dict):
     def __init__(self, arg=[]):
