@@ -88,6 +88,17 @@ class Result(object):
         y_pair=np.array([self.y_pred,self.y_true])
         np.savez(out_path,y_pair)
 
+class PartialResults(object):
+    def __init__(self,y_true,y_partial):
+        self.y_true=y_true
+        self.y_partial=y_partial
+
+    def __len__(self):
+        return len(self.y_partial)
+
+    def get_metric(self.metric_type="acc"):
+        metric=get_metric(metric_type)
+        return [metric(self.y_true,y_i) for y_i in self.y_partial]
 
 class ResultGroup(object):
     def __init__(self,results):
