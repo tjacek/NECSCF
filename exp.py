@@ -55,16 +55,17 @@ def selection_exp(in_path,
     utils.make_dir(out_path)
     data_split=get_splits(in_path,out_path)
     clf_factory=ens.get_ens("class_ens")()
+    acc=[]
     for i,ens_i in enumerate(data_split.get_clfs(clf_factory)):
         split_i=data_split.splits[i]
         test_data=data_split.data.selection(split_i.test_index)
         y_partial=ens_i.partial_predict(test_data.X)
         y_partial=np.array(y_partial)
-        raise Exception(y_partial.shape)
         result_i=dataset.PartialResults(y_true=test_data.y,
                                         y_partial=y_partial)
-        print(result_i.get_metric())
-
+        acc.append(result_i.get_metric())
+    acc=np.array(acc)
+    print(np.mean(acc,axis=0))
 
 #def selection_exp(in_path,
 #                  n_splits=10,

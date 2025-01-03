@@ -97,8 +97,9 @@ class PartialResults(object):
         return len(self.y_partial)
 
     def get_metric(self,metric_type="acc"):
+        y_pred=np.argmax(self.y_partial,axis=2)
         metric=get_metric(metric_type)
-        return [metric(self.y_true,y_i) for y_i in self.y_partial]
+        return [metric(self.y_true,y_i) for y_i in y_pred]
 
 class ResultGroup(object):
     def __init__(self,results):
