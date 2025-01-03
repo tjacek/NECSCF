@@ -50,10 +50,21 @@ def get_splits(in_path,out_path):
             split_i.save(f"{split_path}/{i}")
         return data_split
 
-#def selection(data):
-#    sizes=data.class_percent()
-#    return [ i for i,size_i in sizes.items()
-#                  if(size_i<0.25) ]
+def selection_exp(in_path,
+                  out_path):
+    utils.make_dir(out_path)
+    data_split=get_splits(in_path,out_path)
+    clf_factory=ens.get_ens("class_ens")()
+    for i,ens_i in enumerate(data_split.get_clfs(clf_factory)):
+        split_i=data_split.splits[i]
+        test_data=data_split.data.selection(split_i.test_index)
+        y_partial=ens_i.partial_predict(test_data.X)
+        y_partial=np.array(y_partial)
+        raise Exception(y_partial.shape)
+        result_i=dataset.PartialResults(y_true=test_data.y,
+                                        y_partial=y_partial)
+        print(result_i.get_metric())
+
 
 #def selection_exp(in_path,
 #                  n_splits=10,
@@ -82,7 +93,7 @@ def get_splits(in_path,out_path):
 #    yield list(cats)
 
 if __name__ == '__main__':
-#    single_exp(in_path="../uci/vehicle",
-#               out_path="single_exp",
-#               ens_type="deep")
-    eval_exp(exp_path="single_exp")
+    selection_exp(in_path="../uci/vehicle",
+                  out_path="single_exp")
+#               ens_type="class_ens")
+#    eval_exp(exp_path="single_exp")

@@ -96,7 +96,7 @@ class PartialResults(object):
     def __len__(self):
         return len(self.y_partial)
 
-    def get_metric(self.metric_type="acc"):
+    def get_metric(self,metric_type="acc"):
         metric=get_metric(metric_type)
         return [metric(self.y_true,y_i) for y_i in self.y_partial]
 
