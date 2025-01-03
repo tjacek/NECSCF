@@ -67,6 +67,11 @@ class UnaggrSplit(object):
         def save(self,out_path):
             return np.savez(out_path,self.train_index,self.test_index)
 
+        def __str__(self):
+            train_size=self.train_index.shape[0]
+            test_size=self.test_index.shape[0]
+            return f"train:{train_size},test:{test_size}"
+
 class AggrSplit(object):
     def __init__(self,n_splits,n_repeats):
         self.n_splits=n_splits
