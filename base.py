@@ -30,6 +30,13 @@ class DataSplits(object):
             results.append(split_k.pred(self.data,clf_k))
         return dataset.ResultGroup(results)
 
+    def selection(self,i,train=False):
+        split_i=self.splits[i]
+        if(train):
+            return self.data.selection(split_i.train_index)
+        else:
+            return self.data.selection(split_i.test_index)
+
 class UnaggrSplit(object):
     def __init__(self,n_splits,n_repeats):
         self.n_splits=n_splits
