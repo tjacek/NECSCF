@@ -6,7 +6,7 @@ import numpy as np
 import tensorflow as tf
 import itertools
 import pandas as pd
-import os
+import argparse,os
 import base,dataset,deep,ens,preproc,utils
 
 def single_exp(in_path,
@@ -19,7 +19,7 @@ def single_exp(in_path,
         result_group=dataset.read_result_group(result_path)
     else:
         print(f"Train ens{ens_type}")
-        clf_factory=ens.get_ens(ens_type)()#ClassEnsFactory()
+        clf_factory=ens.get_ens(ens_type)
         clf_factory.init(data_split.data)
         result_group=data_split(clf_factory)
         result_group.save(result_path)
@@ -58,6 +58,7 @@ def selection_exp(in_path,
     acc=[]
     for i,ens_i in enumerate(data_split.get_clfs(clf_factory)):
         split_i=data_split.splits[i]
+        print(str(split_i))
         test_data=data_split.data.selection(split_i.test_index)
         y_partial=ens_i.partial_predict(test_data.X)
         y_partial=np.array(y_partial)
@@ -66,6 +67,16 @@ def selection_exp(in_path,
         acc.append(result_i.get_metric())
     acc=np.array(acc)
     print(np.mean(acc,axis=0))
+
+def history_exp(in_path):
+    data_split=base.get_splits(data_path=in_path,
+                                    n_splits=10,
+                                    n_repeats=1,
+                                    split_type="unaggr")
+    clf_factory=ens.get_ens(ens_type="class_ens")
+    split=data_split.splits[0]
+    clf=clf_factory()
+    
 
 #def selection_exp(in_path,
 #                  n_splits=10,
@@ -94,7 +105,13 @@ def selection_exp(in_path,
 #    yield list(cats)
 
 if __name__ == '__main__':
-    selection_exp(in_path="../uci/vehicle",
-                  out_path="single_exp")
-#               ens_type="class_ens")
-#    eval_exp(exp_path="single_exp")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--input", type=str, default="../uci/vehicle")
+    parser.add_argument("--output", type=str, default="single_exp")
+    parser.add_argument("--ens_type", type=str, default="RF")
+    args = parser.parse_args()
+#    single_exp(in_path=args.input,
+#               out_path=args.output,
+#               ens_type=args.ens_type)
+#    eval_exp(exp_path=args.output)
+    history_exp(in_path=args.input)
