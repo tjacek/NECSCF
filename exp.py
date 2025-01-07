@@ -74,15 +74,18 @@ def history_exp(in_path):
                                     n_repeats=1,
                                     split_type="unaggr")
     clf_factory=ens.get_ens(ens_type="class_ens")
-#    split=data_split.splits[0]
     clf_factory.init(data_split.data)
     clf=clf_factory()
     clf.verbose=2
-#    print(clf.model)
     train_data=data_split.selection(i=0,train=True)   
     history=clf.fit(X=train_data.X,
                     y=train_data.y)
-    print(type(history))
+    n_epochs=len(history.history["out_0_accuracy"])
+    print(f"n_epochs:{n_epochs}" )
+    for key_i in history.history.keys():
+        acc_i= history.history[key_i][0]
+        print(f"{key_i}-{acc_i:.4f}")
+    print(dir(history))
 #def selection_exp(in_path,
 #                  n_splits=10,
 #                  n_repeats=1):
