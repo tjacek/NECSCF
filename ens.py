@@ -4,9 +4,11 @@ import base,dataset,deep
 
 def get_ens(ens_type:str):
     if(ens_type=="deep"):
-        return DeepFactory
+        return DeepFactory()
     if(ens_type=="class_ens"):
-        return ClassEnsFactory
+        return ClassEnsFactory()
+    if(ens_type=="RF"):
+        return base.ClfFactory(ens_type)
     raise Exception(f"Unknow ens type{ens_type}")
 
 class DeepFactory(object):
@@ -43,10 +45,10 @@ class Deep(object):
             self.model=deep.single_builder(params=self.params,
                                            hyper_params=self.hyper_params)
         y=tf.one_hot(y,depth=self.params['n_cats'])
-        self.model.fit(x=X,
-                       y=y,
-                       callbacks=deep.get_callback(),
-                       verbose=self.verbose)
+        return self.model.fit(x=X,
+                              y=y,
+                              callbacks=deep.get_callback(),
+                              verbose=self.verbose)
 
     def predict(self,X):
         y=self.model.predict(X,
@@ -76,12 +78,12 @@ class ClassEns(object):
                                              hyper_params=self.hyper_params)
         y=[tf.one_hot(y,depth=self.params['n_cats'])
                 for _ in range(data.n_cats()+1)]
-        self.model.fit(x=X,
+        return self.model.fit(x=X,
                        y=y,
                        batch_size=self.params['dims'][0],
                        callbacks=deep.get_callback(),
                        verbose=self.verbose)
-        tf.keras.backend.clear_session()
+#        tf.keras.backend.clear_session()
 
     def predict(self,X):
         y=self.model(X, training=False)
@@ -89,6 +91,9 @@ class ClassEns(object):
         y=np.sum(np.array(y),axis=0)
         return np.argmax(y,axis=1)
 
+    def partial_predict(self,X):
+        return self.model(X, training=False)
+    
     def select_predict(self,X,select_cats):
         y=self.model.predict(X,
                              verbose=self.verbose)
