@@ -83,7 +83,7 @@ def history_exp(in_path):
     n_epochs=len(history.history["out_0_accuracy"])
     print(f"n_epochs:{n_epochs}" )
     for key_i in history.history.keys():
-        acc_i= history.history[key_i][0]
+        acc_i= history.history[key_i][-1]
         print(f"{key_i}-{acc_i:.4f}")
     print(dir(history))
 #def selection_exp(in_path,

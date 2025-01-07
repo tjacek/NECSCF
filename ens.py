@@ -22,6 +22,7 @@ class DeepFactory(object):
     def init(self,data):
         self.params={'dims': (data.dim(),),
                      'n_cats':data.n_cats(),
+                     'n_epochs':100,
                      'class_weights':dataset.get_class_weights(data.y) }
 
     def __call__(self):
@@ -80,6 +81,8 @@ class ClassEns(object):
                 for _ in range(data.n_cats()+1)]
         return self.model.fit(x=X,
                        y=y,
+                       epochs=self.params['n_epochs'],
+
                        batch_size=self.params['dims'][0],
                        callbacks=deep.get_callback(),
                        verbose=self.verbose)
