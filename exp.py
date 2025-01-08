@@ -80,12 +80,10 @@ def history_exp(in_path):
     train_data=data_split.selection(i=0,train=True)   
     history=clf.fit(X=train_data.X,
                     y=train_data.y)
-    n_epochs=len(history.history["out_0_accuracy"])
-    print(f"n_epochs:{n_epochs}" )
-    for key_i in history.history.keys():
-        acc_i= history.history[key_i][-1]
+    hist_dict=utils.history_to_dict(history)
+    for key_i,acc_i in hist_dict.items():
         print(f"{key_i}-{acc_i:.4f}")
-    print(dir(history))
+
 #def selection_exp(in_path,
 #                  n_splits=10,
 #                  n_repeats=1):
@@ -116,7 +114,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", type=str, default="../uci/vehicle")
     parser.add_argument("--output", type=str, default="single_exp")
-    parser.add_argument("--ens_type", type=str, default="RF")
+    parser.add_argument("--ens_type", type=str, default="class_ens")
     args = parser.parse_args()
 #    single_exp(in_path=args.input,
 #               out_path=args.output,

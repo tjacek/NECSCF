@@ -93,3 +93,10 @@ def selected_subsets(order,full=False):
 def to_id_dir(path_dict,index=-1):
     return { path_i.split("/")[index] :value_i 
             for path_i,value_i in path_dict.items()}
+
+def history_to_dict(history):
+    history=history.history
+    hist_dict={'n_epochs':len(history["out_0_accuracy"])}
+    for key_i in history.keys():
+        hist_dict[key_i]=history[key_i][-1]
+    return hist_dict
