@@ -27,13 +27,14 @@ class Dataset(object):
                        y=self.y)
                            
     def eval(self,train_index,test_index,clf,as_result=True):
-        clf=self.fit_clf(train_index,clf)
-        return self.pred(test_index,clf,as_result=as_result)
-    
+        clf,history=self.fit_clf(train_index,clf)
+        result=self.pred(test_index,clf,as_result=as_result)
+        return result,history
+        
     def fit_clf(self,train,clf):
         X_train,y_train=self.X[train],self.y[train]
-        clf.fit(X_train,y_train)
-        return clf
+        history=clf.fit(X_train,y_train)
+        return clf,history
 
     def pred(self,test_index,clf,as_result=True):
         X_test,y_test=self.X[test_index],self.y[test_index]
@@ -100,7 +101,7 @@ class PartialResults(object):
         return np.argmax(self.y_partial,axis=2)
 
     def get_metric(self,metric_type="acc"):
-        y_pred=self.get_pred() #np.argmax(self.y_partial,axis=2)
+        y_pred=self.get_pred() 
         metric=get_metric(metric_type)
         return [metric(self.y_true,y_i) for y_i in y_pred]
     

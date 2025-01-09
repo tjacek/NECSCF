@@ -21,8 +21,9 @@ def single_exp(in_path,
         print(f"Train ens{ens_type}")
         clf_factory=ens.get_ens(ens_type)
         clf_factory.init(data_split.data)
-        result_group=data_split(clf_factory)
+        result_group,history=data_split(clf_factory)
         result_group.save(result_path)
+        print(history)
     print(f"Acc:{result_group.get_acc()}")
     print(f"Balance{result_group.get_acc()}")
 
@@ -116,8 +117,8 @@ if __name__ == '__main__':
     parser.add_argument("--output", type=str, default="single_exp")
     parser.add_argument("--ens_type", type=str, default="class_ens")
     args = parser.parse_args()
-#    single_exp(in_path=args.input,
-#               out_path=args.output,
-#               ens_type=args.ens_type)
-#    eval_exp(exp_path=args.output)
-    history_exp(in_path=args.input)
+    single_exp(in_path=args.input,
+               out_path=args.output,
+               ens_type=args.ens_type)
+    eval_exp(exp_path=args.output)
+#    history_exp(in_path=args.input)

@@ -12,11 +12,14 @@ class DataSplits(object):
         
     def __call__(self,clf_factory):
         clf_factory.init(self.data)
-        results=[]
+        results,history=[],[]
         for split_k in tqdm(self.splits):
             clf_k=clf_factory()
-            results.append(split_k.eval(self.data,clf_k))
-        return dataset.ResultGroup(results)
+            result_k,history_k=split_k.eval(self.data,clf_k)
+            results.append(result_k)
+            history.append(utils.history_to_dict(history_k))
+        results=dataset.ResultGroup(results)
+        return results,history
 
     def get_clfs(self,clf_factory):
         clf_factory.init(self.data)
