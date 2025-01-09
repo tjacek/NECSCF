@@ -23,6 +23,7 @@ def single_exp(in_path,
         clf_factory.init(data_split.data)
         result_group,history=data_split(clf_factory)
         result_group.save(result_path)
+        history=utils.mean_dict(history)
         print(history)
     print(f"Acc:{result_group.get_acc()}")
     print(f"Balance{result_group.get_acc()}")

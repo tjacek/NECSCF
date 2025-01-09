@@ -1,4 +1,5 @@
 import os.path
+import numpy as np
 from functools import wraps
 import time,json
 
@@ -100,3 +101,11 @@ def history_to_dict(history):
     for key_i in history.keys():
         hist_dict[key_i]=history[key_i][-1]
     return hist_dict
+
+def mean_dict(all_dicts):
+    mean_dict={ key_i:[]
+        for key_i in all_dicts[0]}
+    for key_i in mean_dict:
+        raw_i=[dict_j[key_i] for dict_j in all_dicts]
+        mean_dict[key_i]=(np.mean(raw_i),np.std(raw_i))
+    return mean_dict
