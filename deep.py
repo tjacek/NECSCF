@@ -114,16 +114,16 @@ def get_callback():
 #                                            patience=5)
 
 class MinAccEarlyStopping(keras.callbacks.Callback):
-    def __init__(self, patience=15):
+    def __init__(self, patience=15,verbose=1):
         super().__init__()
         self.patience = patience
         self.best_weights = None
+        self.verbose=verbose
 
     def on_train_begin(self, logs=None):
         self.wait = 0
         self.stopped_epoch = 0
-        self.best = np.inf
-
+        self.best = -np.inf
 
     def on_epoch_end(self, epoch, logs=None):
         acc=[]
@@ -131,16 +131,13 @@ class MinAccEarlyStopping(keras.callbacks.Callback):
             if("accuracy" in key_i):
                 acc.append(logs[key_i])
         min_acc=np.amin(acc)
-        print(min_acc)
-        raise Exception(logs)
-#        if np.less(current, self.best):
-#            self.best = current
-#            self.wait = 0
-#            self.best_weights = self.model.get_weights()
-#        else:
-#            self.wait += 1
-#            if self.wait >= self.patience:
-#                self.stopped_epoch = epoch
-#                self.model.stop_training = True
-#                print("Restoring model weights from the end of the best epoch.")
-#                self.model.set_weights(self.best_weights)
+        if(min_acc>self.best):
+            if(self.verbose):
+                print(f"min_acc{min_acc},{self.wait}")
+            self.best=min_acc
+            self.wait = 0
+            self.best_weights = self.model.get_weights()
+        else:
+            self.wait+=1
+            self.model.stop_training = True
+            self.model.set_weights(self.best_weights)
