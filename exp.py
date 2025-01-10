@@ -118,8 +118,8 @@ if __name__ == '__main__':
     parser.add_argument("--output", type=str, default="single_exp")
     parser.add_argument("--ens_type", type=str, default="class_ens")
     args = parser.parse_args()
-    single_exp(in_path=args.input,
-               out_path=args.output,
-               ens_type=args.ens_type)
-    eval_exp(exp_path=args.output)
-#    history_exp(in_path=args.input)
+#    single_exp(in_path=args.input,
+#               out_path=args.output,
+#               ens_type=args.ens_type)
+#    eval_exp(exp_path=args.output)
+    history_exp(in_path=args.input)

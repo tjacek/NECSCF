@@ -45,9 +45,6 @@ def ensemble_builder(params,
 
 def single_builder(params,
                    hyper_params=None):
-#    if(hyper_params is None):
-#        hyper_params={'layers':2, 'units_0':2,
-#                      'units_1':1,'batch':False}
     input_layer = Input(shape=(params['dims']))
     class_dict=params['class_weights']
     nn=nn_builder(params=params,
@@ -109,5 +106,41 @@ def keras_loss( class_weights):
     return loss
 
 def get_callback():
-    return tf.keras.callbacks.EarlyStopping(monitor='val_loss', 
-                                            patience=5)
+    return tf.keras.callbacks.EarlyStopping(monitor='accuracy', 
+                                            patience=15)
+
+#def get_callback():
+#    return tf.keras.callbacks.EarlyStopping(monitor='val_loss', 
+#                                            patience=5)
+
+class MinAccEarlyStopping(keras.callbacks.Callback):
+    def __init__(self, patience=15):
+        super().__init__()
+        self.patience = patience
+        self.best_weights = None
+
+    def on_train_begin(self, logs=None):
+        self.wait = 0
+        self.stopped_epoch = 0
+        self.best = np.inf
+
+
+    def on_epoch_end(self, epoch, logs=None):
+        acc=[]
+        for key_i in logs.keys():
+            if("accuracy" in key_i):
+                acc.append(logs[key_i])
+        min_acc=np.amin(acc)
+        print(min_acc)
+        raise Exception(logs)
+#        if np.less(current, self.best):
+#            self.best = current
+#            self.wait = 0
+#            self.best_weights = self.model.get_weights()
+#        else:
+#            self.wait += 1
+#            if self.wait >= self.patience:
+#                self.stopped_epoch = epoch
+#                self.model.stop_training = True
+#                print("Restoring model weights from the end of the best epoch.")
+#                self.model.set_weights(self.best_weights)

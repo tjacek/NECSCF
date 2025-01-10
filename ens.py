@@ -82,9 +82,8 @@ class ClassEns(object):
         return self.model.fit(x=X,
                        y=y,
                        epochs=self.params['n_epochs'],
-
                        batch_size=self.params['dims'][0],
-                       callbacks=deep.get_callback(),
+                       callbacks= deep.MinAccEarlyStopping()  ,#deep.get_callback(),
                        verbose=self.verbose)
 #        tf.keras.backend.clear_session()
 
