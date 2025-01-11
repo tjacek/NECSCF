@@ -22,7 +22,7 @@ class DeepFactory(object):
     def init(self,data):
         self.params={'dims': (data.dim(),),
                      'n_cats':data.n_cats(),
-                     'n_epochs':100,
+                     'n_epochs':1000,
                      'class_weights':dataset.get_class_weights(data.y) }
 
     def __call__(self):
@@ -79,13 +79,14 @@ class ClassEns(object):
                                              hyper_params=self.hyper_params)
         y=[tf.one_hot(y,depth=self.params['n_cats'])
                 for _ in range(data.n_cats()+1)]
+        callback=[deep.AllAccEarlyStopping(n_clfs=data.n_cats()+1, 
+                                           patience=15)]
         return self.model.fit(x=X,
                        y=y,
                        epochs=self.params['n_epochs'],
                        batch_size=self.params['dims'][0],
-                       callbacks= deep.MinAccEarlyStopping()  ,#deep.get_callback(),
+                       callbacks= callback,
                        verbose=self.verbose)
-#        tf.keras.backend.clear_session()
 
     def predict(self,X):
         y=self.model(X, training=False)

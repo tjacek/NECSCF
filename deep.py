@@ -4,7 +4,8 @@ import keras
 from sklearn import preprocessing
 from keras.layers import Concatenate,Dense,BatchNormalization
 from keras import Input, Model
- 
+import utils
+
 def ensemble_builder(params,
                      hyper_params=None,
                      selected_classes=None,
@@ -109,12 +110,9 @@ def get_callback():
     return tf.keras.callbacks.EarlyStopping(monitor='accuracy', 
                                             patience=15)
 
-#def get_callback():
-#    return tf.keras.callbacks.EarlyStopping(monitor='val_loss', 
-#                                            patience=5)
-
 class MinAccEarlyStopping(keras.callbacks.Callback):
-    def __init__(self, patience=15,verbose=1):
+    def __init__(self, patience=15,
+                       verbose=1):
         super().__init__()
         self.patience = patience
         self.best_weights = None
@@ -141,3 +139,38 @@ class MinAccEarlyStopping(keras.callbacks.Callback):
             self.wait+=1
             self.model.stop_training = True
             self.model.set_weights(self.best_weights)
+
+class AllAccEarlyStopping(keras.callbacks.Callback):
+    def __init__(self,n_clfs, 
+                      patience=15,
+                      verbose=1):
+        super().__init__()
+        self.patience = patience
+        self.best_weights = None
+        self.verbose=verbose
+        self.best=np.zeros(n_clfs,dtype=float)
+        self.wait=np.zeros(n_clfs,dtype=int)
+
+    def on_train_begin(self, logs=None):
+        self.stopped_epoch = 0
+
+    def on_epoch_end(self, epoch, logs=None):
+        for key_i in logs.keys():
+            if("accuracy" in key_i):
+                i=utils.extract_number(key_i)
+                current_i=logs[key_i]
+                if(self.best[i]<current_i):
+                    self.best[i]=current_i
+                    self.wait[i]=0
+                else:
+                    self.wait[i]+=1
+        if(self.verbose):
+            print(self.best)
+            print(self.wait)
+        min_wait=np.amin(self.wait)
+        if(min_wait>self.patience):
+            self.model.stop_training = True
+            self.model.set_weights(self.best_weights)
+        else:
+            self.best_weights = self.model.get_weights()
+#        raise Exception(max_wait)
