@@ -22,12 +22,8 @@ def base_train(data_path:str,
         split_j=base.UnaggrSplit.Split(train_index=raw_split["arr_0"],
                                        test_index=raw_split["arr_1"])
         clf_j=clf_factory()
-        clf_j=split_j.fit_clf(data,clf_j)  
+        clf_j,history=split_j.fit_clf(data,clf_j)  
         clf_j.save(f"{model_path}/{index}.keras")
-
-#def malloc_trim():
-#    ctypes.CDLL('libc.so.6').malloc_trim(0) 
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
