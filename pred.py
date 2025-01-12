@@ -8,6 +8,7 @@ import os.path
 import multiprocessing
 import base,dataset,ens,exp
 from deep import weighted_loss
+
 def partial_exp(data_path:str,
                 exp_path:str):
 #    @utils.DirFun({"in_path":0,"exp_path":1})#,"out_path":2})
@@ -20,8 +21,15 @@ def partial_exp(data_path:str,
         data=dataset.read_csv(in_path)
         ens_factory=ens.ClassEnsFactory()
         ens_factory.init(data)
-        for split_i,clf_i in tqdm(model_iter(exp_path,ens_factory)):
-            print(clf_i)
+        utils.make_dir(out_path)
+        clf_iter=model_iter(exp_path,ens_factory)
+        for i,(split_i,clf_i) in tqdm(enumerate(clf_iter)):
+            test_data_i=data.selection(split_i.test_index)
+            raw_partial_i=clf_i.partial_predict(test_data_i.X)
+            result_i=dataset.PartialResults(y_true=test_data_i.y,
+                                            y_partial=raw_partial_i)
+            result_i.save(f"{out_path}/{i}.npz")
+#            raise Exception(raw_partial_i.shape)
     helper(data_path,exp_path)
 
 #def order_exp(data_path:str,

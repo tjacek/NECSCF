@@ -106,8 +106,8 @@ class PartialResults(object):
         return [metric(self.y_true,y_i) for y_i in y_pred]
     
     def save(self,out_path):
-        y_pair=np.array([self.y_pred,self.y_partial])
-        np.savez(out_path,y_pair)
+#        y_pair=np.array([self.y_partial,self.y_true])
+        np.savez(out_path,name1=self.y_partial,name2=self.y_true)
 
 class ResultGroup(object):
     def __init__(self,results):
