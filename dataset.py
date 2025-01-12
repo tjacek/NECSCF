@@ -96,17 +96,18 @@ class PartialResults(object):
 
     def __len__(self):
         return len(self.y_partial)
-    
-    def get_pred(self):
-        return np.argmax(self.y_partial,axis=2)
+
+    def vote(self):
+        ballot= np.sum(self.y_partial,axis=0)
+        return np.argmax(ballot,axis=1)
 
     def get_metric(self,metric_type="acc"):
-        y_pred=self.get_pred() 
+        y_pred=self.vote()
         metric=get_metric(metric_type)
-        return [metric(self.y_true,y_i) for y_i in y_pred]
+        return metric(self.y_true,y_pred)
+#        return [metric(self.y_true,y_i) for y_i in y_pred]
     
     def save(self,out_path):
-#        y_pair=np.array([self.y_partial,self.y_true])
         np.savez(out_path,name1=self.y_partial,name2=self.y_true)
 
 class ResultGroup(object):
@@ -158,6 +159,14 @@ def read_result(in_path:str):
     y_pred,y_true=raw[0],raw[1]
     return Result(y_pred=y_pred,
                   y_true=y_true)
+
+def read_partial(in_path:str):
+    if(type(in_path)==PartialResults):
+        return in_path
+    raw=np.load(in_path)
+    y_partial,y_true=raw['name1'],raw['name2']
+    return PartialResults(y_partial=y_partial,
+                          y_true=y_true)
 
 def read_result_group(in_path:str):
     results= [ read_result(path_i) 

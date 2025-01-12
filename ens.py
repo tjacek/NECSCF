@@ -95,7 +95,7 @@ class ClassEns(object):
         return np.argmax(y,axis=1)
 
     def partial_predict(self,X):
-        return self.model(X, training=False)
+        return np.array(self.model(X, training=False))
     
     def select_predict(self,X,select_cats):
         y=self.model.predict(X,

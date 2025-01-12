@@ -3,10 +3,25 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import utils
 utils.silence_warnings()
 import numpy as np
-import argparse
+import argparse,os.path
 import matplotlib.pyplot as plt
 from scipy import stats
 import dataset,ens,exp,pred
+
+def summary(exp_path):
+    @utils.DirFun({"in_path":0})
+    def helper(in_path):
+        partial_path=f"{in_path}/partial"
+        if(not os.path.isdir(partial_path)):
+            return None
+        results=[dataset.read_partial(path_i) 
+            for path_i in utils.top_files(partial_path) ]
+        return [result_i.get_metric("acc") for result_i in results]
+    acc_dict=helper(exp_path)
+    for name_i,acc_i in acc_dict.items():
+        if(acc_i):
+            id_i=name_i.split("/")[-1]
+            print(f"{id_i}-{np.mean(acc_i):.4f}")
 
 def acc_plot(json_path:str,
              title="acc_plot",
@@ -76,4 +91,5 @@ if __name__ == '__main__':
 #             title="reversed_full")
 #    diff_plot("acc/base_full.json","acc/reversed_full.json",
 #              title="Low purity - high purity  (full)")
-    stat_test("results/RF","results/class_ens")
+#    stat_test("results/RF","results/class_ens")
+    summary(exp_path="exp_deep")
