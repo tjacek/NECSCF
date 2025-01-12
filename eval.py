@@ -35,15 +35,23 @@ def acc_plot(exp_path,
     ord_dict=utils.read_json(ord_path)
     result_dict=get_result(exp_path=exp_path,
                            acc=False)
+    acc_dict={}
     for id_i,card_i in ord_dict.items():
-        
         results_i=result_dict[id_i]
         if(results_i):
             order_i=np.argsort(card_i)
-            subsets_i=utils.selected_subsets(order_i,full=False)
-            acc_i=[results_i[0].selected_acc(subset_j)  
+            subsets_i=utils.selected_subsets(order_i,full=True)
+#            raise Exception(order_i)
+            acc_i=[np.mean([result_k.selected_acc(subset_j)
+                       for result_k in results_i]) 
                     for subset_j in subsets_i]
+            acc_dict[id_i]=acc_i
             print(acc_i)
+    make_plot(acc_dict,
+              title="title",
+              x_label="n_clf",      
+              y_label="acc",
+              n_iters=2)        
 
 #def acc_plot(json_path:str,
 #             title="acc_plot",

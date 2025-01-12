@@ -99,6 +99,7 @@ def silence_warnings():
     warnings.warn = warn
 
 def selected_subsets(order,full=False):
+    order=list(order)
     subsets= [order[:i+1] for i in range(len(order))]
     if(full):
         size=len(subsets)
