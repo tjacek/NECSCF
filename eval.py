@@ -6,9 +6,16 @@ import numpy as np
 import argparse,os.path
 import matplotlib.pyplot as plt
 from scipy import stats
-import dataset,ens,exp,pred
+import dataset,ens,exp,pred,utils
 
 def summary(exp_path):
+    acc_dict=get_result(exp_path,acc=True)
+    for id_i,acc_i in acc_dict.items():
+        if(acc_i):
+            print(f"{id_i}-{np.mean(acc_i):.4f}")
+
+def get_result(exp_path,
+               acc=True):
     @utils.DirFun({"in_path":0})
     def helper(in_path):
         partial_path=f"{in_path}/partial"
@@ -16,12 +23,11 @@ def summary(exp_path):
             return None
         results=[dataset.read_partial(path_i) 
             for path_i in utils.top_files(partial_path) ]
-        return [result_i.get_metric("acc") for result_i in results]
-    acc_dict=helper(exp_path)
-    for name_i,acc_i in acc_dict.items():
-        if(acc_i):
-            id_i=name_i.split("/")[-1]
-            print(f"{id_i}-{np.mean(acc_i):.4f}")
+        if(acc):
+            return [result_i.get_metric("acc") for result_i in results]
+        return results
+    path_dict=helper(exp_path)
+    return utils.to_id_dir(path_dict,index=-1)
 
 def acc_plot(json_path:str,
              title="acc_plot",
@@ -87,9 +93,14 @@ def stat_test(x_path,y_path):
         print(",".join([f"{stat_j:.4f}" for stat_j in stats_i]))
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--exp_path", type=str, default="exp_deep")
+    parser.add_argument('--summary', action='store_true')
+    args = parser.parse_args()
+    if(args.summary):
+        summary(exp_path=args.exp_path)
 #    acc_plot("acc/reversed_full.json",
 #             title="reversed_full")
 #    diff_plot("acc/base_full.json","acc/reversed_full.json",
 #              title="Low purity - high purity  (full)")
 #    stat_test("results/RF","results/class_ens")
-    summary(exp_path="exp_deep")
