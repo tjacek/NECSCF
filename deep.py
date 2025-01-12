@@ -165,12 +165,13 @@ class AllAccEarlyStopping(keras.callbacks.Callback):
                 else:
                     self.wait[i]+=1
         if(self.verbose):
+            print(f"epoch:{epoch}")
             print(self.best)
             print(self.wait)
         min_wait=np.amin(self.wait)
         if(min_wait>self.patience):
+            self.stopped_epoch = epoch
             self.model.stop_training = True
             self.model.set_weights(self.best_weights)
         else:
             self.best_weights = self.model.get_weights()
-#        raise Exception(max_wait)

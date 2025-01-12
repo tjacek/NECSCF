@@ -110,5 +110,8 @@ def mean_dict(all_dicts):
         mean_dict[key_i]=(np.mean(raw_i),np.std(raw_i))
     return mean_dict
 
+#def extract_number(raw_str):
+#    return int(list(filter(str.isdigit, raw_str))[0])
+
 def extract_number(raw_str):
-    return int(list(filter(str.isdigit, raw_str))[0])
+    return int("".join([str(d) for d in filter(str.isdigit, raw_str)]))
