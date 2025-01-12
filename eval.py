@@ -29,15 +29,31 @@ def get_result(exp_path,
     path_dict=helper(exp_path)
     return utils.to_id_dir(path_dict,index=-1)
 
-def acc_plot(json_path:str,
-             title="acc_plot",
-             n_iters=2):
-    acc_dict=utils.read_json(json_path)
-    make_plot(acc_dict,
-              title=title,
-              x_label="n_clf",      
-              y_label="acc",
-              n_iters=n_iters)
+
+def acc_plot(exp_path,
+             ord_path):
+    ord_dict=utils.read_json(ord_path)
+    result_dict=get_result(exp_path=exp_path,
+                           acc=False)
+    for id_i,card_i in ord_dict.items():
+        
+        results_i=result_dict[id_i]
+        if(results_i):
+            order_i=np.argsort(card_i)
+            subsets_i=utils.selected_subsets(order_i,full=False)
+            acc_i=[results_i[0].selected_acc(subset_j)  
+                    for subset_j in subsets_i]
+            print(acc_i)
+
+#def acc_plot(json_path:str,
+#             title="acc_plot",
+#             n_iters=2):
+#    acc_dict=utils.read_json(json_path)
+#    make_plot(acc_dict,
+#              title=title,
+#              x_label="n_clf",      
+#              y_label="acc",
+#              n_iters=n_iters)
 
 def diff_plot(first_json:str,
               second_json:str,
@@ -95,10 +111,13 @@ def stat_test(x_path,y_path):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--exp_path", type=str, default="exp_deep")
+    parser.add_argument("--ord_path", type=str, default="ord/purity.json")
     parser.add_argument('--summary', action='store_true')
     args = parser.parse_args()
     if(args.summary):
         summary(exp_path=args.exp_path)
+    acc_plot(exp_path=args.exp_path,
+             ord_path=args.ord_path)
 #    acc_plot("acc/reversed_full.json",
 #             title="reversed_full")
 #    diff_plot("acc/base_full.json","acc/reversed_full.json",

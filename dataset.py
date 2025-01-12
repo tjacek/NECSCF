@@ -107,6 +107,14 @@ class PartialResults(object):
         return metric(self.y_true,y_pred)
 #        return [metric(self.y_true,y_i) for y_i in y_pred]
     
+    def selected_acc(self,subset):
+        s_votes=[self.y_partial[i] for i in subset]
+        s_ballot= np.sum(s_votes,axis=0)
+        s_pred=np.argmax(s_ballot,axis=1)
+        metric=get_metric("acc")
+        return metric(self.y_true,s_pred)
+
+    
     def save(self,out_path):
         np.savez(out_path,name1=self.y_partial,name2=self.y_true)
 
