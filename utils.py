@@ -109,7 +109,8 @@ def selected_subsets(order,full=False):
 
 def to_id_dir(path_dict,index=-1):
     return { path_i.split("/")[index] :value_i 
-            for path_i,value_i in path_dict.items()}
+            for path_i,value_i in path_dict.items()
+                if(value_i)}
 
 def history_to_dict(history):
     history=history.history
@@ -125,9 +126,6 @@ def mean_dict(all_dicts):
         raw_i=[dict_j[key_i] for dict_j in all_dicts]
         mean_dict[key_i]=(np.mean(raw_i),np.std(raw_i))
     return mean_dict
-
-#def extract_number(raw_str):
-#    return int(list(filter(str.isdigit, raw_str))[0])
 
 def extract_number(raw_str):
     return int("".join([str(d) for d in filter(str.isdigit, raw_str)]))
