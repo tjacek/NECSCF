@@ -3,15 +3,16 @@ utils.silence_warnings()
 import numpy as np
 import tensorflow as tf
 from tqdm import tqdm
-import gc,json
+#import gc,json
 import os.path
 import multiprocessing
+import argparse
 import base,dataset,ens,exp
 from deep import weighted_loss
+import utils
 
 def partial_exp(data_path:str,
                 exp_path:str):
-#    @utils.DirFun({"in_path":0,"exp_path":1})#,"out_path":2})
     @utils.MultiDirFun()
     def helper(in_path,exp_path):
         model_path=f"{exp_path}/class_ens"
@@ -29,8 +30,37 @@ def partial_exp(data_path:str,
             result_i=dataset.PartialResults(y_true=test_data_i.y,
                                             y_partial=raw_partial_i)
             result_i.save(f"{out_path}/{i}.npz")
-#            raise Exception(raw_partial_i.shape)
     helper(data_path,exp_path)
+
+def get_result(exp_path,
+               acc=False):
+    @utils.DirFun({"in_path":0})
+    def helper(in_path):
+        partial_path=f"{in_path}/partial"
+        if(not os.path.isdir(partial_path)):
+            return None
+        results=[dataset.read_partial(path_i) 
+            for path_i in utils.top_files(partial_path) ]
+        if(acc):
+            return [result_i.get_metric("acc") for result_i in results]
+        return results
+    path_dict=helper(exp_path)
+    return utils.to_id_dir(path_dict,index=-1)
+
+def all_subsets(exp_path,subset_path):
+    result_dict=get_result(exp_path,
+                           acc=False)
+    utils.make_dir(subset_path)
+    for name_i,results_i in result_dict.items():
+        with open(f"{subset_path}/{name_i}.csv", 'w') as file:
+            cats=list(range(len(results_i[0])))
+            for subset_j in utils.powerset(cats):
+                acc_j=[result_k.selected_acc(subset_j) 
+                        for result_k in results_i]
+                mean_acc=np.mean(acc_j)
+                line_i=f"{subset_j},{mean_acc:.4f}"
+                file.write(line_i)
+                print(line_i)
 
 #def order_exp(data_path:str,
 #              exp_path:str,
@@ -124,15 +154,6 @@ def partial_exp(data_path:str,
 #        gc.collect()
 #    helper(data_path,exp_path,out_path)
 
-#def simple_pred(data_path,exp_path):
-#    data=dataset.read_csv(data_path)
-#    ens_factory=ens.ClassEnsFactory()
-#    ens_factory.init(data)
-#    acc=[]
-#    for split_i,clf_i in tqdm(model_iter(exp_path,ens_factory)):
-#        result_i=split_i.pred(data,clf_i)
-#        acc.append(result_i.get_acc())
-#    return np.mean(acc)
 
 def model_iter(exp_path,ens_factory):
     split_path=f"{exp_path}/splits"
@@ -158,6 +179,15 @@ def split_iter(exp_path):
         yield split_i
 
 if __name__ == '__main__':
-    partial_exp(data_path="../uci",
-                exp_path="exp_deep")
-#                out_path="results/RF")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--data_path", type=str, default="../uci")
+    parser.add_argument("--exp_path", type=str, default="exp_deep")
+    parser.add_argument("--subset_path", type=str, default="subsets")
+    parser.add_argument('--subset', action='store_true')
+    args = parser.parse_args()
+    if(args.subset):
+        all_subsets(exp_path=args.exp_path,
+                    subset_path=args.subset_path)
+    else:
+        partial_exp(data_path=args.data_path,
+                    exp_path=args.exp_path)

@@ -9,39 +9,22 @@ from scipy import stats
 import dataset,ens,exp,pred,utils
 
 def summary(exp_path):
-    acc_dict=get_result(exp_path,acc=True)
+    acc_dict=pred.get_result(exp_path,acc=True)
     for id_i,acc_i in acc_dict.items():
         if(acc_i):
             print(f"{id_i}-{np.mean(acc_i):.4f}")
 
-def get_result(exp_path,
-               acc=True):
-    @utils.DirFun({"in_path":0})
-    def helper(in_path):
-        partial_path=f"{in_path}/partial"
-        if(not os.path.isdir(partial_path)):
-            return None
-        results=[dataset.read_partial(path_i) 
-            for path_i in utils.top_files(partial_path) ]
-        if(acc):
-            return [result_i.get_metric("acc") for result_i in results]
-        return results
-    path_dict=helper(exp_path)
-    return utils.to_id_dir(path_dict,index=-1)
-
-
 def acc_plot(exp_path,
              ord_path):
     ord_dict=utils.read_json(ord_path)
-    result_dict=get_result(exp_path=exp_path,
-                           acc=False)
+    result_dict=pred.get_result(exp_path=exp_path,
+                                acc=False)
     acc_dict={}
     for id_i,card_i in ord_dict.items():
         results_i=result_dict[id_i]
         if(results_i):
             order_i=np.argsort(card_i)
             subsets_i=utils.selected_subsets(order_i,full=True)
-#            raise Exception(order_i)
             acc_i=[np.mean([result_k.selected_acc(subset_j)
                        for result_k in results_i]) 
                     for subset_j in subsets_i]
@@ -53,30 +36,20 @@ def acc_plot(exp_path,
               y_label="acc",
               n_iters=2)        
 
-#def acc_plot(json_path:str,
-#             title="acc_plot",
-#             n_iters=2):
-#    acc_dict=utils.read_json(json_path)
-#    make_plot(acc_dict,
+#def diff_plot(first_json:str,
+#              second_json:str,
+#              title="acc_plot",
+#              n_iters=2):
+#    first_dict=utils.read_json(first_json)
+#    second_dict=utils.read_json(second_json)
+#    diff_dict={ key_i:[ first_j-second_j  
+#                    for first_j,second_j in zip(diff_i,second_dict[key_i])]
+#                        for key_i,diff_i in first_dict.items()}
+#    make_plot(diff_dict,
 #              title=title,
-#              x_label="n_clf",      
-#              y_label="acc",
+#              x_label="n_clf",
+#              y_label="diff",
 #              n_iters=n_iters)
-
-def diff_plot(first_json:str,
-              second_json:str,
-              title="acc_plot",
-              n_iters=2):
-    first_dict=utils.read_json(first_json)
-    second_dict=utils.read_json(second_json)
-    diff_dict={ key_i:[ first_j-second_j  
-                    for first_j,second_j in zip(diff_i,second_dict[key_i])]
-                        for key_i,diff_i in first_dict.items()}
-    make_plot(diff_dict,
-              title=title,
-              x_label="n_clf",
-              y_label="diff",
-              n_iters=n_iters)
 
 def make_plot(acc_dict,
               title="acc_plot",

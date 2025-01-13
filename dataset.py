@@ -95,7 +95,7 @@ class PartialResults(object):
         self.y_partial=y_partial
 
     def __len__(self):
-        return len(self.y_partial)
+        return self.y_partial.shape[0]
 
     def vote(self):
         ballot= np.sum(self.y_partial,axis=0)

@@ -1,6 +1,7 @@
 import os.path
 import numpy as np
 from functools import wraps
+from itertools import chain, combinations
 import multiprocessing
 import time,json
 
@@ -129,3 +130,8 @@ def mean_dict(all_dicts):
 
 def extract_number(raw_str):
     return int("".join([str(d) for d in filter(str.isdigit, raw_str)]))
+
+def powerset(iterable):
+    xs = list(iterable)
+    return chain.from_iterable(combinations(xs,n) for n in range(len(xs)+1)
+                                                      if(n>0))
