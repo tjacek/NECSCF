@@ -58,7 +58,7 @@ def all_subsets(exp_path,subset_path):
                 acc_j=[result_k.selected_acc(subset_j) 
                         for result_k in results_i]
                 mean_acc=np.mean(acc_j)
-                line_i=f"{subset_j},{mean_acc:.4f}"
+                line_i=f"{subset_j},{mean_acc:.4f}\n"
                 file.write(line_i)
                 print(line_i)
 
