@@ -39,11 +39,11 @@ def get_result(exp_path,
         partial_path=f"{in_path}/partial"
         if(not os.path.isdir(partial_path)):
             return None
-        results=[dataset.read_partial(path_i) 
-            for path_i in utils.top_files(partial_path) ]
+        results=[ dataset.read_partial(path_i)
+                    for path_i in utils.top_files(partial_path) ]
         if(acc):
             return [result_i.get_metric("acc") for result_i in results]
-        return results
+        return dataset.PartialGroup(results)
     path_dict=helper(exp_path)
     return utils.to_id_dir(path_dict,index=-1)
 

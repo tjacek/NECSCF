@@ -13,20 +13,18 @@ class SubsetEval(object):
         self.ord_dict=ord_dict
         self.result_dict=result_dict
 
+    def iter(self,fun,order=True):
+        fun_dict={}
+        for key_i in self.keys():
+            order_i=self.ord_dict[key_i]
+            partial_i=self.result_dict[key_i]
+            if(order):
+                order_i=np.argsort(order_i)
+            fun_dict[key_i]=fun(partial_i,order_i)
+        return fun_dict
+
     def keys(self):
         return self.result_dict.keys()
-
-    def order_acc(self,name_i,reverse=False):
-        order_i=self.ord_dict[name_i]
-        order_i=np.argsort(order_i)
-        if(reverse):
-            order_i=np.flip(order_i)
-        results_i=self.result_dict[name_i]
-        subsets_i=utils.selected_subsets(order_i,full=True)
-        acc_i=[np.mean([result_k.selected_acc(subset_j)
-                       for result_k in results_i]) 
-                    for subset_j in subsets_i]
-        return np.array(acc_i)
 
 def read_subset_eval(ord_path,exp_path):
     ord_dict=utils.read_json(ord_path)
@@ -45,10 +43,13 @@ def acc_plot(exp_path,
              ord_path,
              reverse=True):
     subset_eval=read_subset_eval(ord_path,exp_path)
-    acc_dict={key_i:subset_eval.order_acc(key_i) 
-                  for key_i in subset_eval.keys()}
+    def helper(partial_i,order_i):
+        if(reverse):
+            order_i=np.flip(order_i)
+        return partial_i.order_acc(order_i,full=True)
+    acc_dict=subset_eval.iter(helper,order=True)    
     make_plot(acc_dict,
-              title="title",
+              title="Selection knn-purity",
               x_label="n_clf",      
               y_label="acc",
               n_iters=2)        
@@ -57,8 +58,12 @@ def diff_plot(exp_path,
              ord_path,
              reverse=True):
     subset_eval=read_subset_eval(ord_path,exp_path)
-    acc_dict={key_i:(subset_eval.order_acc(key_i,reverse=False)-subset_eval.order_acc(key_i,reverse=True))
-                  for key_i in subset_eval.keys()}
+    def helper(partial_i,order_i):   
+        acc=partial_i.order_acc(order_i,full=True)
+        flip_i=np.flip(order_i)
+        flip_acc= partial_i.order_acc(flip_i,full=True)
+        return acc - flip_acc
+    acc_dict=subset_eval.iter(helper,order=True)   
     make_plot(acc_dict,
               title="title",
               x_label="n_clf",      

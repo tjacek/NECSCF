@@ -89,6 +89,23 @@ class Result(object):
         y_pair=np.array([self.y_pred,self.y_true])
         np.savez(out_path,y_pair)
 
+class ResultGroup(object):
+    def __init__(self,results):
+        self.results=results
+
+    def get_acc(self):
+        return [result_j.get_acc() 
+                    for result_j in self.results]
+
+    def get_balanced(self):
+        return [result_j.get_balanced() 
+                    for result_j in self.results]
+
+    def save(self,out_path):
+        utils.make_dir(out_path)
+        for i,result_i in enumerate(self.results):
+            result_i.save(f"{out_path}/{i}")
+
 class PartialResults(object):
     def __init__(self,y_true,y_partial):
         self.y_true=y_true
@@ -116,23 +133,19 @@ class PartialResults(object):
     def save(self,out_path):
         np.savez(out_path,name1=self.y_partial,name2=self.y_true)
 
-class ResultGroup(object):
-    def __init__(self,results):
-        self.results=results
+class PartialGroup(object):
+    def __init__(self,partials):
+        self.partials=partials
 
-    def get_acc(self):
-        return [result_j.get_acc() 
-                    for result_j in self.results]
+    def get_acc(self,subset):
+        return np.mean([partial_i.selected_acc(subset) 
+                     for partial_i in self.partials])
 
-    def get_balanced(self):
-        return [result_j.get_balanced() 
-                    for result_j in self.results]
-
-    def save(self,out_path):
-        utils.make_dir(out_path)
-        for i,result_i in enumerate(self.results):
-            result_i.save(f"{out_path}/{i}")
-
+    def order_acc(self,order_i,full=True):
+        subsets=utils.selected_subsets(order_i,full=True)
+        acc=[self.get_acc(subset_j) for subset_j in subsets]
+        return np.array(acc)
+        
 def get_metric(metric_type):
     if(metric_type=="acc"):
         return accuracy_score
