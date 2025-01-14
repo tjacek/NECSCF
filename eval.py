@@ -8,6 +8,33 @@ import matplotlib.pyplot as plt
 from scipy import stats
 import dataset,ens,exp,pred,utils
 
+class SubsetEval(object):
+    def __init__(self,ord_dict,result_dict):
+        self.ord_dict=ord_dict
+        self.result_dict=result_dict
+
+    def keys(self):
+        return self.result_dict.keys()
+
+    def order_acc(self,name_i,reverse=False):
+        order_i=self.ord_dict[name_i]
+        order_i=np.argsort(order_i)
+        if(reverse):
+            order_i=np.flip(order_i)
+        results_i=self.result_dict[name_i]
+        subsets_i=utils.selected_subsets(order_i,full=True)
+        acc_i=[np.mean([result_k.selected_acc(subset_j)
+                       for result_k in results_i]) 
+                    for subset_j in subsets_i]
+        return np.array(acc_i)
+
+def read_subset_eval(ord_path,exp_path):
+    ord_dict=utils.read_json(ord_path)
+    result_dict=pred.get_result(exp_path=exp_path,
+                                acc=False)
+    return SubsetEval(ord_dict=ord_dict,
+                      result_dict=result_dict)
+
 def summary(exp_path):
     acc_dict=pred.get_result(exp_path,acc=True)
     for id_i,acc_i in acc_dict.items():
@@ -17,22 +44,21 @@ def summary(exp_path):
 def acc_plot(exp_path,
              ord_path,
              reverse=True):
-    ord_dict=utils.read_json(ord_path)
-    result_dict=pred.get_result(exp_path=exp_path,
-                                acc=False)
-    acc_dict={}
-    for id_i,card_i in ord_dict.items():
-        if( id_i in result_dict):
-            results_i=result_dict[id_i]
-            order_i=np.argsort(card_i)
-            if(reverse):
-                order_i=np.flip(order_i)
-            subsets_i=utils.selected_subsets(order_i,full=True)
-            acc_i=[np.mean([result_k.selected_acc(subset_j)
-                       for result_k in results_i]) 
-                    for subset_j in subsets_i]
-            acc_dict[id_i]=acc_i
-            print(acc_i)
+    subset_eval=read_subset_eval(ord_path,exp_path)
+    acc_dict={key_i:subset_eval.order_acc(key_i) 
+                  for key_i in subset_eval.keys()}
+    make_plot(acc_dict,
+              title="title",
+              x_label="n_clf",      
+              y_label="acc",
+              n_iters=2)        
+
+def diff_plot(exp_path,
+             ord_path,
+             reverse=True):
+    subset_eval=read_subset_eval(ord_path,exp_path)
+    acc_dict={key_i:(subset_eval.order_acc(key_i,reverse=False)-subset_eval.order_acc(key_i,reverse=True))
+                  for key_i in subset_eval.keys()}
     make_plot(acc_dict,
               title="title",
               x_label="n_clf",      
@@ -45,20 +71,6 @@ def cum_sum(card_i,order_i):
         total+= card_i[j]
         cum.append(total)
     return cum
-#def diff_plot(first_json:str,
-#              second_json:str,
-#              title="acc_plot",
-#              n_iters=2):
-#    first_dict=utils.read_json(first_json)
-#    second_dict=utils.read_json(second_json)
-#    diff_dict={ key_i:[ first_j-second_j  
-#                    for first_j,second_j in zip(diff_i,second_dict[key_i])]
-#                        for key_i,diff_i in first_dict.items()}
-#    make_plot(diff_dict,
-#              title=title,
-#              x_label="n_clf",
-#              y_label="diff",
-#              n_iters=n_iters)
 
 def make_plot(acc_dict,
               title="acc_plot",
@@ -106,7 +118,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     if(args.summary):
         summary(exp_path=args.exp_path)
-    acc_plot(exp_path=args.exp_path,
+    diff_plot(exp_path=args.exp_path,
              ord_path=args.ord_path)
 #    acc_plot("acc/reversed_full.json",
 #             title="reversed_full")
