@@ -52,13 +52,13 @@ def all_subsets(exp_path,subset_path):
                            acc=False)
     utils.make_dir(subset_path)
     for name_i,results_i in result_dict.items():
-        with open(f"{subset_path}/{name_i}.csv", 'w') as file:
+        with open(f"{subset_path}/{name_i}.txt", 'w') as file:
             cats=list(range(len(results_i[0])))
             for subset_j in utils.powerset(cats):
                 acc_j=[result_k.selected_acc(subset_j) 
                         for result_k in results_i]
                 mean_acc=np.mean(acc_j)
-                line_i=f"{subset_j},{mean_acc:.4f}\n"
+                line_i=f"{subset_j}-{mean_acc:.4f}\n"
                 file.write(line_i)
                 print(line_i)
 

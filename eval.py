@@ -15,15 +15,18 @@ def summary(exp_path):
             print(f"{id_i}-{np.mean(acc_i):.4f}")
 
 def acc_plot(exp_path,
-             ord_path):
+             ord_path,
+             reverse=True):
     ord_dict=utils.read_json(ord_path)
     result_dict=pred.get_result(exp_path=exp_path,
                                 acc=False)
     acc_dict={}
     for id_i,card_i in ord_dict.items():
-        results_i=result_dict[id_i]
-        if(results_i):
+        if( id_i in result_dict):
+            results_i=result_dict[id_i]
             order_i=np.argsort(card_i)
+            if(reverse):
+                order_i=np.flip(order_i)
             subsets_i=utils.selected_subsets(order_i,full=True)
             acc_i=[np.mean([result_k.selected_acc(subset_j)
                        for result_k in results_i]) 
@@ -36,6 +39,12 @@ def acc_plot(exp_path,
               y_label="acc",
               n_iters=2)        
 
+def cum_sum(card_i,order_i):
+    cum,total=[],0.0
+    for j in order_i:
+        total+= card_i[j]
+        cum.append(total)
+    return cum
 #def diff_plot(first_json:str,
 #              second_json:str,
 #              title="acc_plot",

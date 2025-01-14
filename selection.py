@@ -71,6 +71,7 @@ def size(subset_path="subsets"):
         size_i={j:np.mean(clf_j) 
                     for j,clf_j in enumerate(clf_sizes)
                        if(clf_j)}
+        print(name_i)
         print(size_i)
 #    sub_eval=get_subset(subset_path)
 #    subsets= sub_eval.by_size()
