@@ -77,6 +77,26 @@ def cum_sum(card_i,order_i):
         cum.append(total)
     return cum
 
+def purity_plot(exp_path,
+                ord_path):
+    subset_eval=read_subset_eval(ord_path,exp_path)
+    def helper(partial_i,purity_i):
+        order_i=np.argsort(purity_i)
+        acc_i=partial_i.order_acc(order_i,full=True)
+        cum_i=cum_sum(purity_i,order_i)
+        return cum_i,acc_i[:-1]
+    acc_dict=subset_eval.iter(helper,order=False)   
+    scatter_plot(acc_dict)
+
+def scatter_plot(acc_dict):
+    for key_i,(x,y) in acc_dict.items():
+        plt.title(key_i)
+        plt.xlabel("purity")
+        plt.ylabel("acc")
+        plt.plot(x, y)
+        plt.show()
+        plt.clf()
+
 def make_plot(acc_dict,
               title="acc_plot",
               x_label="n_clf",
@@ -119,14 +139,18 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--exp_path", type=str, default="exp_deep")
     parser.add_argument("--ord_path", type=str, default="ord/purity.json")
+    parser.add_argument('--type', default='purity', choices=['acc', 'diff', 'purity']) 
     parser.add_argument('--summary', action='store_true')
     args = parser.parse_args()
     if(args.summary):
         summary(exp_path=args.exp_path)
-    diff_plot(exp_path=args.exp_path,
-             ord_path=args.ord_path)
-#    acc_plot("acc/reversed_full.json",
-#             title="reversed_full")
-#    diff_plot("acc/base_full.json","acc/reversed_full.json",
-#              title="Low purity - high purity  (full)")
+    if(args.type=="acc"):
+        acc_plot(exp_path=args.exp_path,
+                  ord_path=args.ord_path)
+    if(args.type=="diff"):
+        diff_plot(exp_path=args.exp_path,
+                  ord_path=args.ord_path)
+    if(args.type=="purity"):
+        purity_plot(exp_path=args.exp_path,
+                    ord_path=args.ord_path)
 #    stat_test("results/RF","results/class_ens")
