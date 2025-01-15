@@ -31,7 +31,7 @@ def base_train(data_path:str,
 def model_exist(model_path,start):
     if(not os.path.isdir(model_path)):
          return False
-    first_path=f"{model_path}/{index}.keras"
+    first_path=f"{model_path}/{start}.keras"
     if(not os.path.isfile(first_path)):
         return False
     return True
