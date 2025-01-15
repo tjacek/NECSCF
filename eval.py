@@ -88,12 +88,21 @@ def purity_plot(exp_path,
     acc_dict=subset_eval.iter(helper,order=False)   
     scatter_plot(acc_dict)
 
+def single_plot(exp_path,
+                ord_path):
+    subset_eval=read_subset_eval(ord_path,exp_path)
+    def helper(partial_i,purity_i):
+        acc_i=partial_i.indv_acc()
+        return purity_i,acc_i
+    acc_dict=subset_eval.iter(helper,order=False)   
+    scatter_plot(acc_dict)
+
 def scatter_plot(acc_dict):
     for key_i,(x,y) in acc_dict.items():
         plt.title(key_i)
         plt.xlabel("purity")
         plt.ylabel("acc")
-        plt.plot(x, y)
+        plt.scatter(x, y)
         plt.show()
         plt.clf()
 
@@ -139,7 +148,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--exp_path", type=str, default="exp_deep")
     parser.add_argument("--ord_path", type=str, default="ord/purity.json")
-    parser.add_argument('--type', default='purity', choices=['acc', 'diff', 'purity']) 
+    parser.add_argument('--type', default='single', choices=['acc', 'diff', 'purity','single']) 
     parser.add_argument('--summary', action='store_true')
     args = parser.parse_args()
     if(args.summary):
@@ -152,5 +161,8 @@ if __name__ == '__main__':
                   ord_path=args.ord_path)
     if(args.type=="purity"):
         purity_plot(exp_path=args.exp_path,
+                    ord_path=args.ord_path)
+    if(args.type=="single"):
+        single_plot(exp_path=args.exp_path,
                     ord_path=args.ord_path)
 #    stat_test("results/RF","results/class_ens")

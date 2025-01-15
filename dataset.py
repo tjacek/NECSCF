@@ -145,7 +145,11 @@ class PartialGroup(object):
         subsets=utils.selected_subsets(order_i,full=True)
         acc=[self.get_acc(subset_j) for subset_j in subsets]
         return np.array(acc)
-        
+
+    def indv_acc(self):
+        n_clf=self.partials[0].y_partial.shape[0]-1
+        return [ self.get_acc([i]) for i in range(n_clf)]
+
 def get_metric(metric_type):
     if(metric_type=="acc"):
         return accuracy_score
