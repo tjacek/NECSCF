@@ -62,6 +62,22 @@ def all_subsets(exp_path,subset_path):
                 file.write(line_i)
                 print(line_i)
 
+def clf_pred(data_path,exp_path):
+    @utils.DirFun({"in_path":0,"exp_path":1})#,"out_path":2})
+    def helper(in_path,exp_path):
+        print(in_path)
+        data=dataset.read_csv(in_path)
+        clf_factory=base.ClfFactory(clf_type="RF")
+        clf_factory.init(data)
+        out_path=f"{exp_path}/RF"
+        utils.make_dir(out_path)
+        for j,split_j in tqdm(enumerate(split_iter(exp_path))):
+            clf_j=clf_factory()
+            result_j,_=split_j.eval(data,clf_j)
+            result_j.save(f"{out_path}/{j}")
+#        gc.collect()
+    helper(data_path,exp_path)
+
 #def order_exp(data_path:str,
 #              exp_path:str,
 #              json_path:str,
@@ -139,22 +155,6 @@ def all_subsets(exp_path,subset_path):
 #        p_i.start()
 #        p_i.join()
 
-#def clf_pred(data_path,exp_path,out_path):
-#    @utils.DirFun({"in_path":0,"exp_path":1,"out_path":2})
-#    def helper(in_path,exp_path,out_path):
-#        print(in_path)
-#        data=dataset.read_csv(in_path)
-#        clf_factory=base.ClfFactory(clf_type="RF")
-#        clf_factory.init(data)
-#        utils.make_dir(out_path)
-#        for j,split_j in tqdm(enumerate(split_iter(exp_path))):
-#            clf_j=clf_factory()
-#            result_j=split_j.eval(data,clf_j)
-#            result_j.save(f"{out_path}/{j}")
-#        gc.collect()
-#    helper(data_path,exp_path,out_path)
-
-
 def model_iter(exp_path,ens_factory):
     split_path=f"{exp_path}/splits"
     model_path=f"{exp_path}/class_ens"
@@ -178,16 +178,21 @@ def split_iter(exp_path):
                                        test_index=raw_split["arr_1"])
         yield split_i
 
+def get_exp(exp_type):
+    if(exp_type=='subset'):
+        return all_subsets
+    if(exp_type=='partial'):
+        return partial_exp
+    if(exp_type=='RF'):
+        return clf_pred
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_path", type=str, default="../uci")
     parser.add_argument("--exp_path", type=str, default="exp_deep")
     parser.add_argument("--subset_path", type=str, default="subsets")
-    parser.add_argument('--subset', action='store_true')
+    parser.add_argument('--type', default='RF', choices=['subsets', 'partial','RF']) 
     args = parser.parse_args()
-    if(args.subset):
-        all_subsets(exp_path=args.exp_path,
-                    subset_path=args.subset_path)
-    else:
-        partial_exp(data_path=args.data_path,
-                    exp_path=args.exp_path)
+    exp_fun=get_exp(exp_type=args.type)
+    exp_fun(data_path=args.data_path,
+            exp_path=args.exp_path)

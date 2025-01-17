@@ -161,7 +161,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     if(args.summary):
         summary(exp_path=args.exp_path)
-    plot_fun=get_plot_fun(plot_type)
+    plot_fun=get_plot_fun(plot_type=args.type)
     plot_fun(exp_path=args.exp_path,
              ord_path=args.ord_path)
 #    stat_test("results/RF","results/class_ens")
