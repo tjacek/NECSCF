@@ -6,6 +6,7 @@ import numpy as np
 import argparse,os.path
 import matplotlib.pyplot as plt
 from scipy import stats
+import pandas as pd
 import dataset,ens,exp,pred,utils
 
 class SubsetEval(object):
@@ -136,32 +137,50 @@ def get_plot_fun(plot_type:str):
     if(args.type=="single"):
         return single_plot 
 
-def stat_test(x_path,y_path):
-    @utils.DirFun({"x_path":0,"y_path":1},input_arg='x_path')
-    def helper(x_path,y_path):
-        print((x_path,y_path))
-        x_acc=dataset.read_result_group(x_path).get_acc()
-        y_acc=dataset.read_result_group(y_path).get_acc()
+def stat_test(exp_path,clf_x,clf_y):
+    @utils.DirFun({"in_path":0})
+    def helper(in_path):
+        x_path=f"{in_path}/{clf_x}"
+        y_path=f"{in_path}/{clf_y}"
+        x_acc=read_acc(x_path)
+        y_acc=read_acc(y_path)
         mean_x,mean_y=np.mean(x_acc),np.mean(y_acc)
         diff= mean_x-mean_y
         pvalue=stats.ttest_ind(x_acc,y_acc,
                                equal_var=False)[1]
-        return mean_x,mean_y,diff,pvalue
-    stat_dict=helper(x_path,y_path)
-    for name_i,stats_i in stat_dict.items():
-        print(name_i)
-        print(",".join([f"{stat_j:.4f}" for stat_j in stats_i]))
+        return mean_x,mean_y,diff,round(pvalue,6)
+    stat_dict=helper(exp_path)
+    lines=[]
+    for name_i,line_i in stat_dict.items():
+        line_i=[name_i.split("/")[-1]]+list(line_i)
+        lines.append(line_i)
+    df=pd.DataFrame.from_records(lines,
+                              columns=['data',clf_x,clf_y,"diff","pvalue"])
+    df=df.sort_values(by='diff')
+    df['sig']=df['pvalue'].apply(lambda pvalue_i:pvalue_i<0.05)
+    print(df)
+
+def read_acc(in_path):
+    if("partial" in in_path):
+        result=dataset.read_partial_group(in_path)
+    else:
+        result=dataset.read_result_group(in_path)
+    return result.get_acc() 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--exp_path", type=str, default="exp_deep")
     parser.add_argument("--ord_path", type=str, default="ord/purity.json")
-    parser.add_argument('--type', default='single', choices=['acc', 'diff', 'purity','single']) 
+    arg_type=['acc', 'diff', 'purity','single','stats']
+    parser.add_argument('--type', default='stats', choices=arg_type) 
     parser.add_argument('--summary', action='store_true')
     args = parser.parse_args()
     if(args.summary):
         summary(exp_path=args.exp_path)
     plot_fun=get_plot_fun(plot_type=args.type)
-    plot_fun(exp_path=args.exp_path,
-             ord_path=args.ord_path)
-#    stat_test("results/RF","results/class_ens")
+    if(args.type=='stats'):
+        stat_test(args.exp_path,"RF","partial")
+    else:
+        plot_fun(exp_path=args.exp_path,
+                 ord_path=args.ord_path)
+#    
