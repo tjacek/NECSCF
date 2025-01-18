@@ -19,6 +19,8 @@ def partial_exp(data_path:str,
         if(not os.path.isdir(model_path)):
             return None
         out_path=f"{exp_path}/partial"
+        if(os.path.isdir(out_path)):
+            return None
         data=dataset.read_csv(in_path)
         ens_factory=ens.ClassEnsFactory()
         ens_factory.init(data)
@@ -191,7 +193,7 @@ if __name__ == '__main__':
     parser.add_argument("--data_path", type=str, default="../uci")
     parser.add_argument("--exp_path", type=str, default="exp_deep")
     parser.add_argument("--subset_path", type=str, default="subsets")
-    parser.add_argument('--type', default='RF', choices=['subsets', 'partial','RF']) 
+    parser.add_argument('--type', default='partial', choices=['subsets', 'partial','RF']) 
     args = parser.parse_args()
     exp_fun=get_exp(exp_type=args.type)
     exp_fun(data_path=args.data_path,
