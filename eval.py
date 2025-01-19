@@ -42,7 +42,8 @@ def summary(exp_path):
 
 def acc_plot(exp_path,
              ord_path,
-             reverse=True):
+             reverse=True,
+             subsets=2):
     subset_eval=read_subset_eval(ord_path,exp_path)
     def helper(partial_i,order_i):
         if(reverse):
@@ -53,7 +54,7 @@ def acc_plot(exp_path,
               title="Selection knn-purity",
               x_label="n_clf",      
               y_label="acc",
-              n_iters=2)        
+              subsets=subsets)        
 
 def diff_plot(exp_path,
              ord_path,
@@ -111,10 +112,13 @@ def make_plot(acc_dict,
               title="acc_plot",
               x_label="n_clf",
               y_label="acc",
-              n_iters=2):
-    all_subplots=[[] for k in range(n_iters)]
-    for i,name_i in enumerate(acc_dict.keys()):
-        all_subplots[(i%n_iters)].append(name_i)
+              subsets=2):
+    if(type(subsets)==int):
+        all_subplots=[[] for k in range(subsets)]
+        for i,name_i in enumerate(acc_dict.keys()):
+            all_subplots[(i%subsets)].append(name_i)
+    else:
+        all_subplots=list(subsets.values())
     for i,subplot_i in enumerate(all_subplots):
         _, ax_k = plt.subplots()
         for name_j in subplot_i:
@@ -127,7 +131,7 @@ def make_plot(acc_dict,
         plt.ylabel(y_label)
         plt.legend()
         plt.show()
-        plt.clf() 
+        plt.clf()  
 
 def get_plot_fun(plot_type:str):
     if(args.type=="acc"):
@@ -165,7 +169,7 @@ def stat_test(exp_path,clf_x,clf_y):
     sig_df=df[df["sig"]==True]
     div_dict['better']=sig_df['data'][ sig_df['diff']<0].tolist()
     div_dict['worse']=sig_df['data'][ sig_df['diff']>0].tolist()
-    print(div_dict)
+    return div_dict
 
 def read_acc(in_path):
     if("partial" in in_path):
@@ -184,9 +188,10 @@ if __name__ == '__main__':
     args = parser.parse_args()
     if(args.summary):
         summary(exp_path=args.exp_path)
-    if(args.type=='stats'):
-        stat_test(args.exp_path,"RF","partial")
-    else:
-        plot_fun=get_plot_fun(plot_type=args.type)
-        plot_fun(exp_path=args.exp_path,
-                 ord_path=args.ord_path)  
+#    if(args.type=='stats'):
+    subsets=stat_test(args.exp_path,"RF","partial")
+#    else:
+    plot_fun=get_plot_fun(plot_type=args.type)
+    plot_fun(exp_path=args.exp_path,
+             ord_path=args.ord_path,
+             subsets=subsets)  
