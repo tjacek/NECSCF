@@ -130,6 +130,8 @@ def make_plot(acc_dict,
         plt.clf() 
 
 def get_plot_fun(plot_type:str):
+    if(args.type=="acc"):
+        return acc_plot
     if(args.type=="diff"):
         return diff_plot
     if(args.type=="purity"):
@@ -159,6 +161,11 @@ def stat_test(exp_path,clf_x,clf_y):
     df=df.sort_values(by='diff')
     df['sig']=df['pvalue'].apply(lambda pvalue_i:pvalue_i<0.05)
     print(df)
+    div_dict={'no_sig':df['data'][df['sig']==False].tolist()}
+    sig_df=df[df["sig"]==True]
+    div_dict['better']=sig_df['data'][ sig_df['diff']<0].tolist()
+    div_dict['worse']=sig_df['data'][ sig_df['diff']>0].tolist()
+    print(div_dict)
 
 def read_acc(in_path):
     if("partial" in in_path):
@@ -177,10 +184,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
     if(args.summary):
         summary(exp_path=args.exp_path)
-    plot_fun=get_plot_fun(plot_type=args.type)
     if(args.type=='stats'):
         stat_test(args.exp_path,"RF","partial")
     else:
+        plot_fun=get_plot_fun(plot_type=args.type)
         plot_fun(exp_path=args.exp_path,
-                 ord_path=args.ord_path)
-#    
+                 ord_path=args.ord_path)  
