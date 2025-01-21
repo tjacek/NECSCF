@@ -6,7 +6,7 @@ import numpy as np
 import tensorflow as tf
 import itertools
 import pandas as pd
-import argparse,os
+import argparse,os,json
 import base,dataset,deep,ens,preproc,utils
 
 def single_exp(in_path,
@@ -16,11 +16,18 @@ def single_exp(in_path,
     data_split=get_splits(in_path,out_path)
     ens_path=f'{out_path}/{ens_type}'
     clf_factory=ens.get_ens(ens_type)
-#    clf_factory.init(data_split.data)
     utils.make_dir(ens_path)
-    for clf_i,history_i in data_split.get_clfs(clf_factory):
+    model_path=f"{ens_path}/models"
+    utils.make_dir(model_path)
+    history_path=f"{ens_path}/history"
+    utils.make_dir(history_path)
+    for i,(clf_i,history_i) in enumerate(data_split.get_clfs(clf_factory)):
         print(type(clf_i))
         print(type(history_i))
+        clf_i.save(f"{model_path}/{i}.keras")
+        hist_dict_i=utils.history_to_dict(history_i)
+        with open(f"{history_path}/{i}", 'w') as f:
+            json.dump(hist_dict_i, f)
 #def single_exp(in_path,
 #               out_path,
 #               ens_type="class_ens"):
