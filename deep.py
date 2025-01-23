@@ -106,7 +106,14 @@ def keras_loss( class_weights):
         return losses
     return loss
 
-def get_callback():
+def get_callback(callback_type):
+    if(callback_type=="min"):
+        return MinAccEarlyStopping
+    if(callback_type=="all"):
+        return AllAccEarlyStopping
+    raise Exception(f"Unknow callback type{callback_type}")
+
+def basic_callback():
     return tf.keras.callbacks.EarlyStopping(monitor='accuracy', 
                                             patience=15)
 
@@ -143,7 +150,7 @@ class MinAccEarlyStopping(keras.callbacks.Callback):
 class AllAccEarlyStopping(keras.callbacks.Callback):
     def __init__(self,n_clfs, 
                       patience=15,
-                      verbose=1):
+                      verbose=0):
         super().__init__()
         self.patience = patience
         self.best_weights = None
