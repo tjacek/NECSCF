@@ -12,7 +12,6 @@ def ensemble_builder(params,
                      full=True):
     input_layer = Input(shape=(params['dims']))
     class_dict=params['class_weights']
-#    selected_classes=hyper_params['selected_classes']
     if(selected_classes is None):
         selected_classes=list(range(params['n_cats']))   
     single_cls,loss,metrics=[],{},{}
@@ -147,17 +146,22 @@ class MinAccEarlyStopping(keras.callbacks.Callback):
             self.model.stop_training = True
             self.model.set_weights(self.best_weights)
 
-class AllAccEarlyStopping(keras.callbacks.Callback):
+
+class ImprovEarlyStopping(keras.callbacks.Callback):
     def __init__(self,n_clfs, 
                       patience=15,
+                      eps=0.0001,
+                      good_acc=0.95,
                       verbose=0):
         super().__init__()
         self.patience = patience
         self.best_weights = None
+        self.eps=eps
+        self.good_acc=good_acc
         self.verbose=verbose
         self.best=np.zeros(n_clfs,dtype=float)
         self.wait=np.zeros(n_clfs,dtype=int)
-
+    
     def on_train_begin(self, logs=None):
         self.stopped_epoch = 0
 
@@ -165,8 +169,12 @@ class AllAccEarlyStopping(keras.callbacks.Callback):
         for key_i in logs.keys():
             if("accuracy" in key_i):
                 i=utils.extract_number(key_i)
+                if(self.best[i]>self.good_acc):
+                    self.wait[i]=self.patience
+                    continue
                 current_i=logs[key_i]
-                if(self.best[i]<current_i):
+                diff_i= current_i-self.best[i]
+                if(diff_i>= self.eps):
                     self.best[i]=current_i
                     self.wait[i]=0
                 else:
@@ -182,3 +190,39 @@ class AllAccEarlyStopping(keras.callbacks.Callback):
             self.model.set_weights(self.best_weights)
         else:
             self.best_weights = self.model.get_weights()
+
+#class AllAccEarlyStopping(keras.callbacks.Callback):
+#    def __init__(self,n_clfs, 
+#                      patience=15,
+#                      verbose=0):
+#        super().__init__()
+#        self.patience = patience
+#        self.best_weights = None
+#        self.verbose=verbose
+#        self.best=np.zeros(n_clfs,dtype=float)
+#        self.wait=np.zeros(n_clfs,dtype=int)
+
+#    def on_train_begin(self, logs=None):
+#        self.stopped_epoch = 0
+
+#    def on_epoch_end(self, epoch, logs=None):
+#        for key_i in logs.keys():
+#            if("accuracy" in key_i):
+#                i=utils.extract_number(key_i)
+#                current_i=logs[key_i]
+#                if(self.best[i]<current_i):
+#                    self.best[i]=current_i
+#                    self.wait[i]=0
+#                else:
+#                    self.wait[i]+=1
+#        if(self.verbose):
+#            print(f"epoch:{epoch}")
+#            print(self.best)
+#            print(self.wait)
+#        min_wait=np.amin(self.wait)
+#        if(min_wait>self.patience):
+#            self.stopped_epoch = epoch
+#            self.model.stop_training = True
+#            self.model.set_weights(self.best_weights)
+#        else:
+#            self.best_weights = self.model.get_weights()
