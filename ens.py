@@ -2,20 +2,30 @@ import numpy as np
 import tensorflow as tf
 import base,dataset,deep
 
-def get_ens(ens_type:str):
+def get_custom_ens(callback_type="min",verbose=0)
+    callback_class=get_callback(callback_type)
+    callback=callback_class(verbose=verbose)
+    hyper_params=default_hyperparams()
+    hyper_params["callback"]=callback
+    return get_ens(ens_type="class_ens",hyper_params)
+    
+def get_ens(ens_type:str,hyper_params=None):
     if(ens_type=="deep"):
-        return DeepFactory()
+        return DeepFactory(hyper_params)
     if(ens_type=="class_ens"):
-        return ClassEnsFactory()
+        return ClassEnsFactory(hyper_params)
     if(ens_type=="RF"):
         return base.ClfFactory(ens_type)
     raise Exception(f"Unknow ens type{ens_type}")
 
+def default_hyperparams():
+    return {'layers':2, 'units_0':2,
+            'units_1':1,'batch':False}
+
 class DeepFactory(object):
     def __init__(self,hyper_params=None):
         if(hyper_params is None):
-           hyper_params={'layers':2, 'units_0':2,
-                         'units_1':1,'batch':False}
+           hyper_params=default_hyperparams()
         self.params=None
         self.hyper_params=hyper_params
     
