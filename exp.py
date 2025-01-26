@@ -7,7 +7,7 @@ import tensorflow as tf
 import itertools
 import pandas as pd
 import argparse,os,json
-import base,dataset,deep,ens,preproc,utils
+import base,dataset,deep,ens,pred,utils
 
 def single_exp(in_path,
                out_path,
@@ -29,14 +29,31 @@ def single_exp(in_path,
         with open(f"{history_path}/{i}", 'w') as f:
             json.dump(hist_dict_i, f)
 
-def eval_exp(exp_path="single_exp"):
+def eval_exp(data_path,exp_path="single_exp"):
+    data_splits=get_splits(data_path,exp_path)
     for path_i in utils.top_files(exp_path):
         id_i=path_i.split("/")[-1]
         if(id_i!="splits"):
-            results_i=dataset.read_result_group(path_i)
-            print(id_i)
-            print(f"Acc:{np.mean(results_i.get_acc())}")
-            print(f"Balance{np.mean(results_i.get_balanced())}")            
+            partial_path=f"{path_i}/partial"
+            if(not os.path.isdir(partial_path)):
+                print(f"Make {partial_path}")
+                utils.make_dir(partial_path)
+                clf_factory=ens.get_ens("class_ens")
+                for j,split_j in enumerate(data_splits.splits):
+                    test_data_j=data_splits.data.selection(split_j.test_index)
+                    clf_j=clf_factory.read(f"{path_i}/models/{j}.keras")
+                    raw_partial_j=clf_j.partial_predict(test_data_j.X)
+                    result_j=dataset.PartialResults(y_true=test_data_j.y,
+                                                    y_partial=raw_partial_j)
+                    result_j.save(f"{partial_path}/{j}.npz")
+            else:
+                partial=dataset.read_partial_group(partial_path)
+                print(id_i)
+                print(f"Acc:{np.mean(partial.get_acc())}")
+#            results_i=dataset.read_result_group(path_i)
+#            print(id_i)
+#            print(f"Acc:{np.mean(results_i.get_acc())}")
+#            print(f"Balance{np.mean(results_i.get_balanced())}")            
 
 def get_splits(in_path,out_path):
     split_path=f"{out_path}/splits"
@@ -71,21 +88,7 @@ def selection_exp(in_path,
     acc=np.array(acc)
     print(np.mean(acc,axis=0))
 
-def history_exp(in_path):
-    data_split=base.get_splits(data_path=in_path,
-                                    n_splits=10,
-                                    n_repeats=1,
-                                    split_type="unaggr")
-    clf_factory=ens.get_ens(ens_type="class_ens")
-    clf_factory.init(data_split.data)
-    clf=clf_factory()
-    clf.verbose=2
-    train_data=data_split.selection(i=0,train=True)   
-    history=clf.fit(X=train_data.X,
-                    y=train_data.y)
-    hist_dict=utils.history_to_dict(history)
-    for key_i,acc_i in hist_dict.items():
-        print(f"{key_i}-{acc_i:.4f}")
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -95,9 +98,10 @@ if __name__ == '__main__':
     parser.add_argument('--eval', action='store_true')
     args = parser.parse_args()
     if(args.eval):
-        single_exp(in_path=args.input,
-               out_path=args.output,
-               ens_type=args.ens_type)
-#        eval_exp(exp_path=args.output)
+#        single_exp(in_path=args.input,
+#               out_path=args.output,
+#               ens_type=args.ens_type)
+        eval_exp(data_path=args.input,
+                 exp_path=args.output)
 #    else:
 #        history_exp(in_path=args.input)

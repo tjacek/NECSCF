@@ -157,9 +157,9 @@ def clf_pred(data_path,exp_path):
 #        p_i.start()
 #        p_i.join()
 
-def model_iter(exp_path,ens_factory):
-    split_path=f"{exp_path}/splits"
-    model_path=f"{exp_path}/class_ens"
+def model_iter(split_path,model_path,ens_factory):
+#    split_path=f"{exp_path}/splits"
+#    model_path=f"{exp_path}/class_ens"
     for i,path_i in enumerate(utils.top_files(model_path)):
         split_i=f"{split_path}/{i}.npz"
         raw_split=np.load(split_i)

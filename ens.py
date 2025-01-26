@@ -68,9 +68,16 @@ class Deep(object):
 
 class ClassEnsFactory(DeepFactory):
 
-  def __call__(self):
+    def __call__(self):
         return ClassEns(params=self.params,
                         hyper_params=self.hyper_params)
+
+    def read(self,model_path):
+        model_i=tf.keras.models.load_model(model_path,
+                                           custom_objects={"loss":deep.weighted_loss})
+        clf_i=self()
+        clf_i.model=model_i
+        return clf_i
 
 class ClassEns(object):
     def __init__(self, params,
