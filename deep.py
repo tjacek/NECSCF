@@ -109,7 +109,7 @@ def get_callback(callback_type):
     if(callback_type=="min"):
         return MinAccEarlyStopping
     if(callback_type=="all"):
-        return AllAccEarlyStopping
+        return ImprovEarlyStopping
     raise Exception(f"Unknow callback type{callback_type}")
 
 def basic_callback():
@@ -148,7 +148,7 @@ class MinAccEarlyStopping(keras.callbacks.Callback):
 
 
 class ImprovEarlyStopping(keras.callbacks.Callback):
-    def __init__(self,n_clfs, 
+    def __init__(self,#n_clfs, 
                       patience=15,
                       eps=0.0001,
                       good_acc=0.95,
@@ -159,6 +159,8 @@ class ImprovEarlyStopping(keras.callbacks.Callback):
         self.eps=eps
         self.good_acc=good_acc
         self.verbose=verbose
+        
+    def init(self,n_clfs):
         self.best=np.zeros(n_clfs,dtype=float)
         self.wait=np.zeros(n_clfs,dtype=int)
     
@@ -170,7 +172,7 @@ class ImprovEarlyStopping(keras.callbacks.Callback):
             if("accuracy" in key_i):
                 i=utils.extract_number(key_i)
                 if(self.best[i]>self.good_acc):
-                    self.wait[i]=self.patience
+                    self.wait[i]=self.patience+1
                     continue
                 current_i=logs[key_i]
                 diff_i= current_i-self.best[i]

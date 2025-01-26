@@ -2,12 +2,13 @@ import numpy as np
 import tensorflow as tf
 import base,dataset,deep
 
-def get_custom_ens(callback_type="min",verbose=0)
-    callback_class=get_callback(callback_type)
+def get_custom_ens(callback_type="all",verbose=0):
+    callback_class=deep.get_callback(callback_type)
     callback=callback_class(verbose=verbose)
     hyper_params=default_hyperparams()
     hyper_params["callback"]=callback
-    return get_ens(ens_type="class_ens",hyper_params)
+    return get_ens(ens_type="class_ens",
+                   hyper_params=hyper_params)
     
 def get_ens(ens_type:str,hyper_params=None):
     if(ens_type=="deep"):
@@ -38,7 +39,6 @@ class DeepFactory(object):
     def __call__(self):
         return Deep(params=self.params,
                     hyper_params=self.hyper_params)
-
 
 class Deep(object):
     def __init__(self, params,
@@ -89,13 +89,15 @@ class ClassEns(object):
                                              hyper_params=self.hyper_params)
         y=[tf.one_hot(y,depth=self.params['n_cats'])
                 for _ in range(data.n_cats()+1)]
-        callback=[deep.AllAccEarlyStopping(n_clfs=data.n_cats()+1, 
-                                           patience=15)]
+        callback=self.hyper_params["callback"]
+        callback.init(data.n_cats()+1)
+#        callback=[deep.AllAccEarlyStopping(n_clfs=data.n_cats()+1, 
+#                                           patience=15)]
         return self.model.fit(x=X,
                        y=y,
                        epochs=self.params['n_epochs'],
                        batch_size=self.params['dims'][0],
-                       callbacks= callback,
+                       callbacks=callback,
                        verbose=self.verbose)
 
     def predict(self,X):

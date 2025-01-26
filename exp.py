@@ -15,7 +15,7 @@ def single_exp(in_path,
     utils.make_dir(out_path)
     data_split=get_splits(in_path,out_path)
     ens_path=f'{out_path}/{ens_type}'
-    clf_factory=ens.get_ens(ens_type)
+    clf_factory=ens.get_custom_ens(callback_type="all",verbose=1)#ens.get_ens(ens_type)
     utils.make_dir(ens_path)
     model_path=f"{ens_path}/models"
     utils.make_dir(model_path)
@@ -28,24 +28,6 @@ def single_exp(in_path,
         hist_dict_i=utils.history_to_dict(history_i)
         with open(f"{history_path}/{i}", 'w') as f:
             json.dump(hist_dict_i, f)
-#def single_exp(in_path,
-#               out_path,
-#               ens_type="class_ens"):
-#    utils.make_dir(out_path)
-#    data_split=get_splits(in_path,out_path)
-#    result_path=f"{out_path}/{ens_type}"
-#    if(os.path.isdir(result_path)):
-#        result_group=dataset.read_result_group(result_path)
-#    else:
-#        print(f"Train ens{ens_type}")
-#        clf_factory=ens.get_ens(ens_type)
-#        clf_factory.init(data_split.data)
-#        result_group,history=data_split(clf_factory)
-#        result_group.save(result_path)
-#        history=utils.mean_dict(history)
-#        print(history)
-#    print(f"Acc:{result_group.get_acc()}")
-#    print(f"Balance{result_group.get_acc()}")
 
 def eval_exp(exp_path="single_exp"):
     for path_i in utils.top_files(exp_path):
@@ -107,8 +89,8 @@ def history_exp(in_path):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input", type=str, default="../uci/vehicle")
-    parser.add_argument("--output", type=str, default="single_exp")
+    parser.add_argument("--input", type=str, default="../uci/wall-following")
+    parser.add_argument("--output", type=str, default="single_exp/wall-following")
     parser.add_argument("--ens_type", type=str, default="class_ens")
     parser.add_argument('--eval', action='store_true')
     args = parser.parse_args()
