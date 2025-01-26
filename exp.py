@@ -12,11 +12,15 @@ import base,dataset,deep,ens,pred,utils
 def single_exp(in_path,
                out_path,
                ens_type="class_ens"):
+    callback_type="total"
     utils.make_dir(out_path)
     data_split=get_splits(in_path,out_path)
     ens_path=f'{out_path}/{ens_type}'
-    clf_factory=ens.get_custom_ens(callback_type="all",verbose=1)#ens.get_ens(ens_type)
+    clf_factory=ens.get_custom_ens(callback_type=callback_type,
+                                   verbose=1)
     utils.make_dir(ens_path)
+    with open(f"{ens_path}/info.js", 'w') as f:
+        json.dump({"ens":ens_type,"callback":callback_type}, f)
     model_path=f"{ens_path}/models"
     utils.make_dir(model_path)
     history_path=f"{ens_path}/history"
