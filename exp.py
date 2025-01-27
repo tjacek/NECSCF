@@ -43,18 +43,36 @@ def eval_exp(data_path,exp_path="single_exp"):
             if(not os.path.isdir(partial_path)):
                 print(f"Make {partial_path}")
                 utils.make_dir(partial_path)
-                clf_factory=ens.get_ens("class_ens")
-                for j,split_j in enumerate(data_splits.splits):
-                    test_data_j=data_splits.data.selection(split_j.test_index)
-                    clf_j=clf_factory.read(f"{path_i}/models/{j}.keras")
-                    raw_partial_j=clf_j.partial_predict(test_data_j.X)
-                    result_j=dataset.PartialResults(y_true=test_data_j.y,
-                                                    y_partial=raw_partial_j)
-                    result_j.save(f"{partial_path}/{j}.npz")
+                make_results(path_i,partial_path,data_splits)
+            info_dict=utils.read_json(f"{path_i}/info.js")
+            if(info_dict['ens']=='MLP'):
+                partial=dataset.read_result_group(partial_path)
             else:
                 partial=dataset.read_partial_group(partial_path)
-                print(id_i)
-                print(f"Acc:{np.mean(partial.get_acc())}")      
+            print(id_i)
+            print(f"Acc:{np.mean(partial.get_acc())}")      
+
+def make_results(path_i,partial_path,data_splits):
+    info_dict=utils.read_json(f"{path_i}/info.js")    
+    if(info_dict['ens']=='class_ens'):
+        clf_factory=ens.get_ens("class_ens")
+        for j,split_j in enumerate(data_splits.splits):
+            test_data_j=data_splits.data.selection(split_j.test_index)
+            clf_j=clf_factory.read(f"{path_i}/models/{j}.keras")
+            raw_partial_j=clf_j.partial_predict(test_data_j.X)
+            result_j=dataset.PartialResults(y_true=test_data_j.y,
+                                        y_partial=raw_partial_j)
+            result_j.save(f"{partial_path}/{j}.npz")
+    else:
+        clf_factory=ens.get_ens("MLP")
+        for j,split_j in enumerate(data_splits.splits):
+            test_data_j=data_splits.data.selection(split_j.test_index)
+            clf_j=clf_factory.read(f"{path_i}/models/{j}.keras")
+            raw_result_j=clf_j.predict(test_data_j.X)
+            result_j=dataset.Result(y_true=test_data_j.y,
+                                     y_pred=raw_result_j)
+            result_j.save(f"{partial_path}/{j}.npz")
+    return info_dict['ens']
 
 def get_splits(in_path,out_path):
     split_path=f"{out_path}/splits"
@@ -112,10 +130,10 @@ if __name__ == '__main__':
     parser.add_argument('--train', action='store_true')
     parser.add_argument('--history', action='store_true')
     args = parser.parse_args()
-    if(args.train):
-        single_exp(in_path=args.input,
-               out_path=args.output,
-               ens_type=args.ens_type)
+#    if(args.train):
+#        single_exp(in_path=args.input,
+#               out_path=args.output,
+#               ens_type=args.ens_type)
     eval_exp(data_path=args.input,
              exp_path=args.output)
     if(args.history):
