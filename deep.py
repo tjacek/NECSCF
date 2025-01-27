@@ -110,6 +110,8 @@ def get_callback(callback_type):
         return MinAccEarlyStopping
     if(callback_type=="all"):
         return ImprovEarlyStopping
+    if(callback_type=="total"):
+        return TotalEarlyStopping
     raise Exception(f"Unknow callback type{callback_type}")
 
 def basic_callback():
@@ -123,6 +125,9 @@ class MinAccEarlyStopping(keras.callbacks.Callback):
         self.patience = patience
         self.best_weights = None
         self.verbose=verbose
+
+    def init(self,n_clfs):
+        pass 
 
     def on_train_begin(self, logs=None):
         self.wait = 0
