@@ -7,11 +7,11 @@ def get_custom_ens(callback_type="all",verbose=0):
     callback=callback_class(verbose=verbose)
     hyper_params=default_hyperparams()
     hyper_params["callback"]=callback
-    return get_ens(ens_type="class_ens",
+    return get_ens(ens_type="MLP",
                    hyper_params=hyper_params)
     
 def get_ens(ens_type:str,hyper_params=None):
-    if(ens_type=="deep"):
+    if(ens_type=="MLP"):
         return DeepFactory(hyper_params)
     if(ens_type=="class_ens"):
         return ClassEnsFactory(hyper_params)
@@ -51,20 +51,26 @@ class Deep(object):
         self.verbose=verbose
 
     def fit(self,X,y):
-        data=dataset.Dataset(X,y)
         if(self.model is None):
             self.model=deep.single_builder(params=self.params,
                                            hyper_params=self.hyper_params)
         y=tf.one_hot(y,depth=self.params['n_cats'])
+        self.model.summary()
+#        raise Exception((data.X.shape,y.shape))
+#        raise Exception(X.shape)
         return self.model.fit(x=X,
                               y=y,
-                              callbacks=deep.get_callback(),
+                              epochs=self.params['n_epochs'],
+                              callbacks=deep.basic_callback(),
                               verbose=self.verbose)
 
     def predict(self,X):
         y=self.model.predict(X,
                              verbose=self.verbose)
         return np.argmax(y,axis=1)
+
+    def save(self,out_path):
+        self.model.save(out_path) 
 
 class ClassEnsFactory(DeepFactory):
 
@@ -98,8 +104,6 @@ class ClassEns(object):
                 for _ in range(data.n_cats()+1)]
         callback=self.hyper_params["callback"]
         callback.init(data.n_cats()+1)
-#        callback=[deep.AllAccEarlyStopping(n_clfs=data.n_cats()+1, 
-#                                           patience=15)]
         return self.model.fit(x=X,
                        y=y,
                        epochs=self.params['n_epochs'],

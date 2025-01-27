@@ -115,7 +115,9 @@ def to_id_dir(path_dict,index=-1):
 
 def history_to_dict(history):
     history=history.history
-    hist_dict={'n_epochs':len(history["out_0_accuracy"])}
+    key=list(history.keys())[0]
+#    raise Exception(key)
+    hist_dict={'n_epochs':len(history[key])}
     for key_i in history.keys():
         hist_dict[key_i]=history[key_i][-1]
     return hist_dict

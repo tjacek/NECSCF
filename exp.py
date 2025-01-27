@@ -12,11 +12,11 @@ import base,dataset,deep,ens,pred,utils
 
 def single_exp(in_path,
                out_path,
-               ens_type="class_ens"):
+               ens_type="MLP"):
     callback_type="min"
     utils.make_dir(out_path)
     data_split=get_splits(in_path,out_path)
-    ens_path=f'{out_path}/{callback_type}'
+    ens_path=f'{out_path}/{ens_type}'
     clf_factory=ens.get_custom_ens(callback_type=callback_type,
                                    verbose=1)
     utils.make_dir(ens_path)
@@ -108,7 +108,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", type=str, default="../uci/wall-following")
     parser.add_argument("--output", type=str, default="single_exp/wall-following")
-    parser.add_argument("--ens_type", type=str, default="class_ens")
+    parser.add_argument("--ens_type", type=str, default="MLP")
     parser.add_argument('--train', action='store_true')
     parser.add_argument('--history', action='store_true')
     args = parser.parse_args()

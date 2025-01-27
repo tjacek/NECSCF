@@ -56,9 +56,10 @@ def single_builder(params,
                        class_dict=class_dict)
     model= Model(inputs=input_layer, 
                  outputs=nn)
-    model.compile(loss=loss,
+    model.compile(loss=loss, #'categorical_crossentropy',
                   optimizer='adam',
-                  metrics=['accuracy'])
+                  metrics=['accuracy'],
+                  jit_compile=False)
     return model
 
 def nn_builder(params,
