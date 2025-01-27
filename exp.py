@@ -7,6 +7,7 @@ import tensorflow as tf
 import itertools
 import pandas as pd
 import argparse,os,json
+from collections import defaultdict
 import base,dataset,deep,ens,pred,utils
 
 def single_exp(in_path,
@@ -53,11 +54,7 @@ def eval_exp(data_path,exp_path="single_exp"):
             else:
                 partial=dataset.read_partial_group(partial_path)
                 print(id_i)
-                print(f"Acc:{np.mean(partial.get_acc())}")
-#            results_i=dataset.read_result_group(path_i)
-#            print(id_i)
-#            print(f"Acc:{np.mean(results_i.get_acc())}")
-#            print(f"Balance{np.mean(results_i.get_balanced())}")            
+                print(f"Acc:{np.mean(partial.get_acc())}")      
 
 def get_splits(in_path,out_path):
     split_path=f"{out_path}/splits"
@@ -74,25 +71,38 @@ def get_splits(in_path,out_path):
             split_i.save(f"{split_path}/{i}")
         return data_split
 
-def selection_exp(in_path,
-                  out_path):
-    utils.make_dir(out_path)
-    data_split=get_splits(in_path,out_path)
-    clf_factory=ens.get_ens("class_ens")()
-    acc=[]
-    for i,ens_i in enumerate(data_split.get_clfs(clf_factory)):
-        split_i=data_split.splits[i]
-        print(str(split_i))
-        test_data=data_split.data.selection(split_i.test_index)
-        y_partial=ens_i.partial_predict(test_data.X)
-        y_partial=np.array(y_partial)
-        result_i=dataset.PartialResults(y_true=test_data.y,
-                                        y_partial=y_partial)
-        acc.append(result_i.get_metric())
-    acc=np.array(acc)
-    print(np.mean(acc,axis=0))
+def show_history(exp_path):
+    for path_i in utils.top_files(exp_path):
+        history_i=f"{path_i}/history"
+        if os.path.exists(history_i):
+            acc_dict=defaultdict(lambda:[])
+            hist_dicts=[utils.read_json(path_j) 
+                        for path_j in utils.top_files(history_i)]
+            for key_i,value_i in hist_dicts[0].items():
+                for hist_j in hist_dicts:
+                    acc_dict[key_i].append(hist_j[key_i])
+            print(path_i)
+            for key_i,acc_i in acc_dict.items():
+                if(not "loss" in key_i):
+                    print(f"{key_i},{np.mean(acc_i):.4f}")
 
-
+#def selection_exp(in_path,
+#                  out_path):
+#    utils.make_dir(out_path)
+#    data_split=get_splits(in_path,out_path)
+#    clf_factory=ens.get_ens("class_ens")()
+#    acc=[]
+#    for i,ens_i in enumerate(data_split.get_clfs(clf_factory)):
+#        split_i=data_split.splits[i]
+#        print(str(split_i))
+#        test_data=data_split.data.selection(split_i.test_index)
+#        y_partial=ens_i.partial_predict(test_data.X)
+#        y_partial=np.array(y_partial)
+#        result_i=dataset.PartialResults(y_true=test_data.y,
+#                                        y_partial=y_partial)
+#        acc.append(result_i.get_metric())
+#    acc=np.array(acc)
+#    print(np.mean(acc,axis=0))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -100,6 +110,7 @@ if __name__ == '__main__':
     parser.add_argument("--output", type=str, default="single_exp/wall-following")
     parser.add_argument("--ens_type", type=str, default="class_ens")
     parser.add_argument('--train', action='store_true')
+    parser.add_argument('--history', action='store_true')
     args = parser.parse_args()
     if(args.train):
         single_exp(in_path=args.input,
@@ -107,5 +118,5 @@ if __name__ == '__main__':
                ens_type=args.ens_type)
     eval_exp(data_path=args.input,
              exp_path=args.output)
-#    else:
-#        history_exp(in_path=args.input)
+    if(args.history):
+        show_history(exp_path=args.output)
