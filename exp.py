@@ -50,7 +50,7 @@ def eval_exp(data_path,exp_path="single_exp"):
             else:
                 partial=dataset.read_partial_group(partial_path)
             print(id_i)
-            print(f"Acc:{np.mean(partial.get_acc())}")      
+            print(f"Acc:{np.mean(partial.get_acc()):.4f}")      
 
 def make_results(path_i,partial_path,data_splits):
     info_dict=utils.read_json(f"{path_i}/info.js")    
@@ -130,10 +130,10 @@ if __name__ == '__main__':
     parser.add_argument('--train', action='store_true')
     parser.add_argument('--history', action='store_true')
     args = parser.parse_args()
-#    if(args.train):
-#        single_exp(in_path=args.input,
-#               out_path=args.output,
-#               ens_type=args.ens_type)
+    if(args.train):
+        single_exp(in_path=args.input,
+               out_path=args.output,
+               ens_type=args.ens_type)
     eval_exp(data_path=args.input,
              exp_path=args.output)
     if(args.history):
