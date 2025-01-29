@@ -33,12 +33,20 @@ class DataSplits(object):
             results.append(split_k.pred(self.data,clf_k))
         return dataset.ResultGroup(results)
 
-    def selection(self,i,train=False):
-        split_i=self.splits[i]
-        if(train):
-            return self.data.selection(split_i.train_index)
-        else:
-            return self.data.selection(split_i.test_index)
+#    def selection(self,i,train=False):
+#        split_i=self.splits[i]
+#        if(train):
+#            return self.data.selection(split_i.train_index)
+#        else:
+#            return self.data.selection(split_i.test_index)
+
+    def selection_iter(self,train=False):
+        for i,split_i in enumerate(self.splits):
+            if(train):
+                index=split_i.train_index
+            else:
+                index=split_i.test_index
+            yield  i,self.data.selection(index)
 
 class UnaggrSplit(object):
     def __init__(self,n_splits,n_repeats):
@@ -82,49 +90,49 @@ class UnaggrSplit(object):
             test_size=self.test_index.shape[0]
             return f"train:{train_size},test:{test_size}"
 
-class AggrSplit(object):
-    def __init__(self,n_splits,n_repeats):
-        self.n_splits=n_splits
-        self.n_repeats=n_repeats
+#class AggrSplit(object):
+#    def __init__(self,n_splits,n_repeats):
+#        self.n_splits=n_splits
+#        self.n_repeats=n_repeats
 
-    def get_split(self,data):
-        rskf=RepeatedStratifiedKFold(n_repeats=self.n_repeats, 
-                                       n_splits=self.n_splits, 
-                                       random_state=0)
-        splits=[]
-        for t,(train_index,test_index) in enumerate(rskf.split(data.X,data.y)):
-            if((t % self.n_splits)==0):
-            	splits.append([])
-            splits[-1].append((train_index,test_index))
-        splits=[self.Split(indexes) for indexes in splits]
-        return splits
+#    def get_split(self,data):
+#        rskf=RepeatedStratifiedKFold(n_repeats=self.n_repeats, 
+#                                       n_splits=self.n_splits, 
+#                                       random_state=0)
+#        splits=[]
+#        for t,(train_index,test_index) in enumerate(rskf.split(data.X,data.y)):
+#            if((t % self.n_splits)==0):
+#            	splits.append([])
+#            splits[-1].append((train_index,test_index))
+#        splits=[self.Split(indexes) for indexes in splits]
+#        return splits
 
-    class Split(object):
-        def __init__(self,indexes):
-            self.indexes=indexes
+#    class Split(object):
+#        def __init__(self,indexes):
+#            self.indexes=indexes
 
-        def eval(self,data,clf):
-            all_clf=self.fit_clf(data,clf)
-            return self.pred(data,all_clf)
+#        def eval(self,data,clf):
+#            all_clf=self.fit_clf(data,clf)
+#            return self.pred(data,all_clf)
 
-        def fit_clf(self,data,clf):
-            return [ data.fit_clf(train_t) 
-                        for train_t,_ in self.indexes]
+#        def fit_clf(self,data,clf):
+#            return [ data.fit_clf(train_t) 
+#                        for train_t,_ in self.indexes]
 
-        def pred(self,data,clf):
-            all_pred,all_test=[],[]
-            for i,(_,test_t) in enumerate(self.indexes):
-                pred_t,test_t=data.pred(test_index=test_t,
-                                        clf=clf[i],
-                                        as_result=False)
-                all_pred.append(pred_t)
-                all_test.append(test_t)
-            all_pred=np.concatenate(all_pred)
-            all_test=np.concatenate(all_test)
-            return dataset.Result(all_pred,all_test)
+#        def pred(self,data,clf):
+#            all_pred,all_test=[],[]
+#            for i,(_,test_t) in enumerate(self.indexes):
+#                pred_t,test_t=data.pred(test_index=test_t,
+#                                        clf=clf[i],
+#                                        as_result=False)
+#                all_pred.append(pred_t)
+#                all_test.append(test_t)
+#            all_pred=np.concatenate(all_pred)
+#            all_test=np.concatenate(all_test)
+#            return dataset.Result(all_pred,all_test)
 
-        def save(self,out_path):
-            return np.savez(out_path,self.indexes)
+#        def save(self,out_path):
+#            return np.savez(out_path,self.indexes)
 
 def get_protocol(prot_type):
     if(prot_type=="aggr"):
