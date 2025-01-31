@@ -1,5 +1,7 @@
+import numpy as np
 import tensorflow as tf
 from keras import Input, Model
+from collections import defaultdict
 import base,dataset,deep,ens
 
 def show_loss(data_path,
@@ -19,10 +21,18 @@ def show_loss(data_path,
         	                y=y,
                             epochs=n_epochs)
             history_dict[type_j].append( history.history )
-    metrics= list(history_dict.values())[0][0].keys()
-    for key_i in metrics:
-        y=[value_j for value_j in history_dict.values()]
-        print(y)
+    series_dict={key_i:defaultdict(lambda:[])
+                  for key_i in history_dict}
+    for key_i,hist_i in history_dict.items():
+        print(key_i)
+        for hist_j in hist_i:
+            for name_k,metric_k in hist_j.items():
+                series_dict[key_i][name_k].append(np.mean(metric_k))
+    print(series_dict)
+#    metrics= list(history_dict.values())[0][0].keys()
+#    for key_i in metrics:
+#        y=[value_j for value_j in history_dict.values()]
+#        print(y)
 
 def base_loss(model,params):
     model.compile(loss='categorical_crossentropy',
