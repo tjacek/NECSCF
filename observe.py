@@ -2,10 +2,13 @@ import tensorflow as tf
 from keras import Input, Model
 import base,dataset,deep,ens
 
-def show_loss(data_path,split_path):
+def show_loss(data_path,
+              split_path,
+              n_epochs=10):
     data_split=base.read_data_split(data_path=data_path,
 		                            split_path=split_path)
     loss_dict={'base':base_loss,'custom':custom_loss}
+    history_dict={key_i:[] for key_i in loss_dict}
     for i,data_i in data_split.selection_iter(train=True):
         for type_j,loss_j in loss_dict.items():
 
@@ -13,8 +16,13 @@ def show_loss(data_path,split_path):
             loss_j(model_i,params)
             y=tf.one_hot(data_i.y,depth=params['n_cats'])
             history=model_i.fit(x=data_i.X,
-        	                y=y)
-            print(history.history.keys())
+        	                y=y,
+                            epochs=n_epochs)
+            history_dict[type_j].append( history.history )
+    metrics= list(history_dict.values())[0][0].keys()
+    for key_i in metrics:
+        y=[value_j for value_j in history_dict.values()]
+        print(y)
 
 def base_loss(model,params):
     model.compile(loss='categorical_crossentropy',
