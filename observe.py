@@ -2,11 +2,12 @@ import numpy as np
 import tensorflow as tf
 from keras import Input, Model
 from collections import defaultdict
+import matplotlib.pyplot as plt
 import base,dataset,deep,ens
 
 def show_loss(data_path,
               split_path,
-              n_epochs=10):
+              n_epochs=100):
     data_split=base.read_data_split(data_path=data_path,
 		                            split_path=split_path)
     loss_dict={'base':base_loss,'custom':custom_loss}
@@ -28,11 +29,16 @@ def show_loss(data_path,
         for hist_j in hist_i:
             for name_k,metric_k in hist_j.items():
                 series_dict[key_i][name_k].append(np.mean(metric_k))
-    print(series_dict)
-#    metrics= list(history_dict.values())[0][0].keys()
-#    for key_i in metrics:
-#        y=[value_j for value_j in history_dict.values()]
-#        print(y)
+    metrics=list(series_dict.values())[0].keys()
+    t=np.arange(n_epochs)
+    for metric_i in metrics:
+        fig, ax = plt.subplots()
+        for loss_type_j,dict_j in series_dict.items():
+            series_j=dict_j[metric_i]
+            ax.plot(t, series_j,label=loss_type_j)
+            ax.set(title=metric_i)
+        plt.show()
+        plt.clf()
 
 def base_loss(model,params):
     model.compile(loss='categorical_crossentropy',
