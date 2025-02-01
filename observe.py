@@ -25,10 +25,13 @@ def show_loss(data_path,
     series_dict={key_i:defaultdict(lambda:[])
                   for key_i in history_dict}
     for key_i,hist_i in history_dict.items():
-        print(key_i)
         for hist_j in hist_i:
             for name_k,metric_k in hist_j.items():
-                series_dict[key_i][name_k].append(np.mean(metric_k))
+                series_dict[key_i][name_k].append(metric_k)
+        for name_k,value_k in series_dict[key_i].items():
+            arr=np.array(value_k)
+            arr=np.mean(arr,axis=0)
+            series_dict[key_i][name_k]=arr
     metrics=list(series_dict.values())[0].keys()
     t=np.arange(n_epochs)
     for metric_i in metrics:
@@ -37,6 +40,9 @@ def show_loss(data_path,
             series_j=dict_j[metric_i]
             ax.plot(t, series_j,label=loss_type_j)
             ax.set(title=metric_i)
+        plt.xlabel("epochs")
+        plt.ylabel(metric_i)
+        plt.legend()
         plt.show()
         plt.clf()
 
