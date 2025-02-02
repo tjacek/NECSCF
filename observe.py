@@ -1,5 +1,7 @@
 import numpy as np
 import tensorflow as tf
+physical_devices = tf.config.list_physical_devices('GPU')
+tf.config.experimental.set_memory_growth(physical_devices[0], enable=True)
 from keras import Input, Model
 from collections import defaultdict
 import matplotlib.pyplot as plt
@@ -7,20 +9,20 @@ import base,dataset,deep,ens
 
 def show_loss(data_path,
               split_path,
-              n_epochs=100):
+              n_epochs=5):
     data_split=base.read_data_split(data_path=data_path,
 		                            split_path=split_path)
-    loss_dict={'base':base_loss,'custom':custom_loss}
+    loss_dict={'base':TrainAlg,
+#               'weight':weighted_loss,
+               'custom':CustomLoss}
     history_dict={key_i:[] for key_i in loss_dict}
     for i,data_i in data_split.selection_iter(train=True):
-        for type_j,loss_j in loss_dict.items():
-
+        for type_j,alg_type_j in loss_dict.items():
             model_i,params=get_model(data_i)
-            loss_j(model_i,params)
-            y=tf.one_hot(data_i.y,depth=params['n_cats'])
-            history=model_i.fit(x=data_i.X,
-        	                y=y,
-                            epochs=n_epochs)
+            loss_j=alg_type_j(model_i,params)
+            loss_j.prepare_model()
+            history=loss_j.fit(data=data_i,
+                               n_epochs=n_epochs)
             history_dict[type_j].append( history.history )
     series_dict={key_i:defaultdict(lambda:[])
                   for key_i in history_dict}
@@ -46,17 +48,41 @@ def show_loss(data_path,
         plt.show()
         plt.clf()
 
-def base_loss(model,params):
-    model.compile(loss='categorical_crossentropy',
+class TrainAlg(object):
+    def __init__(self,model,params):
+        self.model=model
+        self.params=params
+
+    def prepare_model(self):
+        self.model.compile(loss='categorical_crossentropy',
                   optimizer='adam',
                   metrics=['accuracy'],
                   jit_compile=False)
-    return model
+        return self.model
 
-def custom_loss(model,params):
-    loss=deep.weighted_loss(specific=None,
-                       class_dict=params['class_weights'])
-    model.compile(loss=loss,
+    def fit(self,data,n_epochs):
+        y=tf.one_hot(data.y,
+                     depth=self.params['n_cats'])
+        history=self.model.fit(x=data.X,
+                               y=y,
+                               epochs=n_epochs)
+        return history
+
+class CustomLoss(TrainAlg):
+    def prepare_model(self):
+        loss=deep.weighted_loss(specific=None,
+                       class_dict=self.params['class_weights'])
+        self.model.compile(loss=loss,
+                           optimizer='adam',
+                           metrics=['accuracy'],
+                           jit_compile=False)
+        return self.model
+
+def weighted_loss(model,params):
+    weigt_dict=params['class_weights']
+    loss_weights=[weigt_dict[i] for i in range(len(weigt_dict))]
+    model.compile(loss='categorical_crossentropy',
+                  loss_weights=loss_weights,
                   optimizer='adam',
                   metrics=['accuracy'],
                   jit_compile=False)
