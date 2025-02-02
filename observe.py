@@ -9,11 +9,11 @@ import base,dataset,deep,ens
 
 def show_loss(data_path,
               split_path,
-              n_epochs=5):
+              n_epochs=40):
     data_split=base.read_data_split(data_path=data_path,
 		                            split_path=split_path)
     loss_dict={'base':TrainAlg,
-#               'weight':weighted_loss,
+#               'weight':WeightedLoss,
                'custom':CustomLoss}
     history_dict={key_i:[] for key_i in loss_dict}
     for i,data_i in data_split.selection_iter(train=True):
@@ -58,7 +58,7 @@ class TrainAlg(object):
                   optimizer='adam',
                   metrics=['accuracy'],
                   jit_compile=False)
-        return self.model
+        return self
 
     def fit(self,data,n_epochs):
         y=tf.one_hot(data.y,
@@ -70,29 +70,33 @@ class TrainAlg(object):
 
 class CustomLoss(TrainAlg):
     def prepare_model(self):
+        params={key_i:(1.0/value_i) 
+          for key_i,value_i in self.params['class_weights'].items()}
+#        params=self.params['class_weights']
         loss=deep.weighted_loss(specific=None,
-                       class_dict=self.params['class_weights'])
+                       class_dict=params)
         self.model.compile(loss=loss,
                            optimizer='adam',
                            metrics=['accuracy'],
                            jit_compile=False)
-        return self.model
+        return self
 
-def weighted_loss(model,params):
-    weigt_dict=params['class_weights']
-    loss_weights=[weigt_dict[i] for i in range(len(weigt_dict))]
-    model.compile(loss='categorical_crossentropy',
-                  loss_weights=loss_weights,
-                  optimizer='adam',
-                  metrics=['accuracy'],
-                  jit_compile=False)
-    return model
+class WeightedLoss(TrainAlg):
+    def fit(self,data,n_epochs):
+        y=tf.one_hot(data.y,
+                     depth=self.params['n_cats'])
+        history=self.model.fit(x=data.X,
+                               y=y,
+                               epochs=n_epochs,
+                               class_weight=self.params['class_weights'])
+        return history
 
 def get_model(data):
     params={'dims': (data.dim(),),
             'n_cats':data.n_cats(),
             'n_epochs':100,
             'class_weights':dataset.get_class_weights(data.y)}
+#    raise Exception(params)
     hyper_params=ens.default_hyperparams()
     input_layer = Input(shape=(params['dims']))
     nn=deep.nn_builder(params=params,
