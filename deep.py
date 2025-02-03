@@ -56,7 +56,7 @@ def single_builder(params,
                        class_dict=class_dict)
     model= Model(inputs=input_layer, 
                  outputs=nn)
-    model.compile(loss=loss, #'categorical_crossentropy',
+    model.compile(loss='categorical_crossentropy',
                   optimizer='adam',
                   metrics=['accuracy'],
                   jit_compile=False)
@@ -85,7 +85,7 @@ def weighted_loss(specific,class_dict):
     n_cats=len(class_dict)
     class_weights=np.zeros(n_cats,dtype=np.float32)
     for i in range(n_cats):
-        class_weights[i]=1.0/class_dict[i]
+        class_weights[i]=class_dict[i] #1.0/class_dict[i]
     if(not (specific is None)):
         class_weights[specific]*=  (len(class_dict)/2)
     return keras_loss(class_weights)
