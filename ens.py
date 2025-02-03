@@ -7,7 +7,7 @@ def get_custom_ens(callback_type="all",verbose=0):
     callback=callback_class(verbose=verbose)
     hyper_params=default_hyperparams()
     hyper_params["callback"]=callback
-    return get_ens(ens_type="MLP",
+    return get_ens(ens_type="class_ens",
                    hyper_params=hyper_params)
     
 def get_ens(ens_type:str,hyper_params=None):
@@ -39,6 +39,13 @@ class DeepFactory(object):
     def __call__(self):
         return Deep(params=self.params,
                     hyper_params=self.hyper_params)
+    
+    def read(self,model_path):
+        model_i=tf.keras.models.load_model(model_path,
+                                           custom_objects={"loss":deep.weighted_loss})
+        clf_i=self()
+        clf_i.model=model_i
+        return clf_i
 
 class Deep(object):
     def __init__(self, params,
@@ -55,9 +62,6 @@ class Deep(object):
             self.model=deep.single_builder(params=self.params,
                                            hyper_params=self.hyper_params)
         y=tf.one_hot(y,depth=self.params['n_cats'])
-        self.model.summary()
-#        raise Exception((data.X.shape,y.shape))
-#        raise Exception(X.shape)
         return self.model.fit(x=X,
                               y=y,
                               epochs=self.params['n_epochs'],
@@ -113,7 +117,6 @@ class ClassEns(object):
 
     def predict(self,X):
         y=self.model(X, training=False)
-#                             verbose=self.verbose)
         y=np.sum(np.array(y),axis=0)
         return np.argmax(y,axis=1)
 

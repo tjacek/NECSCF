@@ -12,8 +12,8 @@ import base,dataset,deep,ens,pred,utils
 
 def single_exp(in_path,
                out_path,
-               ens_type="MLP"):
-    callback_type="min"
+               ens_type="class_ens"):
+    callback_type="total"
     utils.make_dir(out_path)
     data_split=get_splits(in_path,out_path)
     ens_path=f'{out_path}/{ens_type}'
@@ -86,8 +86,8 @@ def make_results(data_splits,
                     out_path,
                     result_path,
                     partial=True):
-    for i,data_i in selection_iter(train=False):
-        clf_i=clf_factory.read(f"{out_path}/models/{j}.keras")
+    for i,data_i in data_splits.selection_iter(train=False):
+        clf_i=clf_factory.read(f"{out_path}/models/{i}.keras")
         if(partial):
             raw_i=clf_i.partial_predict(data_i.X)
             result_i=dataset.PartialResults(y_true=data_i.y,
@@ -96,7 +96,7 @@ def make_results(data_splits,
             raw_i=clf_i.predict(data_i.X)
             result_i=dataset.Result(y_true=data_i.y,
                                      y_pred=raw_i)
-        result_i.save(f"{result_path}/{j}.npz")
+        result_i.save(f"{result_path}/{i}.npz")
 
 def get_splits(in_path,out_path):
     split_path=f"{out_path}/splits"
@@ -132,7 +132,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", type=str, default="../uci/wall-following")
     parser.add_argument("--output", type=str, default="single_exp/wall-following")
-    parser.add_argument("--ens_type", type=str, default="MLP")
+    parser.add_argument("--ens_type", type=str, default="class_ens")
     parser.add_argument('--train', action='store_true')
     parser.add_argument('--history', action='store_true')
     args = parser.parse_args()
