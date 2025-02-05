@@ -66,20 +66,32 @@ def partial_exp(data_path:str,
             result_i.save(f"{out_path}/{i}.npz")
     helper(data_path,exp_path)
 
-def get_result(exp_path,
-               acc=False):
+def get_result(exp_path):
     @utils.DirFun({"in_path":0})
     def helper(in_path):
-        partial_path=f"{in_path}/partial"
-        if(not os.path.isdir(partial_path)):
-            return None
+        result_path=f"{in_path}/class_ens/results"
         results=[ dataset.read_partial(path_i)
-                    for path_i in utils.top_files(partial_path) ]
-        if(acc):
-            return [result_i.get_metric("acc") for result_i in results]
-        return dataset.PartialGroup(results)
+                    for path_i in utils.top_files(result_path) ]
+        results[0]
+        acc=[result_i.get_metric("acc") for result_i in results]
+        return np.mean(acc)
     path_dict=helper(exp_path)
+    print(path_dict)
     return utils.to_id_dir(path_dict,index=-1)
+#def get_result(exp_path,
+#               acc=False):
+#    @utils.DirFun({"in_path":0})
+#    def helper(in_path):
+#        partial_path=f"{in_path}/partial"
+#        if(not os.path.isdir(partial_path)):
+#            return None
+#        results=[ dataset.read_partial(path_i)
+#                    for path_i in utils.top_files(partial_path) ]
+#        if(acc):
+#            return [result_i.get_metric("acc") for result_i in results]
+#        return dataset.PartialGroup(results)
+#    path_dict=helper(exp_path)
+#    return utils.to_id_dir(path_dict,index=-1)
 
 def all_subsets(exp_path,subset_path):
     result_dict=get_result(exp_path,
@@ -173,8 +185,6 @@ def clf_pred(data_path,exp_path):
 #        p_i.join()
 
 def model_iter(split_path,model_path,ens_factory):
-#    split_path=f"{exp_path}/splits"
-#    model_path=f"{exp_path}/class_ens"
     for i,path_i in enumerate(utils.top_files(model_path)):
         split_i=f"{split_path}/{i}.npz"
         raw_split=np.load(split_i)
@@ -210,6 +220,7 @@ if __name__ == '__main__':
     parser.add_argument("--subset_path", type=str, default="subsets")
     parser.add_argument('--type', default='partial', choices=['subsets', 'partial','RF']) 
     args = parser.parse_args()
+    get_result(exp_path=args.exp_path)
 #    exp_fun=get_exp(exp_type=args.type)
-    pred_exp(data_path=args.data_path,
-            exp_path=args.exp_path)
+#    pred_exp(data_path=args.data_path,
+#            exp_path=args.exp_path)
