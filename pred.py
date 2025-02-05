@@ -9,8 +9,40 @@ import multiprocessing
 import argparse
 import base,dataset,ens,exp
 from deep import weighted_loss
-import utils
+import utils,train
 
+def pred_exp(data_path:str,
+             exp_path:str):
+    @utils.MultiDirFun()
+    def helper(in_path,exp_path):
+        path_dir=train.get_paths(out_path=exp_path,
+                                 ens_type='class_ens',
+                                 dirs=['models','history','results'])
+        try:
+            chech_dirs(path_dir)
+        except:
+            return None
+        data_splits= base.read_data_split(data_path=in_path,
+                                          split_path=path_dir['splits'])
+        clf_factory=ens.get_ens("class_ens")
+        data_iter=data_splits.selection_iter(train=False)
+        utils.make_dir(path_dir["results"])
+        for i,data_i in tqdm(data_iter):
+            clf_i=clf_factory.read(f"{path_dir['models']}/{i}.keras")
+            raw_i=clf_i.partial_predict(data_i.X)
+            result_i=dataset.PartialResults(y_true=data_i.y,
+                                            y_partial=raw_i)
+            result_i.save(f"{path_dir['results']}/{i}.npz")
+        print(data_splits)
+    output_dict=helper(data_path,exp_path)
+    print(output_dict)
+
+def chech_dirs(path_dir):
+    if(not os.path.isdir(path_dir["models"])):
+        raise Exception(f"Models don't exist")
+    if(os.path.isdir(path_dir["results"])):
+        raise Exception(f"Result exist")
+    
 def partial_exp(data_path:str,
                 exp_path:str):
     @utils.MultiDirFun()
@@ -79,23 +111,6 @@ def clf_pred(data_path,exp_path):
             result_j.save(f"{out_path}/{j}")
 #        gc.collect()
     helper(data_path,exp_path)
-
-#def order_exp(data_path:str,
-#              exp_path:str,
-#              json_path:str,
-#              out_path:str):
-#    utils.make_dir(out_path)
-#    exp_types={"base_full":(True,False),
-#               "base":(False,False),
-#               "reversed":(False,True),
-#               "reversed_full":(True,True)}
-#    for name_i,(full_i,reverse_i) in exp_types.items():
-#        order_pred(data_path=data_path,
-#                   exp_path=exp_path,
-#                   json_path=json_path,
-#                   out_path=f"{out_path}/{name_i}.json",
-#                   full=full_i,
-#                   reverse=reverse_i)
 
 #def order_pred(data_path:str,
 #               exp_path:str,
@@ -190,11 +205,11 @@ def get_exp(exp_type):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data_path", type=str, default="../uci")
-    parser.add_argument("--exp_path", type=str, default="exp_deep")
+    parser.add_argument("--data_path", type=str, default="../_uci")
+    parser.add_argument("--exp_path", type=str, default="test")
     parser.add_argument("--subset_path", type=str, default="subsets")
     parser.add_argument('--type', default='partial', choices=['subsets', 'partial','RF']) 
     args = parser.parse_args()
-    exp_fun=get_exp(exp_type=args.type)
-    exp_fun(data_path=args.data_path,
+#    exp_fun=get_exp(exp_type=args.type)
+    pred_exp(data_path=args.data_path,
             exp_path=args.exp_path)
