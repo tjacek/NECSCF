@@ -22,18 +22,18 @@ def pred_exp(data_path:str,
             chech_dirs(path_dir)
         except:
             return None
-        data_splits= base.read_data_split(data_path=in_path,
-                                          split_path=path_dir['splits'])
+        data=dataset.read_csv(in_path)
         clf_factory=ens.get_ens("class_ens")
-        data_iter=data_splits.selection_iter(train=False)
+        pred_iter=model_iter(split_path=path_dir['splits'],
+                             model_path=path_dir['models'],
+                             ens_factory=clf_factory)
         utils.make_dir(path_dir["results"])
-        for i,data_i in tqdm(data_iter):
-            clf_i=clf_factory.read(f"{path_dir['models']}/{i}.keras")
-            raw_i=clf_i.partial_predict(data_i.X)
-            result_i=dataset.PartialResults(y_true=data_i.y,
-                                            y_partial=raw_i)
+        for i,(split_i,clf_i) in tqdm(enumerate(pred_iter)):
+            test_data_i=data.selection(split_i.test_index)
+            raw_partial_i=clf_i.partial_predict(test_data_i.X)
+            result_i=dataset.PartialResults(y_true=test_data_i.y,
+                                            y_partial=raw_partial_i)
             result_i.save(f"{path_dir['results']}/{i}.npz")
-        print(data_splits)
     output_dict=helper(data_path,exp_path)
     print(output_dict)
 
@@ -70,10 +70,13 @@ def get_result(exp_path):
     @utils.DirFun({"in_path":0})
     def helper(in_path):
         result_path=f"{in_path}/class_ens/results"
+        if(not os.path.isdir(result_path)):
+             return None
         results=[ dataset.read_partial(path_i)
                     for path_i in utils.top_files(result_path) ]
-        results[0]
         acc=[result_i.get_metric("acc") for result_i in results]
+        print(results[0])
+        print(acc)
         return np.mean(acc)
     path_dict=helper(exp_path)
     print(path_dict)
@@ -215,12 +218,12 @@ def get_exp(exp_type):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data_path", type=str, default="../_uci")
-    parser.add_argument("--exp_path", type=str, default="test")
+    parser.add_argument("--data_path", type=str, default="../uci")
+    parser.add_argument("--exp_path", type=str, default="new_exp")
     parser.add_argument("--subset_path", type=str, default="subsets")
     parser.add_argument('--type', default='partial', choices=['subsets', 'partial','RF']) 
     args = parser.parse_args()
-    get_result(exp_path=args.exp_path)
 #    exp_fun=get_exp(exp_type=args.type)
-#    pred_exp(data_path=args.data_path,
-#            exp_path=args.exp_path)
+    pred_exp(data_path=args.data_path,
+             exp_path=args.exp_path)
+#    get_result(exp_path=args.exp_path)
