@@ -7,6 +7,7 @@ from tqdm import tqdm
 import os.path
 import multiprocessing
 import argparse
+import pandas as pd
 import base,dataset,ens,exp
 from deep import weighted_loss
 import utils,train
@@ -42,29 +43,6 @@ def chech_dirs(path_dir):
         raise Exception(f"Models don't exist")
     if(os.path.isdir(path_dir["results"])):
         raise Exception(f"Result exist")
-    
-def partial_exp(data_path:str,
-                exp_path:str):
-    @utils.MultiDirFun()
-    def helper(in_path,exp_path):
-        model_path=f"{exp_path}/class_ens"
-        if(not os.path.isdir(model_path)):
-            return None
-        out_path=f"{exp_path}/partial"
-        if(os.path.isdir(out_path)):
-            return None
-        data=dataset.read_csv(in_path)
-        ens_factory=ens.ClassEnsFactory()
-        ens_factory.init(data)
-        utils.make_dir(out_path)
-        clf_iter=model_iter(exp_path,ens_factory)
-        for i,(split_i,clf_i) in tqdm(enumerate(clf_iter)):
-            test_data_i=data.selection(split_i.test_index)
-            raw_partial_i=clf_i.partial_predict(test_data_i.X)
-            result_i=dataset.PartialResults(y_true=test_data_i.y,
-                                            y_partial=raw_partial_i)
-            result_i.save(f"{out_path}/{i}.npz")
-    helper(data_path,exp_path)
 
 def get_result(exp_path):
     @utils.DirFun({"in_path":0})
@@ -72,29 +50,22 @@ def get_result(exp_path):
         result_path=f"{in_path}/class_ens/results"
         if(not os.path.isdir(result_path)):
              return None
-        results=[ dataset.read_partial(path_i)
+        return [ dataset.read_partial(path_i)
                     for path_i in utils.top_files(result_path) ]
-        acc=[result_i.get_metric("acc") for result_i in results]
-        print(results[0])
-        print(acc)
-        return np.mean(acc)
-    path_dict=helper(exp_path)
-    print(path_dict)
-    return utils.to_id_dir(path_dict,index=-1)
-#def get_result(exp_path,
-#               acc=False):
-#    @utils.DirFun({"in_path":0})
-#    def helper(in_path):
-#        partial_path=f"{in_path}/partial"
-#        if(not os.path.isdir(partial_path)):
-#            return None
-#        results=[ dataset.read_partial(path_i)
-#                    for path_i in utils.top_files(partial_path) ]
-#        if(acc):
-#            return [result_i.get_metric("acc") for result_i in results]
-#        return dataset.PartialGroup(results)
-#    path_dict=helper(exp_path)
-#    return utils.to_id_dir(path_dict,index=-1)
+    result_dict=helper(exp_path)
+    result_dict=utils.to_id_dir(result_dict,index=-1)
+    metrics=["acc","balance"]
+    lines=[]
+    for name_i,results_i in result_dict.items():
+        line_i=[name_i]
+        for metric_j in metrics:
+            value_j=[result_k.get_metric(metric_j)
+                        for result_k in results_i]
+            line_i.append(np.mean(value_j))
+        lines.append(line_i)
+    df=pd.DataFrame.from_records(lines,
+                                  columns=["data"]+metrics)
+    print(df.round(4))
 
 def all_subsets(exp_path,subset_path):
     result_dict=get_result(exp_path,
@@ -224,6 +195,6 @@ if __name__ == '__main__':
     parser.add_argument('--type', default='partial', choices=['subsets', 'partial','RF']) 
     args = parser.parse_args()
 #    exp_fun=get_exp(exp_type=args.type)
-    pred_exp(data_path=args.data_path,
-             exp_path=args.exp_path)
-#    get_result(exp_path=args.exp_path)
+#    pred_exp(data_path=args.data_path,
+#             exp_path=args.exp_path)
+    get_result(exp_path=args.exp_path)
