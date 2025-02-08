@@ -67,21 +67,6 @@ def get_result(exp_path):
                                   columns=["data"]+metrics)
     print(df.round(4))
 
-def all_subsets(exp_path,subset_path):
-    result_dict=get_result(exp_path,
-                           acc=False)
-    utils.make_dir(subset_path)
-    for name_i,results_i in result_dict.items():
-        with open(f"{subset_path}/{name_i}.txt", 'w') as file:
-            cats=list(range(len(results_i[0])))
-            for subset_j in utils.powerset(cats):
-                acc_j=[result_k.selected_acc(subset_j) 
-                        for result_k in results_i]
-                mean_acc=np.mean(acc_j)
-                line_i=f"{subset_j}-{mean_acc:.4f}\n"
-                file.write(line_i)
-                print(line_i)
-
 def clf_pred(data_path,exp_path):
     @utils.DirFun({"in_path":0,"exp_path":1})#,"out_path":2})
     def helper(in_path,exp_path):
@@ -89,14 +74,33 @@ def clf_pred(data_path,exp_path):
         data=dataset.read_csv(in_path)
         clf_factory=base.ClfFactory(clf_type="RF")
         clf_factory.init(data)
-        out_path=f"{exp_path}/RF"
-        utils.make_dir(out_path)
-        for j,split_j in tqdm(enumerate(split_iter(exp_path))):
+        path_dir=train.get_paths(out_path=exp_path,
+                                 ens_type='RF',
+                                 dirs=['results','info.js'])
+
+        utils.make_dir(path_dir['ens'])
+        utils.make_dir(path_dir['results'])
+        for j,split_j in tqdm(enumerate(split_iter(path_dir['splits']))):
             clf_j=clf_factory()
             result_j,_=split_j.eval(data,clf_j)
-            result_j.save(f"{out_path}/{j}")
-#        gc.collect()
+            result_j.save(f"{path_dir['results']}/{j}")
+        with open(path_dict['info.js'], 'w') as f:
+            json.dump({"ens":'RF',"callback":None}, f)
     helper(data_path,exp_path)
+#def all_subsets(exp_path,subset_path):
+#    result_dict=get_result(exp_path,
+#                           acc=False)
+#    utils.make_dir(subset_path)
+#    for name_i,results_i in result_dict.items():
+#        with open(f"{subset_path}/{name_i}.txt", 'w') as file:
+#            cats=list(range(len(results_i[0])))
+#            for subset_j in utils.powerset(cats):
+#                acc_j=[result_k.selected_acc(subset_j) 
+#                        for result_k in results_i]
+#                mean_acc=np.mean(acc_j)
+#                line_i=f"{subset_j}-{mean_acc:.4f}\n"
+#                file.write(line_i)
+#                print(line_i)
 
 #def order_pred(data_path:str,
 #               exp_path:str,
@@ -179,13 +183,13 @@ def split_iter(exp_path):
                                        test_index=raw_split["arr_1"])
         yield split_i
 
-def get_exp(exp_type):
-    if(exp_type=='subset'):
-        return all_subsets
-    if(exp_type=='partial'):
-        return partial_exp
-    if(exp_type=='RF'):
-        return clf_pred
+#def get_exp(exp_type):
+#    if(exp_type=='subset'):
+#        return all_subsets
+#    if(exp_type=='partial'):
+#        return partial_exp
+#    if(exp_type=='RF'):
+#        return clf_pred
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
