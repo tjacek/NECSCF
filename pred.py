@@ -13,36 +13,61 @@ from deep import weighted_loss
 import utils,train
 
 def pred_exp(data_path:str,
-             exp_path:str):
-    @utils.MultiDirFun()
-    def helper(in_path,exp_path):
-        path_dir=train.get_paths(out_path=exp_path,
-                                 ens_type='class_ens',
-                                 dirs=['models','history','results'])
-        try:
-            chech_dirs(path_dir)
-        except:
-            return None
-        data=dataset.read_csv(in_path)
-        clf_factory=ens.get_ens("class_ens")
-        pred_iter=model_iter(split_path=path_dir['splits'],
-                             model_path=path_dir['models'],
-                             ens_factory=clf_factory)
-        utils.make_dir(path_dir["results"])
-        for i,(split_i,clf_i) in tqdm(enumerate(pred_iter)):
-            test_data_i=data.selection(split_i.test_index)
-            raw_partial_i=clf_i.partial_predict(test_data_i.X)
-            result_i=dataset.PartialResults(y_true=test_data_i.y,
-                                            y_partial=raw_partial_i)
-            result_i.save(f"{path_dir['results']}/{i}.npz")
+             exp_path:str,
+             clf_type:str):
+    
+    if(clf_type=="class_ens"):
+        fun=class_ens_pred
+    if(clf_type=="RF"):
+        fun=rf_pred
+    helper=utils.MultiDirFun()(fun)
     output_dict=helper(data_path,exp_path)
     print(output_dict)
+
+def class_ens_pred(in_path,exp_path):
+    path_dir=train.get_paths(out_path=exp_path,
+                            ens_type='class_ens',
+                            dirs=['models','history','results'])
+    try:
+        chech_dirs(path_dir)
+    except:
+        return None
+    data=dataset.read_csv(in_path)
+    clf_factory=ens.get_ens("class_ens")
+    pred_iter=model_iter(split_path=path_dir['splits'],
+                         model_path=path_dir['models'],
+                         ens_factory=clf_factory)
+    utils.make_dir(path_dir["results"])
+    for i,(split_i,clf_i) in tqdm(enumerate(pred_iter)):
+        test_data_i=data.selection(split_i.test_index)
+        raw_partial_i=clf_i.partial_predict(test_data_i.X)
+        result_i=dataset.PartialResults(y_true=test_data_i.y,
+                                            y_partial=raw_partial_i)
+        result_i.save(f"{path_dir['results']}/{i}.npz")
+
+def rf_pred(in_path,exp_path):
+    print(in_path)
+    data=dataset.read_csv(in_path)
+    clf_factory=base.ClfFactory(clf_type="RF")
+    clf_factory.init(data)
+    path_dir=train.get_paths(out_path=exp_path,
+                                 ens_type='RF',
+                                 dirs=['results','info.js'])
+
+    utils.make_dir(path_dir['ens'])
+    utils.make_dir(path_dir['results'])
+    for j,split_j in tqdm(enumerate(split_iter(exp_path))):
+        clf_j=clf_factory()
+        result_j,_=split_j.eval(data,clf_j)
+        result_j.save(f"{path_dir['results']}/{j}")
+    with open(path_dict['info.js'], 'w') as f:
+        json.dump({"ens":'RF',"callback":None}, f)
 
 def chech_dirs(path_dir):
     if(not os.path.isdir(path_dir["models"])):
         raise Exception(f"Models don't exist")
-    if(os.path.isdir(path_dir["results"])):
-        raise Exception(f"Result exist")
+#    if(os.path.isdir(path_dir["results"])):
+#        raise Exception(f"Result exist")
 
 def get_result(exp_path):
     @utils.DirFun({"in_path":0})
@@ -67,26 +92,28 @@ def get_result(exp_path):
                                   columns=["data"]+metrics)
     print(df.round(4))
 
-def clf_pred(data_path,exp_path):
-    @utils.DirFun({"in_path":0,"exp_path":1})#,"out_path":2})
-    def helper(in_path,exp_path):
-        print(in_path)
-        data=dataset.read_csv(in_path)
-        clf_factory=base.ClfFactory(clf_type="RF")
-        clf_factory.init(data)
-        path_dir=train.get_paths(out_path=exp_path,
-                                 ens_type='RF',
-                                 dirs=['results','info.js'])
+def model_iter(split_path,model_path,ens_factory):
+    for i,path_i in enumerate(utils.top_files(model_path)):
+        split_i=f"{split_path}/{i}.npz"
+        raw_split=np.load(split_i)
+        split_i=base.UnaggrSplit.Split(train_index=raw_split["arr_0"],
+                                       test_index=raw_split["arr_1"])
+        model_i=tf.keras.models.load_model(f"{model_path}/{i}.keras",
+                                           custom_objects={"loss":weighted_loss})
+        clf_i=ens_factory()
+        clf_i.model=model_i
+        yield split_i,clf_i
 
-        utils.make_dir(path_dir['ens'])
-        utils.make_dir(path_dir['results'])
-        for j,split_j in tqdm(enumerate(split_iter(path_dir['splits']))):
-            clf_j=clf_factory()
-            result_j,_=split_j.eval(data,clf_j)
-            result_j.save(f"{path_dir['results']}/{j}")
-        with open(path_dict['info.js'], 'w') as f:
-            json.dump({"ens":'RF',"callback":None}, f)
-    helper(data_path,exp_path)
+def split_iter(exp_path):
+    split_path=f"{exp_path}/splits"
+    for i,path_i in enumerate(utils.top_files(split_path)):
+        split_i=f"{split_path}/{i}.npz"
+        raw_split=np.load(split_i)
+        split_i=base.UnaggrSplit.Split(train_index=raw_split["arr_0"],
+                                       test_index=raw_split["arr_1"])
+        yield split_i
+
+
 #def all_subsets(exp_path,subset_path):
 #    result_dict=get_result(exp_path,
 #                           acc=False)
@@ -162,43 +189,18 @@ def clf_pred(data_path,exp_path):
 #        p_i.start()
 #        p_i.join()
 
-def model_iter(split_path,model_path,ens_factory):
-    for i,path_i in enumerate(utils.top_files(model_path)):
-        split_i=f"{split_path}/{i}.npz"
-        raw_split=np.load(split_i)
-        split_i=base.UnaggrSplit.Split(train_index=raw_split["arr_0"],
-                                       test_index=raw_split["arr_1"])
-        model_i=tf.keras.models.load_model(f"{model_path}/{i}.keras",
-                                           custom_objects={"loss":weighted_loss})
-        clf_i=ens_factory()
-        clf_i.model=model_i
-        yield split_i,clf_i
 
-def split_iter(exp_path):
-    split_path=f"{exp_path}/splits"
-    for i,path_i in enumerate(utils.top_files(split_path)):
-        split_i=f"{split_path}/{i}.npz"
-        raw_split=np.load(split_i)
-        split_i=base.UnaggrSplit.Split(train_index=raw_split["arr_0"],
-                                       test_index=raw_split["arr_1"])
-        yield split_i
-
-#def get_exp(exp_type):
-#    if(exp_type=='subset'):
-#        return all_subsets
-#    if(exp_type=='partial'):
-#        return partial_exp
-#    if(exp_type=='RF'):
-#        return clf_pred
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_path", type=str, default="../uci")
     parser.add_argument("--exp_path", type=str, default="new_exp")
-    parser.add_argument("--subset_path", type=str, default="subsets")
-    parser.add_argument('--type', default='partial', choices=['subsets', 'partial','RF']) 
+    parser.add_argument('--type', default=None, 
+                         choices=[None,'class_ens','RF','MLP']) 
     args = parser.parse_args()
-#    exp_fun=get_exp(exp_type=args.type)
-#    pred_exp(data_path=args.data_path,
-#             exp_path=args.exp_path)
+    if(args.type):
+        pred_exp(data_path=args.data_path,
+                 exp_path=args.exp_path,
+                 clf_type=args.type)
     get_result(exp_path=args.exp_path)
+    print(args)
