@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from sklearn.decomposition import PCA
+#from sklearn.decomposition import PCA
 from sklearn import preprocessing
 from sklearn.metrics import accuracy_score,classification_report,balanced_accuracy_score
 import utils
@@ -72,9 +72,9 @@ class Result(object):
     def get_balanced(self):
         return balanced_accuracy_score(self.y_pred,self.y_true)
 
-    def get_metric(self,metric):
-        if(type(metric)==str):
-            metric=get_metric(metric)
+    def get_metric(self,metric_type):
+        if(type(metric_type)==str):
+            metric=dispatch_metric(metric_type)
         return metric(self.y_pred,self.y_true)
 
     def report(self):
@@ -93,6 +93,9 @@ class ResultGroup(object):
     def __init__(self,results):
         self.results=results
 
+    def get_metric(self,metric_type):
+        return [result_j.get_metric(metric_type) 
+                    for result_j in self.results]
     def get_acc(self):
         return [result_j.get_acc() 
                     for result_j in self.results]
@@ -120,31 +123,38 @@ class PartialResults(object):
 
     def get_metric(self,metric_type="acc"):
         y_pred=self.vote()
-        metric=get_metric(metric_type)
+        metric=dispatch_metric(metric_type)
         return metric(self.y_true,y_pred)
     
     def selected_acc(self,subset):
         s_votes=[self.y_partial[i] for i in subset]
         s_ballot= np.sum(s_votes,axis=0)
         s_pred=np.argmax(s_ballot,axis=1)
-        metric=get_metric("acc")
+        metric=dispatch_metric("acc")
         return metric(self.y_true,s_pred)
 
     def save(self,out_path):
         np.savez(out_path,name1=self.y_partial,name2=self.y_true)
 
+    def __str__(self):
+        return str(self.y_true.shape)
+
 class PartialGroup(object):
     def __init__(self,partials):
         self.partials=partials
+   
+    def get_metric(self,metric_type):
+        return [result_j.get_metric(metric_type) 
+                    for result_j in self.partials]
 
-    def get_acc(self,subset):
+    def get_acc(self,subset=None):
+        if(subset is None):
+            return [partial_i.get_metric(metric_type="acc")
+                     for partial_i in self.partials]
         return np.mean([partial_i.selected_acc(subset) 
                      for partial_i in self.partials])
 
     def order_acc(self,order_i,full=True):
-        if(order_i is None):
-            return np.mean([partial_i.get_metric(metric_type="acc")
-                     for partial_i in self.partials])
         subsets=utils.selected_subsets(order_i,full=True)
         acc=[self.get_acc(subset_j) for subset_j in subsets]
         return np.array(acc)
@@ -153,7 +163,7 @@ class PartialGroup(object):
         n_clf=self.partials[0].y_partial.shape[0]-1
         return [ self.get_acc([i]) for i in range(n_clf)]
 
-def get_metric(metric_type):
+def dispatch_metric(metric_type):
     if(metric_type=="acc"):
         return accuracy_score
     if(metric_type=="balance"):
@@ -200,7 +210,7 @@ def read_result_group(in_path:str):
     return ResultGroup(results)
 
 def read_partial_group(in_path:str):
-    results= [ read_result(path_i) 
+    results= [ read_partial(path_i) 
                  for path_i in utils.top_files(in_path)]
     return PartialGroup(results)
 #def compare_results(first_path,second_path):

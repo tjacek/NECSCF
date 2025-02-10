@@ -4,7 +4,7 @@ import numpy as np
 import tensorflow as tf
 from tqdm import tqdm
 #import gc,json
-import os.path
+import os.path,json
 import multiprocessing
 import argparse
 import pandas as pd
@@ -50,16 +50,16 @@ def rf_pred(in_path,exp_path):
     data=dataset.read_csv(in_path)
     clf_factory=base.ClfFactory(clf_type="RF")
     clf_factory.init(data)
-    path_dir=train.get_paths(out_path=exp_path,
+    path_dict=train.get_paths(out_path=exp_path,
                                  ens_type='RF',
                                  dirs=['results','info.js'])
 
-    utils.make_dir(path_dir['ens'])
-    utils.make_dir(path_dir['results'])
+    utils.make_dir(path_dict['ens'])
+    utils.make_dir(path_dict['results'])
     for j,split_j in tqdm(enumerate(split_iter(exp_path))):
         clf_j=clf_factory()
         result_j,_=split_j.eval(data,clf_j)
-        result_j.save(f"{path_dir['results']}/{j}")
+        result_j.save(f"{path_dict['results']}/{j}")
     with open(path_dict['info.js'], 'w') as f:
         json.dump({"ens":'RF',"callback":None}, f)
 
@@ -72,24 +72,31 @@ def chech_dirs(path_dir):
 def get_result(exp_path):
     @utils.DirFun({"in_path":0})
     def helper(in_path):
-        result_path=f"{in_path}/class_ens/results"
-        if(not os.path.isdir(result_path)):
-             return None
-        return [ dataset.read_partial(path_i)
-                    for path_i in utils.top_files(result_path) ]
-    result_dict=helper(exp_path)
-    result_dict=utils.to_id_dir(result_dict,index=-1)
+        print(in_path)
+        output_dict=[]
+        for path_i in utils.top_files(in_path):
+            if(not "splits" in path_i):
+                info_dict=utils.read_json(f"{path_i}/info.js")
+                clf_type=info_dict['ens']
+                if(clf_type=="class_ens"):
+                    result=dataset.read_partial_group(f"{path_i}/results")
+                else:
+                    result=dataset.read_result_group(f"{path_i}/results")
+                output_dict.append((clf_type,result))
+        return output_dict
+    output_dict=helper(exp_path)
+    result_dict=utils.to_id_dir(output_dict,index=-1)
     metrics=["acc","balance"]
     lines=[]
-    for name_i,results_i in result_dict.items():
-        line_i=[name_i]
-        for metric_j in metrics:
-            value_j=[result_k.get_metric(metric_j)
-                        for result_k in results_i]
-            line_i.append(np.mean(value_j))
-        lines.append(line_i)
+    for name_i,output_i in result_dict.items():
+        for clf_j,result_j in output_i:
+            line_j=[name_i,clf_j]
+            for metric_k in metrics:
+                value_j= result_j.get_metric(metric_k)
+                line_j.append(np.mean(value_j))
+            lines.append(line_j)
     df=pd.DataFrame.from_records(lines,
-                                  columns=["data"]+metrics)
+                                  columns=["data","clf"]+metrics)
     print(df.round(4))
 
 def model_iter(split_path,model_path,ens_factory):
