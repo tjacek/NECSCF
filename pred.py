@@ -3,9 +3,9 @@ utils.silence_warnings()
 import numpy as np
 import tensorflow as tf
 from tqdm import tqdm
-#import gc,json
 import os.path,json
-import multiprocessing
+from scipy import stats
+#import multiprocessing
 import argparse
 import pandas as pd
 import base,dataset,ens,exp
@@ -69,19 +69,14 @@ def chech_dirs(path_dir):
 #    if(os.path.isdir(path_dir["results"])):
 #        raise Exception(f"Result exist")
 
-def get_result(exp_path):
+def summary(exp_path):
     @utils.DirFun({"in_path":0})
     def helper(in_path):
         print(in_path)
         output_dict=[]
         for path_i in utils.top_files(in_path):
             if(not "splits" in path_i):
-                info_dict=utils.read_json(f"{path_i}/info.js")
-                clf_type=info_dict['ens']
-                if(clf_type=="class_ens"):
-                    result=dataset.read_partial_group(f"{path_i}/results")
-                else:
-                    result=dataset.read_result_group(f"{path_i}/results")
+                clf_type,result=get_result(path_i)
                 output_dict.append((clf_type,result))
         return output_dict
     output_dict=helper(exp_path)
@@ -98,6 +93,38 @@ def get_result(exp_path):
     df=pd.DataFrame.from_records(lines,
                                   columns=["data","clf"]+metrics)
     print(df.round(4))
+
+def stat_test(exp_path,
+              clf_x,
+              clf_y,
+              metric_type="acc"):
+    @utils.DirFun({"in_path":0})
+    def helper(in_path):
+        _,result_x=get_result(f"{in_path}/{clf_x}")
+        _,result_y=get_result(f"{in_path}/{clf_y}")
+        x_value=result_x.get_metric(metric_type)
+        y_value=result_y.get_metric(metric_type)
+        mean_x,mean_y=np.mean(x_value),np.mean(y_value)
+        diff= mean_x-mean_y
+        pvalue=stats.ttest_ind(x_value,y_value,
+                               equal_var=False)[1]
+        return mean_x,mean_y,diff,round(pvalue,6)
+    pvalue_dict=helper(exp_path)
+    pvalue_dict=utils.to_id_dir(pvalue_dict,index=-1)
+    lines=[ [name_i]+list(line_i) for name_i,line_i in pvalue_dict.items()]
+    df=pd.DataFrame.from_records(lines,
+                              columns=['data',clf_x,clf_y,"diff","pvalue"])
+    df['sig']=df['pvalue'].apply(lambda pvalue_i:pvalue_i<0.05)
+    df=df.sort_values(by='diff')
+    print(df)
+
+def get_result(path_i):
+    info_dict=utils.read_json(f"{path_i}/info.js")
+    clf_type=info_dict['ens']
+    if(clf_type=="class_ens"):
+        return clf_type,dataset.read_partial_group(f"{path_i}/results")
+    else:
+        return clf_type,dataset.read_result_group(f"{path_i}/results")
 
 def model_iter(split_path,model_path,ens_factory):
     for i,path_i in enumerate(utils.top_files(model_path)):
@@ -119,7 +146,6 @@ def split_iter(exp_path):
         split_i=base.UnaggrSplit.Split(train_index=raw_split["arr_0"],
                                        test_index=raw_split["arr_1"])
         yield split_i
-
 
 #def all_subsets(exp_path,subset_path):
 #    result_dict=get_result(exp_path,
@@ -176,27 +202,6 @@ def split_iter(exp_path):
 #        json.dump(acc_dict, f, ensure_ascii=False, indent=4)
 #    return acc_dict
 
-#def result_pred(data_path,exp_path,out_path):
-#    def helper(data_path,exp_path,out_path):
-#        print(data_path)
-#        data=dataset.read_csv(data_path)
-#        ens_factory=ens.ClassEnsFactory()
-#        ens_factory.init(data)
-#        utils.make_dir(out_path)
-#        for j,(split_j,clf_j) in tqdm(enumerate(model_iter(exp_path,ens_factory))):
-#            result_j=split_j.pred(data,clf_j)
-#            result_j.save(f"{out_path}/{j}")
-#    utils.make_dir(out_path)
-#    for path_i in utils.top_files(data_path):
-#        id_i=path_i.split("/")[-1]
-#        exp_i=f"{exp_path}/{id_i}"
-#        out_i=f"{out_path}/{id_i}"
-#        p_i=multiprocessing.Process(target=helper, 
-#                                    args=(path_i,exp_i,out_i))
-#        p_i.start()
-#        p_i.join()
-
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -204,10 +209,19 @@ if __name__ == '__main__':
     parser.add_argument("--exp_path", type=str, default="new_exp")
     parser.add_argument('--type', default=None, 
                          choices=[None,'class_ens','RF','MLP']) 
+    parser.add_argument('--pairs', default=None,) 
     args = parser.parse_args()
     if(args.type):
         pred_exp(data_path=args.data_path,
                  exp_path=args.exp_path,
                  clf_type=args.type)
-    get_result(exp_path=args.exp_path)
-    print(args)
+#    summary(exp_path=args.exp_path)
+    if(args.pairs):
+        clfs=args.pairs.split(',')
+        if(len(clfs)>1):
+            clf_x,clf_y=clfs[0],clfs[1]
+            stat_test(exp_path=args.exp_path,
+                      clf_x=clf_x,
+                      clf_y=clf_y)
+        else:
+            print(f"Not a pair{args.pairs}")
