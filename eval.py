@@ -1,6 +1,6 @@
 import numpy as np
 import os
-import utils
+import pred,utils
 
 def history_acc(exp_path):
     @utils.DirFun({"in_path":0})
@@ -23,4 +23,18 @@ def history_acc(exp_path):
     	print(name_i)
     	print(dict_i)
 
-history_acc("new_exp")     
+def sig_dict(df):
+    if(type(df)==str):
+        df=pred.stat_test(exp_path=df,
+                          clf_x="RF",
+                          clf_y="class_ens",
+                          metric_type="acc")
+    print(df)    
+    sig_dict={'no_sig':df['data'][df['sig']==False].tolist()}
+    sig_df=df[df["sig"]==True]
+    sig_dict['better']=sig_df['data'][ sig_df['diff']<0].tolist()
+    sig_dict['worse']=sig_df['data'][ sig_df['diff']>0].tolist()
+    print(sig_dict)
+
+#history_acc("new_exp")
+sig_dict("new_exp") 
