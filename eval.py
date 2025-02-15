@@ -2,6 +2,16 @@ import numpy as np
 import os
 import pred,utils
 
+class DynamicSubsets(object):
+    def __init__(self,partial_results):
+        self.partial_group=partial_results
+
+    def __call__(self,subset_i,metric_type="acc"):
+        value=[partial_i.selected_acc(subset_i,
+                                      metric_type=metric_type)  
+                    for partial_i in self.partial_group]
+        return np.mean(value)
+
 def history_acc(exp_path):
     @utils.DirFun({"in_path":0})
     def helper(in_path):
