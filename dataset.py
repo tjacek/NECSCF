@@ -126,11 +126,11 @@ class PartialResults(object):
         metric=dispatch_metric(metric_type)
         return metric(self.y_true,y_pred)
     
-    def selected_acc(self,subset):
+    def selected_acc(self,subset,metric_type="acc"):
         s_votes=[self.y_partial[i] for i in subset]
         s_ballot= np.sum(s_votes,axis=0)
         s_pred=np.argmax(s_ballot,axis=1)
-        metric=dispatch_metric("acc")
+        metric=dispatch_metric(metric_type)
         return metric(self.y_true,s_pred)
 
     def save(self,out_path):
@@ -154,14 +154,16 @@ class PartialGroup(object):
         return np.mean([partial_i.selected_acc(subset) 
                      for partial_i in self.partials])
 
-    def order_acc(self,order_i,full=True):
+    def order_acc(self,order_i,metric_type="acc",full=True):
         subsets=utils.selected_subsets(order_i,full=True)
-        acc=[self.get_acc(subset_j) for subset_j in subsets]
+        acc=[self.get_metric(subset_j,metric_type) 
+                for subset_j in subsets]
         return np.array(acc)
 
-    def indv_acc(self):
+    def indv_acc(self,metric_type="acc"):
         n_clf=self.partials[0].y_partial.shape[0]-1
-        return [ self.get_acc([i]) for i in range(n_clf)]
+        return [ self.get_metric([i],metric_type) 
+                    for i in range(n_clf)]
 
 def dispatch_metric(metric_type):
     if(metric_type=="acc"):

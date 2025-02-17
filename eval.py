@@ -1,6 +1,6 @@
 import numpy as np
 import os
-import pred,utils
+import dataset,pred,utils
 
 class DynamicSubsets(object):
     def __init__(self,partial_results):
@@ -11,6 +11,14 @@ class DynamicSubsets(object):
                                       metric_type=metric_type)  
                     for partial_i in self.partial_group]
         return np.mean(value)
+
+def eval_exp(in_path,clf_type="class_ens"):
+    @utils.DirFun({"in_path":0})
+    def helper(in_path):
+        result_path=f"{in_path}/{clf_type}/results"
+        result_group=dataset.read_partial_group(result_path)
+        return DynamicSubsets(result_group)
+    helper(in_path)
 
 def history_acc(exp_path):
     @utils.DirFun({"in_path":0})
@@ -47,4 +55,4 @@ def sig_dict(df):
     print(sig_dict)
 
 #history_acc("new_exp")
-sig_dict("new_exp") 
+eval_exp("new_exp") 
