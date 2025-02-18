@@ -12,13 +12,24 @@ class DynamicSubsets(object):
                     for partial_i in self.partial_group]
         return np.mean(value)
 
-def eval_exp(in_path,clf_type="class_ens"):
+    def series(self,order,metric_type="acc"):
+        subsets= utils.selected_subsets(order,full=False)
+        return [self(subset_i,metric_type=metric_type) 
+                    for subset_i in subsets]
+
+def eval_exp(in_path,
+             ord_path,
+             clf_type="class_ens"):
     @utils.DirFun({"in_path":0})
     def helper(in_path):
         result_path=f"{in_path}/{clf_type}/results"
         result_group=dataset.read_partial_group(result_path)
         return DynamicSubsets(result_group)
-    helper(in_path)
+    output_dict=helper(in_path)
+    print(output_dict)
+    ord_dict=utils.read_json(ord_path)
+    print(ord_dict)
+
 
 def history_acc(exp_path):
     @utils.DirFun({"in_path":0})
@@ -55,4 +66,5 @@ def sig_dict(df):
     print(sig_dict)
 
 #history_acc("new_exp")
-eval_exp("new_exp") 
+eval_exp("new_exp",
+         ord_path="ord/purity.json") 
