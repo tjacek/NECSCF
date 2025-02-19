@@ -2,21 +2,6 @@ import numpy as np
 import os
 import dataset,pred,utils
 
-class DynamicSubsets(object):
-    def __init__(self,partial_results):
-        self.partial_group=partial_results
-
-    def __call__(self,subset_i,metric_type="acc"):
-        value=[partial_i.selected_acc(subset_i,
-                                      metric_type=metric_type)  
-                    for partial_i in self.partial_group]
-        return np.mean(value)
-
-    def series(self,order,metric_type="acc"):
-        subsets= utils.selected_subsets(order,full=False)
-        return [self(subset_i,metric_type=metric_type) 
-                    for subset_i in subsets]
-
 def eval_exp(in_path,
              ord_path,
              clf_type="class_ens"):
@@ -24,11 +9,17 @@ def eval_exp(in_path,
     def helper(in_path):
         result_path=f"{in_path}/{clf_type}/results"
         result_group=dataset.read_partial_group(result_path)
-        return DynamicSubsets(result_group)
-    output_dict=helper(in_path)
+        return result_group #DynamicSubsets(result_group)
+    output_dict=utils.to_id_dir(helper(in_path))
     print(output_dict)
     ord_dict=utils.read_json(ord_path)
-    print(ord_dict)
+    for name_i,subsets_i in output_dict.items():
+        ord_i=ord_dict[name_i]
+        ord_i=np.argsort(ord_i)
+        acc=subsets_i.get_metric(subset=ord_i)         
+        mean_acc=np.mean(acc)
+        print(name_i)
+        print(mean_acc)
 
 
 def history_acc(exp_path):
