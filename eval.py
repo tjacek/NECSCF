@@ -16,8 +16,10 @@ def eval_exp(in_path,
     for name_i,subsets_i in output_dict.items():
         ord_i=ord_dict[name_i]
         ord_i=np.argsort(ord_i)
-        acc=subsets_i.get_metric(subset=ord_i)         
-        mean_acc=np.mean(acc)
+        acc=subsets_i.order_acc(ord_i)         
+        acc=np.array(acc)
+        print(acc.shape)
+        mean_acc=np.mean(acc,axis=1)
         print(name_i)
         print(mean_acc)
 
@@ -58,4 +60,4 @@ def sig_dict(df):
 
 #history_acc("new_exp")
 eval_exp("new_exp",
-         ord_path="ord/purity.json") 
+         ord_path="ord/size.json") 

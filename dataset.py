@@ -153,8 +153,9 @@ class PartialGroup(object):
                         for result_j in self.partials]
 
     def order_acc(self,order_i,metric_type="acc",full=True):
-        subsets=utils.selected_subsets(order_i,full=True)
-        acc=[self.get_metric(subset_j,metric_type) 
+        subsets=utils.selected_subsets(order_i,full=full)
+        acc=[self.get_metric(metric_type=metric_type,
+                             subset=subset_j) 
                 for subset_j in subsets]
         return np.array(acc)
 
