@@ -23,22 +23,26 @@ def eval_exp(in_path,
         print(name_i)
         print(mean_acc)
 
-def make_plot(title,
-              x_label,
-              y_label,
-              all_subplots):
+def make_plot(all_subplots,
+              title="Size",
+              x_label="n_clf",
+              y_label="acc",
+              default_x=True):
     for i,subplot_i in enumerate(all_subplots):
         _, ax_k = plt.subplots()
-        for name_j in subplot_i:
-            acc_j=acc_dict[name_j]
-            x_order=np.arange(len(acc_j))+1
-            ax_k.plot(x_order,acc_j,
-                      label=name_j.split("/")[-1])
+        for name_j,value_j in subplot_i:
+            if(default_x):
+                y=value_j
+                x=np.arange(len(y))+1
+            else:
+                x,y=value_j
+            ax_k.plot(x,y,
+                      label=name_j)
         plt.title(title)
         plt.xlabel(x_label)
-        plt.yldavidgerardabel(y_label)
+        plt.ylabel(y_label)
         plt.legend()
-        plt.show()davidgerard
+        plt.show()
         plt.clf()  
 
 def history_acc(exp_path):
