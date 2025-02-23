@@ -9,19 +9,26 @@ def eval_exp(in_path,
     def helper(in_path):
         result_path=f"{in_path}/{clf_type}/results"
         result_group=dataset.read_partial_group(result_path)
-        return result_group #DynamicSubsets(result_group)
+        return result_group
     output_dict=utils.to_id_dir(helper(in_path))
-    print(output_dict)
     ord_dict=utils.read_json(ord_path)
+    acc_dict={}
     for name_i,subsets_i in output_dict.items():
         ord_i=ord_dict[name_i]
         ord_i=np.argsort(ord_i)
         acc=subsets_i.order_acc(ord_i)         
         acc=np.array(acc)
-        print(acc.shape)
+#        print(acc.shape)
         mean_acc=np.mean(acc,axis=1)
-        print(name_i)
-        print(mean_acc)
+        acc_dict[name_i]=mean_acc
+    print(acc_dict)
+    sig_df=pred.stat_test(exp_path=in_path,
+              clf_x="RF",
+              clf_y="class_ens",
+              metric_type="acc")
+    print(sig_df)
+#        print(name_i)
+#        print(mean_acc)
 
 def make_plot(all_subplots,
               title="Size",
