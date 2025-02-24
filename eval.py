@@ -18,7 +18,6 @@ def eval_exp(in_path,
         ord_i=np.argsort(ord_i)
         acc=subsets_i.order_acc(ord_i)         
         acc=np.array(acc)
-#        print(acc.shape)
         mean_acc=np.mean(acc,axis=1)
         acc_dict[name_i]=mean_acc
     print(acc_dict)
@@ -26,9 +25,12 @@ def eval_exp(in_path,
               clf_x="RF",
               clf_y="class_ens",
               metric_type="acc")
-    print(sig_df)
-#        print(name_i)
-#        print(mean_acc)
+    subplots={}
+    subplots["no_sig"]=list(sig_df[sig_df["sig"]==False]['data'])
+    sig_df=sig_df[sig_df["sig"]==True]
+    subplots["worse"]=list(sig_df[sig_df["diff"]>0]["data"])
+    subplots["better"]=list(sig_df[sig_df["diff"]<0]["data"])
+    print(subplots)
 
 def make_plot(all_subplots,
               title="Size",
