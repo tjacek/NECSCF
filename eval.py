@@ -1,25 +1,36 @@
 import numpy as np
 import os
+import matplotlib.pyplot as plt
 import dataset,pred,utils
 
-def eval_exp(in_path,
-             ord_path,
-             clf_type="class_ens"):
+class DynamicSubsets(object):
+    def __init__(self,partial_dict):
+        self.partial_dict=partial_dict
+
+    def transform(self,fun):
+        return { name_i:fun(name_i,subsets_i)
+                   for name_i,subsets_i in self.partial_dict.items()} 
+
+def read_dynamic_subsets(in_path):
     @utils.DirFun({"in_path":0})
     def helper(in_path):
-        result_path=f"{in_path}/{clf_type}/results"
+        result_path=f"{in_path}/class_ens/results"
         result_group=dataset.read_partial_group(result_path)
         return result_group
     output_dict=utils.to_id_dir(helper(in_path))
+    return DynamicSubsets(output_dict)
+
+def eval_exp(in_path,
+             ord_path):
+    dynamic_subsets=read_dynamic_subsets(in_path)
     ord_dict=utils.read_json(ord_path)
-    acc_dict={}
-    for name_i,subsets_i in output_dict.items():
+    def helper(name_i,subsets_i):
         ord_i=ord_dict[name_i]
         ord_i=np.argsort(ord_i)
         acc=subsets_i.order_acc(ord_i)         
         acc=np.array(acc)
-        mean_acc=np.mean(acc,axis=1)
-        acc_dict[name_i]=mean_acc
+        return np.mean(acc,axis=1)
+    acc_dict=dynamic_subsets.transform(helper)
     print(acc_dict)
     sig_df=pred.stat_test(exp_path=in_path,
               clf_x="RF",
@@ -30,15 +41,19 @@ def eval_exp(in_path,
     sig_df=sig_df[sig_df["sig"]==True]
     subplots["worse"]=list(sig_df[sig_df["diff"]>0]["data"])
     subplots["better"]=list(sig_df[sig_df["diff"]<0]["data"])
-    print(subplots)
+    subplots={ key_i: [ (name_j,acc_dict[name_j])
+               for name_j in value_i] 
+                   for key_i,value_i in subplots.items()}
+    make_plot(subplots)
 
 def make_plot(all_subplots,
               title="Size",
               x_label="n_clf",
               y_label="acc",
               default_x=True):
-    for i,subplot_i in enumerate(all_subplots):
+    for i,(title_i,subplot_i) in enumerate(all_subplots.items()):
         _, ax_k = plt.subplots()
+        print(subplot_i)
         for name_j,value_j in subplot_i:
             if(default_x):
                 y=value_j
