@@ -21,7 +21,8 @@ def read_dynamic_subsets(in_path):
     return DynamicSubsets(output_dict)
 
 def eval_exp(in_path,
-             ord_path):
+             ord_path,
+             z_score=True):
     dynamic_subsets=read_dynamic_subsets(in_path)
     ord_dict=utils.read_json(ord_path)
     def helper(name_i,subsets_i):
@@ -29,7 +30,11 @@ def eval_exp(in_path,
         ord_i=np.argsort(ord_i)
         acc=subsets_i.order_acc(ord_i)         
         acc=np.array(acc)
-        return np.mean(acc,axis=1)
+        acc= np.mean(acc,axis=1)
+        if(z_score):
+            acc= acc-np.mean(acc)
+#            acc= acc / np.std(acc)
+        return acc
     acc_dict=dynamic_subsets.transform(helper)
     print(acc_dict)
     sig_df=pred.stat_test(exp_path=in_path,
