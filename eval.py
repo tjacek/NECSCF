@@ -9,7 +9,11 @@ class DynamicSubsets(object):
 
     def transform(self,fun):
         return { name_i:fun(name_i,subsets_i)
-                   for name_i,subsets_i in self.partial_dict.items()} 
+                   for name_i,subsets_i in self.partial_dict.items()}
+
+def eval_exp(conf_path):
+    conf_dict=utils.read_json(conf_path)
+    print(conf_dict)
 
 def read_dynamic_subsets(in_path):
     @utils.DirFun({"in_path":0})
@@ -20,7 +24,7 @@ def read_dynamic_subsets(in_path):
     output_dict=utils.to_id_dir(helper(in_path))
     return DynamicSubsets(output_dict)
 
-def eval_exp(in_path,
+def eval_exp_(in_path,
              ord_path,
              z_score=True):
     dynamic_subsets=read_dynamic_subsets(in_path)
@@ -33,7 +37,6 @@ def eval_exp(in_path,
         acc= np.mean(acc,axis=1)
         if(z_score):
             acc= acc-np.mean(acc)
-#            acc= acc / np.std(acc)
         return acc
     acc_dict=dynamic_subsets.transform(helper)
     print(acc_dict)
@@ -109,5 +112,6 @@ def sig_dict(df):
     print(sig_dict)
 
 #history_acc("new_exp")
-eval_exp("new_exp",
-         ord_path="ord/size.json") 
+#eval_exp("new_exp",
+#         ord_path="ord/size.json")
+eval_exp(conf_path="conf/basic.js")
