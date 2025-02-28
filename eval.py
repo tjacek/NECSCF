@@ -13,7 +13,15 @@ class DynamicSubsets(object):
 
 def eval_exp(conf_path):
     conf_dict=utils.read_json(conf_path)
-    print(conf_dict)
+    if(conf_dict["subplots"] is None):
+        sig_df=pred.stat_test(exp_path=conf_dict["exp_path"],
+                              clf_x="RF",
+                              clf_y="class_ens",
+                              metric_type=conf_dict["metric_type"])
+        subplots=pred.sig_subsets(sig_df)
+    else:
+        subplots=conf_dict["subplots"]
+    print(subplots)
 
 def read_dynamic_subsets(in_path):
     @utils.DirFun({"in_path":0})
@@ -44,11 +52,7 @@ def eval_exp_(in_path,
               clf_x="RF",
               clf_y="class_ens",
               metric_type="acc")
-    subplots={}
-    subplots["no_sig"]=list(sig_df[sig_df["sig"]==False]['data'])
-    sig_df=sig_df[sig_df["sig"]==True]
-    subplots["worse"]=list(sig_df[sig_df["diff"]>0]["data"])
-    subplots["better"]=list(sig_df[sig_df["diff"]<0]["data"])
+
     subplots={ key_i: [ (name_j,acc_dict[name_j])
                for name_j in value_i] 
                    for key_i,value_i in subplots.items()}
@@ -114,4 +118,4 @@ def sig_dict(df):
 #history_acc("new_exp")
 #eval_exp("new_exp",
 #         ord_path="ord/size.json")
-eval_exp(conf_path="conf/basic.js")
+eval_exp(conf_path="conf/basic2.js")

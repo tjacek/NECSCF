@@ -116,7 +116,15 @@ def stat_test(exp_path,
                               columns=['data',clf_x,clf_y,"diff","pvalue"])
     df['sig']=df['pvalue'].apply(lambda pvalue_i:pvalue_i<0.05)
     df=df.sort_values(by='diff')
-    print(df)
+    return df
+
+def sig_subsets(sig_df):
+    subplots={}
+    subplots["no_sig"]=list(sig_df[sig_df["sig"]==False]['data'])
+    sig_df=sig_df[sig_df["sig"]==True]
+    subplots["worse"]=list(sig_df[sig_df["diff"]>0]["data"])
+    subplots["better"]=list(sig_df[sig_df["diff"]<0]["data"])
+    return subplots
 
 def get_result(path_i):
     info_dict=utils.read_json(f"{path_i}/info.js")
@@ -145,7 +153,8 @@ def split_iter(exp_path):
         raw_split=np.load(split_i)
         split_i=base.UnaggrSplit.Split(train_index=raw_split["arr_0"],
                                        test_index=raw_split["arr_1"])
-        yield split_i
+        yield split_i    
+
 
 #def all_subsets(exp_path,subset_path):
 #    result_dict=get_result(exp_path,
@@ -205,7 +214,7 @@ def split_iter(exp_path):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data_path", type=str, default="../uci")
+    parser.aaropietrzakdd_argument("--data_path", type=str, default="../uci")
     parser.add_argument("--exp_path", type=str, default="new_exp")
     parser.add_argument('--type', default=None, 
                          choices=[None,'class_ens','RF','MLP']) 
