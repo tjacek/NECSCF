@@ -22,6 +22,23 @@ def eval_exp(conf_path):
     else:
         subplots=conf_dict["subplots"]
     print(subplots)
+    dynamic_subsets=read_dynamic_subsets(conf_dict["exp_path"])
+    ord_dict=utils.read_json(conf_dict["ord_path"])
+
+    def helper(name_i,subsets_i):
+        ord_i=ord_dict[name_i]
+        ord_i=np.argsort(ord_i)
+        acc=subsets_i.order_acc(ord_i)         
+        acc=np.array(acc)
+        acc= np.mean(acc,axis=1)
+#        if(z_score):
+#            acc= acc-np.mean(acc)
+        return acc
+    acc_dict=dynamic_subsets.transform(helper)
+    subplots={ key_i: [ (name_j,acc_dict[name_j])
+               for name_j in value_i] 
+                   for key_i,value_i in subplots.items()}
+    make_plot(subplots)
 
 def read_dynamic_subsets(in_path):
     @utils.DirFun({"in_path":0})
@@ -32,31 +49,6 @@ def read_dynamic_subsets(in_path):
     output_dict=utils.to_id_dir(helper(in_path))
     return DynamicSubsets(output_dict)
 
-def eval_exp_(in_path,
-             ord_path,
-             z_score=True):
-    dynamic_subsets=read_dynamic_subsets(in_path)
-    ord_dict=utils.read_json(ord_path)
-    def helper(name_i,subsets_i):
-        ord_i=ord_dict[name_i]
-        ord_i=np.argsort(ord_i)
-        acc=subsets_i.order_acc(ord_i)         
-        acc=np.array(acc)
-        acc= np.mean(acc,axis=1)
-        if(z_score):
-            acc= acc-np.mean(acc)
-        return acc
-    acc_dict=dynamic_subsets.transform(helper)
-    print(acc_dict)
-    sig_df=pred.stat_test(exp_path=in_path,
-              clf_x="RF",
-              clf_y="class_ens",
-              metric_type="acc")
-
-    subplots={ key_i: [ (name_j,acc_dict[name_j])
-               for name_j in value_i] 
-                   for key_i,value_i in subplots.items()}
-    make_plot(subplots)
 
 def make_plot(all_subplots,
               title="Size",
