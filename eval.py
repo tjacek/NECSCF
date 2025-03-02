@@ -13,6 +13,18 @@ class DynamicSubsets(object):
 
 def eval_exp(conf_path):
     conf_dict=utils.read_json(conf_path)
+    if(conf_dict["eval_type"]=="selection"):
+        selection_eval(conf_dict)
+    if(conf_dict["eval_type"]=="shapley"):
+        shapley_eval(conf_dict)
+
+def shapley_eval(conf_dict):
+    subset_path=conf_dict["subset_path"]
+    dynamic_subsets=read_dynamic_subsets(conf_dict["exp_path"])
+    if(not os.path.isdir(conf_dict["subset_path"])):
+        print(dynamic_subsets)
+
+def selection_eval(conf_dict):
     if(conf_dict["subplots"] is None):
         sig_df=pred.stat_test(exp_path=conf_dict["exp_path"],
                               clf_x="RF",
