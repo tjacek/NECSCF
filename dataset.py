@@ -143,6 +143,9 @@ class PartialGroup(object):
     def __init__(self,partials):
         self.partials=partials
    
+    def n_clfs(self):
+        return self.partials[0].y_partial.shape[0]
+
     def get_metric(self,metric_type="acc",subset=None):
         if(subset is None):
             return [result_j.get_metric(metric_type) 
@@ -160,7 +163,7 @@ class PartialGroup(object):
         return np.array(acc)
 
     def indv_acc(self,metric_type="acc"):
-        n_clf=self.partials[0].y_partial.shape[0]-1
+        n_clf= self.n_clfs()
         return [ self.get_metric([i],metric_type) 
                     for i in range(n_clf)]
 

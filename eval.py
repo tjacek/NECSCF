@@ -20,9 +20,10 @@ def eval_exp(conf_path):
 
 def shapley_eval(conf_dict):
     subset_path=conf_dict["subset_path"]
-    dynamic_subsets=read_dynamic_subsets(conf_dict["exp_path"])
     if(not os.path.isdir(conf_dict["subset_path"])):
-        print(dynamic_subsets)
+        dynamic_subsets=read_dynamic_subsets(conf_dict["exp_path"])
+        for name_i,partial_i in dynamic_subsets.partial_dict.items():
+            print(partial_i.n_clfs())
 
 def selection_eval(conf_dict):
     if(conf_dict["subplots"] is None):
