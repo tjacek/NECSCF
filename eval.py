@@ -1,5 +1,6 @@
 import numpy as np
 import os
+from tqdm import tqdm
 import matplotlib.pyplot as plt
 import dataset,pred,utils
 
@@ -11,6 +12,18 @@ class DynamicSubsets(object):
         return { name_i:fun(name_i,subsets_i)
                    for name_i,subsets_i in self.partial_dict.items()}
 
+    def all_subsets(self,metric_type="acc"):
+        for name_i,partial_i in self.partial_dict.items():
+            clf_i=partial_i.n_clfs()
+            subsets_i=list(utils.powerset(range(clf_i)))
+            values_i=[]
+            for subset_j in tqdm(subsets_i):
+                metric_j=partial_i.get_metric(metric_type=metric_type,
+                                              subset=subset_j)
+                metric_j=np.mean(metric_j)
+                values_i.append((subset_j,metric_j))
+            yield name_i,values_i  
+
 def eval_exp(conf_path):
     conf_dict=utils.read_json(conf_path)
     if(conf_dict["eval_type"]=="selection"):
@@ -20,10 +33,13 @@ def eval_exp(conf_path):
 
 def shapley_eval(conf_dict):
     subset_path=conf_dict["subset_path"]
-    if(not os.path.isdir(conf_dict["subset_path"])):
+    if(not os.path.isdir(subset_path)):
+        utils.make_dir(subset_path)
         dynamic_subsets=read_dynamic_subsets(conf_dict["exp_path"])
-        for name_i,partial_i in dynamic_subsets.partial_dict.items():
-            print(partial_i.n_clfs())
+        subset_iter=dynamic_subsets.all_subsets(conf_dict["metric_type"])
+        for name_i,values_i in dynamic_subsets.all_subsets():
+            print(name_i)
+            utils.save_json(values_i,f"{subset_path}/{name_i}")
 
 def selection_eval(conf_dict):
     if(conf_dict["subplots"] is None):
