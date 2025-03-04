@@ -24,6 +24,33 @@ class DynamicSubsets(object):
                 values_i.append((subset_j,metric_j))
             yield name_i,values_i  
 
+def read_dynamic_subsets(in_path):
+    @utils.DirFun({"in_path":0})
+    def helper(in_path):
+        result_path=f"{in_path}/class_ens/results"
+        result_group=dataset.read_partial_group(result_path)
+        return result_group
+    output_dict=utils.to_id_dir(helper(in_path))
+    return DynamicSubsets(output_dict)
+
+class StaticSubsets(object):
+    def __init__(self,subset_dict,value_dict):
+        self.subset_dict=subset_dict
+        self.value_dict=value_dict
+
+def read_dynamic_subsets(in_path):
+    @utils.DirFun({"in_path":0})
+    def helper(in_path):
+        raw_i=utils.read_json(in_path)
+        subest_dict,value_dict={},{}
+        for subset_j,value_j in raw_i:
+            id_j=str(subset_j)
+            subest_dict[id_j]=set(subset_j)
+            value_dict[id_j]=value_j
+        return StaticSubsets(subest_dict,value_dict)
+    output_dict=utils.to_id_dir(helper(in_path))
+    print(output_dict)
+
 def eval_exp(conf_path):
     conf_dict=utils.read_json(conf_path)
     if(conf_dict["eval_type"]=="selection"):
@@ -40,6 +67,7 @@ def shapley_eval(conf_dict):
         for name_i,values_i in dynamic_subsets.all_subsets():
             print(name_i)
             utils.save_json(values_i,f"{subset_path}/{name_i}")
+    read_dynamic_subsets(subset_path)
 
 def selection_eval(conf_dict):
     if(conf_dict["subplots"] is None):
@@ -68,16 +96,6 @@ def selection_eval(conf_dict):
                for name_j in value_i] 
                    for key_i,value_i in subplots.items()}
     make_plot(subplots)
-
-def read_dynamic_subsets(in_path):
-    @utils.DirFun({"in_path":0})
-    def helper(in_path):
-        result_path=f"{in_path}/class_ens/results"
-        result_group=dataset.read_partial_group(result_path)
-        return result_group
-    output_dict=utils.to_id_dir(helper(in_path))
-    return DynamicSubsets(output_dict)
-
 
 def make_plot(all_subplots,
               title="Size",

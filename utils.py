@@ -20,7 +20,11 @@ def top_files(path):
 def read_json(in_path):
     with open(in_path, 'r') as file:
         data = json.load(file)
-        return data    
+        return data
+
+def save_json(value,out_path):
+    with open(out_path, 'w') as f:
+        json.dump(value, f)
 
 class DirFun(object):
     def __init__(self,
