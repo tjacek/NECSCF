@@ -2,6 +2,7 @@ import numpy as np
 import os
 from tqdm import tqdm
 import matplotlib.pyplot as plt
+import scipy.stats
 import dataset,pred,utils
 
 class DynamicSubsets(object):
@@ -95,11 +96,20 @@ def shapley_eval(conf_dict):
         n_clfs=subset_i.n_clfs()
         shapley=[subset_i.shapley(k) for k in range(n_clfs-1)]
         point_dict[name_i]=(ord_dict[name_i],shapley)
+    plot_path=conf_dict["plot_path"]
+    utils.make_dir(conf_dict["plot_path"])
+    for name_i,(x_i,y_i) in point_dict.items():
+        fig, ax = plt.subplots()
+        scatter = ax.scatter(x_i, y_i)
+        plt.savefig(f'{plot_path}/{name_i}')
+
+def total_scater(point_dict):
     x,y=[],[]
     for name_i,(x_i,y_i) in point_dict.items():
         x.append(x_i)
         y.append(y_i)
     x,y=np.concatenate(x),np.concatenate(y)
+    print(scipy.stats.pearsonr(x, y) )
     fig, ax = plt.subplots()
     scatter = ax.scatter(x, y)
     plt.show()
