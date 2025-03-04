@@ -38,18 +38,34 @@ class StaticSubsets(object):
         self.subset_dict=subset_dict
         self.value_dict=value_dict
 
-def read_dynamic_subsets(in_path):
+    def shapley(self,k):
+        singlton,margin=set([k]),[]
+        for id_i,set_i in self.subset_dict.items():
+            if(len(set_i)==1):
+                continue
+            if(k in set_i):
+                diff_i=set_i.difference(singlton)
+                one_out_id=list(diff_i)
+                one_out_id.sort()
+                one_out_id=str(one_out_id)
+                in_value=self.value_dict[id_i]
+                out_value=self.value_dict[one_out_id]
+                margin.append(in_value-out_value)
+        return np.mean(margin)
+
+def read_static_subsets(in_path):
     @utils.DirFun({"in_path":0})
     def helper(in_path):
         raw_i=utils.read_json(in_path)
         subest_dict,value_dict={},{}
         for subset_j,value_j in raw_i:
-            id_j=str(subset_j)
+            id_j=list(subset_j)
+            id_j.sort()
+            id_j=str(id_j)
             subest_dict[id_j]=set(subset_j)
             value_dict[id_j]=value_j
         return StaticSubsets(subest_dict,value_dict)
-    output_dict=utils.to_id_dir(helper(in_path))
-    print(output_dict)
+    return utils.to_id_dir(helper(in_path))
 
 def eval_exp(conf_path):
     conf_dict=utils.read_json(conf_path)
@@ -67,7 +83,9 @@ def shapley_eval(conf_dict):
         for name_i,values_i in dynamic_subsets.all_subsets():
             print(name_i)
             utils.save_json(values_i,f"{subset_path}/{name_i}")
-    read_dynamic_subsets(subset_path)
+    subset_dict=read_static_subsets(subset_path)
+    for name_i,subset_i in subset_dict.items():
+        print(subset_i.shapley(0))
 
 def selection_eval(conf_dict):
     if(conf_dict["subplots"] is None):
