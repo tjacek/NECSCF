@@ -153,64 +153,7 @@ def split_iter(exp_path):
         raw_split=np.load(split_i)
         split_i=base.UnaggrSplit.Split(train_index=raw_split["arr_0"],
                                        test_index=raw_split["arr_1"])
-        yield split_i    
-
-
-#def all_subsets(exp_path,subset_path):
-#    result_dict=get_result(exp_path,
-#                           acc=False)
-#    utils.make_dir(subset_path)
-#    for name_i,results_i in result_dict.items():
-#        with open(f"{subset_path}/{name_i}.txt", 'w') as file:
-#            cats=list(range(len(results_i[0])))
-#            for subset_j in utils.powerset(cats):
-#                acc_j=[result_k.selected_acc(subset_j) 
-#                        for result_k in results_i]
-#                mean_acc=np.mean(acc_j)
-#                line_i=f"{subset_j}-{mean_acc:.4f}\n"
-#                file.write(line_i)
-#                print(line_i)
-
-#def order_pred(data_path:str,
-#               exp_path:str,
-#               json_path:str,
-#               out_path:str,
-#               full=False,
-#               reverse=False):
-#    card_dict=utils.read_json(json_path)
-#    def helper(data_path,exp_path,queue):
-#        name=data_path.split("/")[-1]
-#        print(name)
-#        card= card_dict[name]
-#        order=np.argsort(card)
-#        if(reverse):
-#            order=np.flip(order)
-#        clf_selection=utils.selected_subsets(order.tolist(),
-#                                             full=full)
-#        data=dataset.read_csv(data_path)
-#        ens_factory=ens.ClassEnsFactory()
-#        ens_factory.init(data)
-#        acc=[[] for _ in clf_selection]
-#        for split_i,clf_i in tqdm(model_iter(exp_path,ens_factory)):
-#            for j,subset_j in enumerate(clf_selection):
-#                clf_j=exp.SelectedEns(clf_i,subset_j)
-#                acc[j].append(split_i.pred(data,clf_j).get_acc())
-#        acc=np.array(acc)
-#        queue.put(np.mean(acc,axis=1).tolist())
-#    acc_dict={}
-#    for path_i in utils.top_files(data_path):
-#        id_i=path_i.split("/")[-1]
-#        exp_i=f"{exp_path}/{id_i}"
-#        queue = multiprocessing.Queue()
-#        p_i=multiprocessing.Process(target=helper, 
-#                                    args=(path_i,exp_i,queue))
-#        p_i.start()
-#        p_i.join()
-#        acc_dict[id_i]=queue.get()
-#    with open(out_path, 'w', encoding='utf-8') as f:
-#        json.dump(acc_dict, f, ensure_ascii=False, indent=4)
-#    return acc_dict
-
+        yield split_i
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

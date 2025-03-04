@@ -37,6 +37,11 @@ class StaticSubsets(object):
     def __init__(self,subset_dict,value_dict):
         self.subset_dict=subset_dict
         self.value_dict=value_dict
+    
+    def n_clfs(self):
+        values=[len(subset_i) 
+            for subset_i in self.subset_dict.values()]
+        return max(values)
 
     def shapley(self,k):
         singlton,margin=set([k]),[]
@@ -84,8 +89,20 @@ def shapley_eval(conf_dict):
             print(name_i)
             utils.save_json(values_i,f"{subset_path}/{name_i}")
     subset_dict=read_static_subsets(subset_path)
+    ord_dict=utils.read_json(conf_dict["ord_path"])
+    point_dict={}
     for name_i,subset_i in subset_dict.items():
-        print(subset_i.shapley(0))
+        n_clfs=subset_i.n_clfs()
+        shapley=[subset_i.shapley(k) for k in range(n_clfs-1)]
+        point_dict[name_i]=(ord_dict[name_i],shapley)
+    x,y=[],[]
+    for name_i,(x_i,y_i) in point_dict.items():
+        x.append(x_i)
+        y.append(y_i)
+    x,y=np.concatenate(x),np.concatenate(y)
+    fig, ax = plt.subplots()
+    scatter = ax.scatter(x, y)
+    plt.show()
 
 def selection_eval(conf_dict):
     if(conf_dict["subplots"] is None):
