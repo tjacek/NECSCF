@@ -90,8 +90,11 @@ def shapley_eval(conf_dict):
     point_dict={}
     for name_i,subset_i in subset_dict.items():
         n_clfs=subset_i.n_clfs()
+        ord_i=ord_dict[name_i]
+        if(len(ord_i) <n_clfs):
+            n_clfs-=1
         shapley=[subset_i.shapley(k) for k in range(n_clfs)]
-        point_dict[name_i]=(ord_dict[name_i],shapley)
+        point_dict[name_i]=(ord_i,shapley)
 #    indiv_scatter(point_dict,conf_dict["plot_path"])
     total_scater(point_dict)
 
