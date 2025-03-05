@@ -51,9 +51,7 @@ class StaticSubsets(object):
                 continue
             if(k in set_i):
                 diff_i=set_i.difference(singlton)
-                one_out_id=list(diff_i)
-                one_out_id.sort()
-                one_out_id=str(one_out_id)
+                one_out_id=get_id(diff_i)
                 in_value=self.value_dict[id_i]
                 out_value=self.value_dict[one_out_id]
                 margin.append(in_value-out_value)
@@ -65,9 +63,7 @@ def read_static_subsets(in_path):
         raw_i=utils.read_json(in_path)
         subest_dict,value_dict={},{}
         for subset_j,value_j in raw_i:
-            id_j=list(subset_j)
-            id_j.sort()
-            id_j=str(id_j)
+            id_j=get_id(subset_j)
             subest_dict[id_j]=set(subset_j)
             value_dict[id_j]=value_j
         return StaticSubsets(subest_dict,value_dict)
@@ -113,6 +109,11 @@ def total_scater(point_dict):
     fig, ax = plt.subplots()
     scatter = ax.scatter(x, y)
     plt.show()
+
+def get_id(subset):
+    id_j=list(subset)
+    id_j.sort()
+    return str(id_j)
 
 def selection_eval(conf_dict):
     if(conf_dict["subplots"] is None):
