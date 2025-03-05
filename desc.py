@@ -30,8 +30,16 @@ def history_acc(exp_path,out_path=None):
                         if("acc" in key_j)}
             values=[ dict_i[keys[k]][0]
                         for k in range(len(keys))]
+            values=z_score(values)
             ord_dict[name_i.split("/")[-1]]=values
         utils.save_json(ord_dict,out_path)
 
+def z_score(values):
+    values=np.array(values)
+    values-=np.mean(values)
+    values/=np.std(values)
+    values=np.round(values,4)
+    return values.tolist()
+
 if __name__ == '__main__':
-    history_acc("new_exp","ord/acc.json")
+    history_acc("new_exp","ord/total_acc.json")
