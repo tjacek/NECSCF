@@ -92,8 +92,11 @@ def shapley_eval(conf_dict):
         n_clfs=subset_i.n_clfs()
         shapley=[subset_i.shapley(k) for k in range(n_clfs-1)]
         point_dict[name_i]=(ord_dict[name_i],shapley)
-    plot_path=conf_dict["plot_path"]
-    utils.make_dir(conf_dict["plot_path"])
+#    indiv_scatter(point_dict,conf_dict["plot_path"])
+    total_scater(point_dict)
+
+def indiv_scatter(point_dict,plot_path):
+    utils.make_dir(plot_path)
     for name_i,(x_i,y_i) in point_dict.items():
         fig, ax = plt.subplots()
         scatter = ax.scatter(x_i, y_i)
@@ -165,27 +168,6 @@ def make_plot(all_subplots,
         plt.legend()
         plt.show()
         plt.clf()  
-
-def history_acc(exp_path):
-    @utils.DirFun({"in_path":0})
-    def helper(in_path):
-        for path_i in utils.top_files(in_path):
-            history_i=f"{path_i}/history"
-            if(os.path.exists(history_i)):
-                hist=[utils.read_json(path_j) 
-                            for path_j in utils.top_files(history_i)]
-                keys=[key_j for key_j in hist[0].keys()
-                        if(not "loss" in key_j)]
-                hist_dict={ key_j:[hist_k[key_j] for hist_k in hist]
-                             for key_j in keys}
-                hist_dict={ key_j: (round(np.mean(value_j),4),
-                	                round(np.std(value_j),4))
-                             for key_j,value_j in hist_dict.items()}
-                return hist_dict
-    output_dict=helper(exp_path)
-    for name_i,dict_i in output_dict.items():
-    	print(name_i)
-    	print(dict_i)
 
 def sig_dict(df):
     if(type(df)==str):
