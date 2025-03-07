@@ -96,16 +96,17 @@ def shapley_eval(conf_dict):
         shapley=[subset_i.shapley(k) for k in range(n_clfs)]
         point_dict[name_i]=(ord_i,shapley)
 #    indiv_scatter(point_dict,conf_dict["plot_path"])
-    total_scater(point_dict)
+    total_scater(point_dict,conf_dict)
 
 def indiv_scatter(point_dict,plot_path):
+    plot_path=conf_dict["plot_path"]
     utils.make_dir(plot_path)
     for name_i,(x_i,y_i) in point_dict.items():
         fig, ax = plt.subplots()
         scatter = ax.scatter(x_i, y_i)
         plt.savefig(f'{plot_path}/{name_i}')
 
-def total_scater(point_dict):
+def total_scater(point_dict,conf_dict):
     x,y=[],[]
     for name_i,(x_i,y_i) in point_dict.items():
         x.append(x_i)
@@ -114,6 +115,10 @@ def total_scater(point_dict):
     print(scipy.stats.pearsonr(x, y) )
     fig, ax = plt.subplots()
     scatter = ax.scatter(x, y)
+    plt.title("Classes in each dataset")
+    plt.ylabel(conf_dict["eval_type"])
+    x_label=conf_dict["ord_path"].split("/")[-1].split(".")[0]
+    plt.xlabel(y_label)
     plt.show()
 
 def get_id(subset):
