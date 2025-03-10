@@ -1,6 +1,36 @@
 import numpy as np
 import os.path
-import utils
+from sklearn.neighbors import BallTree
+import dataset,utils
+
+
+def knn_purity(in_path,k=10):
+    @utils.DirFun({"in_path":0})
+    def helper(in_path):
+        data_i=dataset.read_csv(in_path)
+        tree=BallTree(data_i.X)
+        indces= tree.query(data_i.X,
+                           k=k+1,
+                          return_distance=False)
+        n_cats=data_i.n_cats()
+        hist=np.zeros((n_cats,n_cats))
+        sizes=np.zeros(n_cats)
+        for i,ind_i in enumerate(indces):
+            point_i=int(data_i.y[i])
+            sizes[point_i]+=1
+            for ind_j in ind_i[1:]:
+                near_j=int(data_i.y[ind_j])
+                hist[point_i][near_j]+=1
+        hist/=k
+        for i,size_i in enumerate(sizes):
+            hist[i,:]/=size_i
+        return hist
+    output_dict=helper(in_path)
+    for name_i,value_i in output_dict.items():
+        value_i=np.round(value_i,4)
+        print(name_i)
+        print(value_i)
+
 
 def history_acc(exp_path,out_path=None):
     @utils.DirFun({"in_path":0})
@@ -42,4 +72,5 @@ def z_score(values):
     return values.tolist()
 
 if __name__ == '__main__':
-    history_acc("new_exp","ord/total_acc.json")
+    knn_purity("../uci")
+#    history_acc("new_exp","ord/total_acc.json")
