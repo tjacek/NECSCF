@@ -40,7 +40,8 @@ def ensemble_builder(params,
                  outputs=single_cls)
     model.compile(loss=loss,
                   optimizer='adam',
-                  metrics=metrics)
+                  metrics=metrics,
+                  jit_compile=False)
     return model
 
 def single_builder(params,
@@ -224,7 +225,7 @@ class TotalEarlyStopping(keras.callbacks.Callback):
         total_acc=0.0
         for key_i in logs.keys():
             if("accuracy" in key_i):
-                total_acc=logs[key_i]
+                total_acc+=logs[key_i]
         diff= total_acc-self.best
         if(diff>= self.eps):
             self.best=total_acc
