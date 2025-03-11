@@ -60,6 +60,12 @@ def exp(in_path):
                                     n_repeats=1,
                                     split_type="unaggr")
     clf_factory=FlexibleFactory(weight_gen=basic_weights)
+    metric_dict,hist_dicts=eval_factory(data_split,clf_factory)
+    print(metric_dict)
+
+def eval_factory(data_split,clf_factory,metrics=None):
+    if(metrics is None):
+        metrics=["acc","balance"]
     def helper(split_i,clf_i):
         result_i,history_i=split_i.eval(data_split.data,
                                         clf_i)
@@ -79,8 +85,9 @@ def exp(in_path):
                         for history_j in history])
             history_stats[key_i]=np.mean(raw_i,axis=0)
     result=dataset.ResultGroup(results)
-    acc=result.get_acc()
-    print(np.mean(acc))
+    metric_dict={ metric_i:np.mean(result.get_metric(metric_i))
+                   for metric_i in metrics}
+    return metric_dict,history
 
 in_path="../uci/cleveland"
 exp(in_path)
