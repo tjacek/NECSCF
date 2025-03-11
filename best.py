@@ -1,9 +1,7 @@
 import numpy as np
 #import pandas as pd 
-#from collections import namedtuple
-#from collections import defaultdict
 from tqdm import tqdm
-import base,dataset,ens,deep,utils
+import base,dataset,desc,ens,deep,utils
 
 class FlexibleFactory(object):
     def __init__(self,weight_gen,hyper_params=None):
@@ -32,6 +30,20 @@ class FlexibleFactory(object):
             clfs.append(clf_i)
         return NaiveEnsemble(clfs)
 
+class PurityWeights(object):
+    def __init__(self,purity_hist):
+        self.purity_hist=purity_hist
+
+    def __call__(self,i,weight_dict):
+        purity_i=self.purity_hist[i,:]
+        new_weight={}
+        for k,weight_k in weight_dict.items():
+            if(k==i):
+                new_weight[k]= 2*weight_k
+            else:
+                new_weight[k]= (1.0-purity_i[k])*weight_k
+        return new_weight
+
 class NaiveEnsemble(object):
     def __init__(self,clfs):	
         self.clfs=clfs
@@ -59,9 +71,14 @@ def exp(in_path):
                                     n_splits=10,
                                     n_repeats=1,
                                     split_type="unaggr")
-    clf_factory=FlexibleFactory(weight_gen=basic_weights)
-    metric_dict,hist_dicts=eval_factory(data_split,clf_factory)
-    print(metric_dict)
+    gen_dict={"purity":PurityWeights(desc.purity_hist(data_split.data)),
+              "basic":basic_weights}
+    for type_i,gen_i in gen_dict.items():
+        clf_factory_i=FlexibleFactory(weight_gen=gen_i)
+        metric_dict,hist_dicts=eval_factory(data_split,clf_factory_i)
+        print(type_i)
+        print(hist_dicts)
+        print(metric_dict)
 
 def eval_factory(data_split,clf_factory,metrics=None):
     if(metrics is None):
@@ -87,7 +104,7 @@ def eval_factory(data_split,clf_factory,metrics=None):
     result=dataset.ResultGroup(results)
     metric_dict={ metric_i:np.mean(result.get_metric(metric_i))
                    for metric_i in metrics}
-    return metric_dict,history
+    return metric_dict,history_stats
 
 in_path="../uci/cleveland"
 exp(in_path)
