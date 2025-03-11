@@ -1,8 +1,9 @@
 import numpy as np
-import pandas as pd 
-from collections import namedtuple
-from collections import defaultdict
-import base,dataset,ens,deep
+#import pandas as pd 
+#from collections import namedtuple
+#from collections import defaultdict
+from tqdm import tqdm
+import base,dataset,ens,deep,utils
 
 class FlexibleFactory(object):
     def __init__(self,weight_gen,hyper_params=None):
@@ -36,13 +37,14 @@ class NaiveEnsemble(object):
         self.clfs=clfs
 
     def fit(self,X,y):
+        history=[]
         for model_i in self.clfs:
-            model_i.fit(X,y)
+            history.append(model_i.fit(X,y))
+        return history
 
     def predict(self,X):
         y=[clf_i.predict_proba(X) for clf_i in self.clfs]
         y=np.array(y)
-        print(y.shape)
         y=np.sum(y,axis=0)
         return np.argmax(y,axis=1)
 
@@ -58,9 +60,26 @@ def exp(in_path):
                                     n_repeats=1,
                                     split_type="unaggr")
     clf_factory=FlexibleFactory(weight_gen=basic_weights)
-    result,_=data_split(clf_factory)
+    def helper(split_i,clf_i):
+        result_i,history_i=split_i.eval(data_split.data,
+                                        clf_i)
+        hist_dicts=[ utils.history_to_dict(history_j) 
+                        for history_j in history_i]
+        keys=hist_dicts[0].keys()
+        single_dict={key_i:[hist_j[key_i] 
+                             for hist_j in hist_dicts]
+                        for key_i in keys}
+        return result_i,single_dict
+    output=[pair_i for pair_i in data_split.iter(helper,clf_factory)]
+    results,history=list(zip(*output))
+    history_stats={}
+    for key_i in history[0].keys():
+        if(not "loss" in key_i):
+            raw_i=np.array([history_j[key_i] 
+                        for history_j in history])
+            history_stats[key_i]=np.mean(raw_i,axis=0)
+    result=dataset.ResultGroup(results)
     acc=result.get_acc()
-    print(acc)
     print(np.mean(acc))
 
 in_path="../uci/cleveland"
