@@ -66,19 +66,31 @@ def basic_weights(i,weight_dict):
     new_weight[i]*=size
     return new_weight
 
-def exp(in_path):
+def find_best(in_path,out_path):
+    datasets=["cmc","vehicle"]
+    utils.make_dir(out_path)
+    for data_i in datasets:
+        output_i=single_exp(f"{in_path}/{data_i}",verbose=True)
+        utils.save_json(value=output_i,
+                        out_path=f"{out_path}/{data_i}")
+
+def single_exp(in_path,verbose=False):
     data_split=base.get_splits(data_path=in_path,
                                     n_splits=10,
                                     n_repeats=1,
                                     split_type="unaggr")
     gen_dict={"purity":PurityWeights(desc.purity_hist(data_split.data)),
               "basic":basic_weights}
+    output_dict={}
     for type_i,gen_i in gen_dict.items():
         clf_factory_i=FlexibleFactory(weight_gen=gen_i)
-        metric_dict,hist_dicts=eval_factory(data_split,clf_factory_i)
-        print(type_i)
-        print(hist_dicts)
-        print(metric_dict)
+        metric_dict,history_stats=eval_factory(data_split,clf_factory_i)
+        output_dict[type_i]=(metric_dict,history_stats)
+        if(verbose):
+             print(type_i)
+             print(history_stats)
+             print(metric_dict)
+    return output_dict
 
 def eval_factory(data_split,clf_factory,metrics=None):
     if(metrics is None):
@@ -100,11 +112,13 @@ def eval_factory(data_split,clf_factory,metrics=None):
         if(not "loss" in key_i):
             raw_i=np.array([history_j[key_i] 
                         for history_j in history])
-            history_stats[key_i]=np.mean(raw_i,axis=0)
+            history_stats[key_i]=list(np.mean(raw_i,axis=0))
     result=dataset.ResultGroup(results)
     metric_dict={ metric_i:np.mean(result.get_metric(metric_i))
                    for metric_i in metrics}
     return metric_dict,history_stats
 
 in_path="../uci/cleveland"
-exp(in_path)
+#exp(in_path)
+find_best(in_path="../uci",
+          out_path="best")
