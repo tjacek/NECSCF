@@ -1,6 +1,7 @@
 import numpy as np
-#import pandas as pd 
+import pandas as pd 
 from tqdm import tqdm
+import argparse
 import base,dataset,desc,ens,deep,utils
 
 class FlexibleFactory(object):
@@ -67,7 +68,8 @@ def basic_weights(i,weight_dict):
     return new_weight
 
 def find_best(in_path,out_path):
-    datasets=["cmc","vehicle"]
+    datasets=["dermatology","solar-flare","wall-following",
+              "wine-quality-red","newthyroid","lymphography"]
     utils.make_dir(out_path)
     for data_i in datasets:
         output_i=single_exp(f"{in_path}/{data_i}",verbose=True)
@@ -118,7 +120,28 @@ def eval_factory(data_split,clf_factory,metrics=None):
                    for metric_i in metrics}
     return metric_dict,history_stats
 
-in_path="../uci/cleveland"
-#exp(in_path)
-find_best(in_path="../uci",
-          out_path="best")
+def df_summary(in_path):
+    lines=[]
+    for path_i in utils.top_files(in_path):
+        id_i=path_i.split("/")[-1]
+        dict_i=utils.read_json(path_i)
+        for name_j,(metric_j,_) in dict_i.items():
+            for type_k,value_k in metric_j.items():
+                line_j=[id_i,name_j,type_k,value_k]
+                lines.append(line_j)
+    df=pd.DataFrame.from_records(lines,
+                                 columns=["data","weights","metric","value"])
+    print(df.round(4))
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--in_path", type=str, default="../_uci")
+    parser.add_argument("--out_path", type=str, default="best")
+    parser.add_argument('--summary', action='store_true')
+
+    args = parser.parse_args()
+    if(args.summary):
+        df_summary(in_path=args.out_path)
+    else:   
+        find_best(in_path=args.in_path,
+                  out_path=args.out_path)
