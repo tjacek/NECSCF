@@ -68,8 +68,7 @@ def basic_weights(i,weight_dict):
     return new_weight
 
 def find_best(in_path,out_path):
-    datasets=["dermatology","solar-flare","wall-following",
-              "wine-quality-red","newthyroid","lymphography"]
+    datasets=["satimage","mfeat-fourier","cleveland"]
     utils.make_dir(out_path)
     for data_i in datasets:
         output_i=single_exp(f"{in_path}/{data_i}",verbose=True)
@@ -130,12 +129,24 @@ def df_summary(in_path):
                 line_j=[id_i,name_j,type_k,value_k]
                 lines.append(line_j)
     df=pd.DataFrame.from_records(lines,
-                                 columns=["data","weights","metric","value"])
+                                 columns=["data","ens","metric","value"])
+    df=df.sort_values(by=["data","metric"])
     print(df.round(4))
+    df_dict={metric_i:{ens_j:df.query(f"ens=='{ens_j}' and metric=='{metric_i}'")
+                for ens_j in df['ens'].unique()}
+                    for metric_i in df['metric'].unique()}
+    def extrac(df,data):
+        return df.query(f"data=='{data_i}'")['value'].to_list()[0]
+    for data_i in df['data'].unique():
+        acc_purity=extrac(df_dict['acc']['purity'],data_i)
+        acc_basic=extrac(df_dict['acc']['basic'],data_i)
+        balance_purity=extrac(df_dict['balance']['purity'],data_i)
+        balance_basic=extrac(df_dict['balance']['basic'],data_i)
+        print(f'{data_i},{acc_purity-acc_basic:.4f},{balance_purity-balance_basic:.4f}')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--in_path", type=str, default="../_uci")
+    parser.add_argument("--in_path", type=str, default="../uci")
     parser.add_argument("--out_path", type=str, default="best")
     parser.add_argument('--summary', action='store_true')
 
