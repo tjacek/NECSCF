@@ -57,29 +57,30 @@ def eval_exp(data_path,exp_path="single_exp"):
                                 partial=partial)                
             result=read(partial_path)
             print(id_i)
-            print(f"Acc:{np.mean(result.get_acc()):.4f}")          
-    
-#def make_results(path_i,partial_path,data_splits):
-#    info_dict=utils.read_json(f"{path_i}/info.js")    
-#    if(info_dict['ens']=='class_ens'):
-#        clf_factory=ens.get_ens("class_ens")
-#        for j,split_j in enumerate(data_splits.splits):
-#            test_data_j=data_splits.data.selection(split_j.test_index)
-#            clf_j=clf_factory.read(f"{path_i}/models/{j}.keras")
-#            raw_partial_j=clf_j.partial_predict(test_data_j.X)
-#            result_j=dataset.PartialResults(y_true=test_data_j.y,
-#                                        y_partial=raw_partial_j)
-#            result_j.save(f"{partial_path}/{j}.npz")
-#    else:
-#        clf_factory=ens.get_ens("MLP")
-#        for j,split_j in enumerate(data_splits.splits):
-#            test_data_j=data_splits.data.selection(split_j.test_index)
-#            clf_j=clf_factory.read(f"{path_i}/models/{j}.keras")
-#            raw_result_j=clf_j.predict(test_data_j.X)
-#            result_j=dataset.Result(y_true=test_data_j.y,
-#                                     y_pred=raw_result_j)
-#            result_j.save(f"{partial_path}/{j}.npz")
-#    return info_dict['ens']
+            print(f"Acc:{np.mean(result.get_metric(metric_type='acc')):.4f}")
+
+def light_eval(data_path,
+               exp_path="single_exp",
+               ens_type="purity_ens"):
+    data_splits=get_splits(data_path,exp_path)
+    clf_factory=ens.get_ens(ens_type)
+    ens_path=f"{exp_path}/{ens_type}"
+    result_path=f"{ens_path}/results"
+    if(not os.path.isdir(result_path)):
+        utils.make_dir(result_path)
+        for i,path_i in  enumerate(utils.top_files(f"{ens_path}/models")):
+            model_path_i=f"{ens_path}/models/{i}.keras"
+            print(model_path_i)
+            clf_i=clf_factory.read(model_path_i)
+            split_i=base.read_split(f"{exp_path}/splits/{i}.npz")#data_splits.splits[i]
+            data_i= data_splits.data.selection(split_i.test_index)
+            raw_i=clf_i.partial_predict(data_i.X)
+            result_i=dataset.PartialResults(y_true=data_i.y,
+                                        y_partial=raw_i)
+            result_i.save(f"{result_path}/{i}.npz")
+    results=dataset.read_partial_group(result_path)
+    print(f"Acc:{np.mean(results.get_metric(metric_type='acc')):.4f}")
+    print(f"Balance:{np.mean(results.get_metric(metric_type='balance')):.4f}")
 
 def make_results(data_splits,
                     clf_factory,
@@ -130,9 +131,9 @@ def show_history(exp_path):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input", type=str, default="../uci/wall-following")
-    parser.add_argument("--output", type=str, default="single_exp/wall-following")
-    parser.add_argument("--ens_type", type=str, default="class_ens")
+    parser.add_argument("--input", type=str, default="../uci/cleveland")
+    parser.add_argument("--output", type=str, default="new_exp/cleveland")
+    parser.add_argument("--ens_type", type=str, default="purity_ens")
     parser.add_argument('--train', action='store_true')
     parser.add_argument('--history', action='store_true')
     args = parser.parse_args()
@@ -140,7 +141,7 @@ if __name__ == '__main__':
         single_exp(in_path=args.input,
                out_path=args.output,
                ens_type=args.ens_type)
-    eval_exp(data_path=args.input,
+    light_eval(data_path=args.input,
              exp_path=args.output)
     if(args.history):
         show_history(exp_path=args.output)
