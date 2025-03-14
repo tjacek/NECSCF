@@ -8,34 +8,33 @@ import utils
 
 def ensemble_builder(params,
                      hyper_params=None,
-                     selected_classes=None,
+                     loss_gen=None,
                      full=True):
+    if(loss_gen is None):
+        loss_gen=WeightedLoss()
     input_layer = Input(shape=(params['dims']))
-    class_dict=params['class_weights']
-    if(selected_classes is None):
-        selected_classes=list(range(params['n_cats']))   
+    class_dict,n_cats=params['class_weights'],params['n_cats']
     single_cls,loss,metrics=[],{},{}
-    for i in selected_classes:
+    for i in range(n_cats):
         nn_i=nn_builder(params=params,
                         hyper_params=hyper_params,
                         input_layer=input_layer,
                         i=i,
                         n_cats=params['n_cats'])
         single_cls.append(nn_i)
-        loss[f'out_{i}']=weighted_loss(specific=i,
-                                       class_dict=class_dict)
+        loss[f'out_{i}']=loss_gen(specific=i,
+                                  class_dict=class_dict)
         metrics[f'out_{i}']= 'accuracy'
     if(full):
-        k=len(selected_classes)
         nn_k=nn_builder(params=params,
                         hyper_params=hyper_params,
                         input_layer=input_layer,
-                        i=k,
-                        n_cats=params['n_cats'])
+                        i=n_cats,
+                        n_cats=n_cats)
         single_cls.append(nn_k)
-        loss[f'out_{k}']=weighted_loss(specific=None,
+        loss[f'out_{n_cats}']=loss_gen(specific=None,
                                        class_dict=class_dict)
-        metrics[f'out_{k}']= 'accuracy'
+        metrics[f'out_{n_cats}']= 'accuracy'
     model= Model(inputs=input_layer, 
                  outputs=single_cls)
     model.compile(loss=loss,
@@ -43,6 +42,44 @@ def ensemble_builder(params,
                   metrics=metrics,
                   jit_compile=False)
     return model
+
+#def _ensemble_builder(params,
+#                     hyper_params=None,
+#                     selected_classes=None,
+#                     full=True):
+#    input_layer = Input(shape=(params['dims']))
+#    class_dict=params['class_weights']
+#    if(selected_classes is None):
+#        selected_classes=list(range(params['n_cats']))   
+#    single_cls,loss,metrics=[],{},{}
+#    for i in selected_classes:
+#        nn_i=nn_builder(params=params,
+#                        hyper_params=hyper_params,
+#                        input_layer=input_layer,
+#                        i=i,
+#                        n_cats=params['n_cats'])
+#        single_cls.append(nn_i)
+#        loss[f'out_{i}']=weighted_loss(specific=i,
+#                                       class_dict=class_dict)
+#        metrics[f'out_{i}']= 'accuracy'
+#    if(full):
+#        k=len(selected_classes)
+#        nn_k=nn_builder(params=params,
+#                        hyper_params=hyper_params,
+#                        input_layer=input_layer,
+#                        i=k,
+#                        n_cats=params['n_cats'])
+#        single_cls.append(nn_k)
+#        loss[f'out_{k}']=weighted_loss(specific=None,
+#                                       class_dict=class_dict)
+#        metrics[f'out_{k}']= 'accuracy'
+#    model= Model(inputs=input_layer, 
+#                 outputs=single_cls)
+#    model.compile(loss=loss,
+#                  optimizer='adam',
+#                  metrics=metrics,
+#                  jit_compile=False)
+#    return model
 
 def single_builder(params,
                    hyper_params=None):
@@ -82,14 +119,27 @@ def nn_builder(params,
     x_i=Dense(n_cats, activation='softmax',name=f'out_{i}')(x_i)
     return x_i
 
-def weighted_loss(specific,class_dict):
-    n_cats=len(class_dict)
-    class_weights=np.zeros(n_cats,dtype=np.float32)
-    for i in range(n_cats):
-        class_weights[i]=class_dict[i] #1.0/class_dict[i]
-    if(not (specific is None)):
-        class_weights[specific]*=  (len(class_dict)/2)
-    return keras_loss(class_weights)
+class WeightedLoss(object):
+    def init(self,data):
+        pass
+    
+    def __call__(self,specific,class_dict):
+        n_cats=len(class_dict)
+        class_weights=np.zeros(n_cats,dtype=np.float32)
+        for i in range(n_cats):
+            class_weights[i]=class_dict[i]
+        if(not (specific is None)):
+            class_weights[specific]*=  (len(class_dict)/2)
+        return keras_loss(class_weights)
+
+#def weighted_loss(specific,class_dict):
+#    n_cats=len(class_dict)
+#    class_weights=np.zeros(n_cats,dtype=np.float32)
+#    for i in range(n_cats):
+#        class_weights[i]=class_dict[i]
+#    if(not (specific is None)):
+#        class_weights[specific]*=  (len(class_dict)/2)
+#    return keras_loss(class_weights)
 
 @keras.saving.register_keras_serializable(name="weighted_loss")
 def keras_loss( class_weights):

@@ -132,17 +132,26 @@ def df_summary(in_path):
                                  columns=["data","ens","metric","value"])
     df=df.sort_values(by=["data","metric"])
     print(df.round(4))
+    return df
+
+
+def diff_df(df):
     df_dict={metric_i:{ens_j:df.query(f"ens=='{ens_j}' and metric=='{metric_i}'")
                 for ens_j in df['ens'].unique()}
                     for metric_i in df['metric'].unique()}
     def extrac(df,data):
         return df.query(f"data=='{data_i}'")['value'].to_list()[0]
+    lines=[]
     for data_i in df['data'].unique():
         acc_purity=extrac(df_dict['acc']['purity'],data_i)
         acc_basic=extrac(df_dict['acc']['basic'],data_i)
         balance_purity=extrac(df_dict['balance']['purity'],data_i)
         balance_basic=extrac(df_dict['balance']['basic'],data_i)
-        print(f'{data_i},{acc_purity-acc_basic:.4f},{balance_purity-balance_basic:.4f}')
+        lines.append([data_i,100*(acc_purity-acc_basic),100*(balance_purity-balance_basic)])
+#        print(f'{data_i},{acc_purity-acc_basic:.4f},{balance_purity-balance_basic:.4f}')
+    df=pd.DataFrame.from_records(lines,
+                                 columns=["data","acc","balance"])
+    print(df)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -152,7 +161,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     if(args.summary):
-        df_summary(in_path=args.out_path)
+        df=df_summary(in_path=args.out_path)
+        diff_df(df)
     else:   
         find_best(in_path=args.in_path,
                   out_path=args.out_path)
