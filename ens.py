@@ -1,37 +1,7 @@
 import numpy as np
 import tensorflow as tf
 import base,dataset,deep
-import desc
-#def get_custom_ens(callback_type="all",verbose=0):
-#    callback_class=deep.get_callback(callback_type)
-#    callback=callback_class(verbose=verbose)
-#    hyper_params=default_hyperparams()
-#    hyper_params["callback"]=callback
-#    return get_ens(ens_type="class_ens",
-#                   hyper_params=hyper_params)
-
-class PurityLoss(object):
-    def __init__(self):
-        self.hist=None
-
-    def init(self,data):
-        self.hist=desc.purity_hist(data)
-
-    def __call__(self,specific,class_dict):
-        n_cats=len(class_dict)
-        class_weights=np.zeros(n_cats,dtype=np.float32)
-        if(specific is None):
-            for i in range(n_cats):
-                class_weights[i]=class_dict[i]
-        else:
-            purity_s=self.hist[specific,:]
-            for i in range(n_cats):
-                if(i==specific):
-                    class_weights[i]=2*class_dict[i]
-                else:
-                    class_weights[i]=(1.0-purity_s[i])*class_dict[i]
-
-        return deep.keras_loss(class_weights)
+import ens_dep 
 
 def get_ens(ens_type:str,hyper_params=None):
     if(ens_type=="MLP"):
@@ -40,7 +10,7 @@ def get_ens(ens_type:str,hyper_params=None):
         return ClassEnsFactory(hyper_params)
     if(ens_type=="purity_ens"):
         return ClassEnsFactory(hyper_params=hyper_params,
-                               loss_gen=PurityLoss())
+                               loss_gen=ens_deep.PurityLoss())
     if(ens_type=="RF"):
         return base.ClfFactory(ens_type)
     raise Exception(f"Unknow ens type{ens_type}")
@@ -69,7 +39,7 @@ class DeepFactory(object):
     
     def read(self,model_path):
         model_i=tf.keras.models.load_model(model_path,
-                                           custom_objects={"loss":deep.weighted_loss})
+                                           custom_objects={"loss":deep.WeightedLoss})
         clf_i=self()
         clf_i.model=model_i
         return clf_i
@@ -107,24 +77,11 @@ class Deep(object):
     def save(self,out_path):
         self.model.save(out_path) 
 
-#class ClassEnsFactory(DeepFactory):
-
-#    def __call__(self):
-#        return ClassEns(params=self.params,
-#                        hyper_params=self.hyper_params)
-
-#    def read(self,model_path):
-#        model_i=tf.keras.models.load_model(model_path,
-#                                           custom_objects={"loss":deep.weighted_loss})
-#        clf_i=self()
-#        clf_i.model=model_i
-#        return clf_i
-
 class ClassEnsFactory(DeepFactory):
     def __init__(self,loss_gen=None,
                       hyper_params=None):
         if(loss_gen is None):
-            loss_gen=deep.weighted_loss
+            loss_gen=deep.WeightedLoss()
         if(hyper_params is None):
            hyper_params=default_hyperparams()
         self.params=None
@@ -148,20 +105,6 @@ class ClassEnsFactory(DeepFactory):
         clf_i=self()
         clf_i.model=model_i
         return clf_i
-
-
-#class ClassEnsFactory(DeepFactory):
-
-#    def __call__(self):
-#        return ClassEns(params=self.params,
-#                        hyper_params=self.hyper_params)
-
-#    def read(self,model_path):
-#        model_i=tf.keras.models.load_model(model_path,
-#                                           custom_objects={"loss":deep.weighted_loss})
-#        clf_i=self()
-#        clf_i.model=model_i
-#        return clf_i
 
 class ClassEns(object):
     def __init__(self, params,
