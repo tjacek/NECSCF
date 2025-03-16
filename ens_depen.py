@@ -1,5 +1,6 @@
 import numpy as np 
-import desc
+import keras
+import desc,deep
 
 class PurityLoss(object):
     def __init__(self):

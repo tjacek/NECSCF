@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 import base,dataset,deep
-import ens_dep 
+import ens_depen 
 
 def get_ens(ens_type:str,hyper_params=None):
     if(ens_type=="MLP"):
@@ -10,7 +10,7 @@ def get_ens(ens_type:str,hyper_params=None):
         return ClassEnsFactory(hyper_params)
     if(ens_type=="purity_ens"):
         return ClassEnsFactory(hyper_params=hyper_params,
-                               loss_gen=ens_deep.PurityLoss())
+                               loss_gen=ens_depen.PurityLoss())
     if(ens_type=="RF"):
         return base.ClfFactory(ens_type)
     raise Exception(f"Unknow ens type{ens_type}")
@@ -129,7 +129,7 @@ class ClassEns(object):
                 for _ in range(data.n_cats()+1)]
         callback=self.hyper_params["callback"]
         if(type(callback)==str):
-            callback=deep.get_callback(callback)(verbose=0)
+            callback=ens_depen.get_callback(callback)(verbose=0)
         callback.init(data.n_cats()+1)
         return self.model.fit(x=X,
                        y=y,
