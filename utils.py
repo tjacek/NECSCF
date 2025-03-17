@@ -3,6 +3,7 @@ import numpy as np
 from functools import wraps
 from itertools import chain, combinations
 import multiprocessing
+import re
 import time,json
 
 def make_dir(path):
@@ -14,8 +15,14 @@ def top_files(path):
         paths=[ f'{path}/{file_i}' for file_i in os.listdir(path)]
     else:
         paths=path
-    paths=sorted(paths)
+    paths=sorted(paths,key=natural_keys)
     return paths
+
+def natural_keys(text):
+    return [ atoi(c) for c in re.split('(\d+)', text) ]
+
+def atoi(text):
+    return int(text) if text.isdigit() else text
 
 def read_json(in_path):
     with open(in_path, 'r') as file:
@@ -80,6 +87,7 @@ class MultiDirFun(object):
             data_path=args[0]
             for path_i in top_files(data_path):
                 id_i=path_i.split('/')[-1]
+#                if(os.path.isdir(path_i)):
                 new_args=[f"{arg_j}/{id_i}" for arg_j in args]
                 p_i=multiprocessing.Process(target=fun, 
                                             args=new_args)
@@ -120,7 +128,6 @@ def to_id_dir(path_dict,index=-1):
 def history_to_dict(history):
     history=history.history
     key=list(history.keys())[0]
-#    raise Exception(key)
     hist_dict={'n_epochs':len(history[key])}
     for key_i in history.keys():
         hist_dict[key_i]=history[key_i][-1]
