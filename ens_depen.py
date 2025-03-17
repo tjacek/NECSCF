@@ -1,5 +1,6 @@
 import numpy as np 
 import keras
+import tensorflow as tf
 import desc,deep
 
 class PurityLoss(object):

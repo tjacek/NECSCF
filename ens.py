@@ -11,14 +11,15 @@ def get_ens(ens_type:str,hyper_params=None):
     if(ens_type=="purity_ens"):
         return ClassEnsFactory(hyper_params=hyper_params,
                                loss_gen=ens_depen.PurityLoss())
+    if(ens_type=="deep"):
+        return DeepFactory()
     if(ens_type=="RF"):
         return base.ClfFactory(ens_type)
-    raise Exception(f"Unknow ens type{ens_type}")
+    raise Exception(f"Unknown ens type:{ens_type}")
 
 def default_hyperparams():
     return {'layers':2, 'units_0':2,
-            'units_1':1,'batch':False,
-            'callback':'total'}
+            'units_1':1,'batch':False}
 
 class DeepFactory(object):
     def __init__(self,hyper_params=None):
@@ -44,6 +45,9 @@ class DeepFactory(object):
         clf_i.model=model_i
         return clf_i
 
+    def get_info(self):
+        return {"ens":"deep","callback":"basic"}
+
 class Deep(object):
     def __init__(self, params,
                        hyper_params,
@@ -56,13 +60,14 @@ class Deep(object):
 
     def fit(self,X,y):
         if(self.model is None):
+#            raise Exception(self.params)
             self.model=deep.single_builder(params=self.params,
                                            hyper_params=self.hyper_params)
         y=tf.one_hot(y,depth=self.params['n_cats'])
         return self.model.fit(x=X,
                               y=y,
                               epochs=self.params['n_epochs'],
-                              callbacks=deep.basic_callback(),
+                              callbacks=ens_depen.basic_callback(),
                               verbose=self.verbose)
 
     def predict(self,X):
