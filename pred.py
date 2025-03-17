@@ -9,31 +9,36 @@ from scipy import stats
 import argparse
 import pandas as pd
 import base,dataset,ens,exp
-from deep import weighted_loss
-import utils,train
+#from deep import WeightedLoss
+import deep,utils,train
 
 def pred_exp(data_path:str,
              exp_path:str,
              clf_type:str):
     
-    if(clf_type=="class_ens"):
-        fun=class_ens_pred
+    if("ens" in clf_type):
+        def fun(in_path,exp_path):
+            return class_ens_pred(in_path=in_path,
+                                  exp_path=exp_path,
+                                  ens_type=clf_type)
     if(clf_type=="RF"):
         fun=rf_pred
     helper=utils.MultiDirFun()(fun)
     output_dict=helper(data_path,exp_path)
     print(output_dict)
 
-def class_ens_pred(in_path,exp_path):
+def class_ens_pred(in_path,
+                   exp_path,
+                   ens_type='class_ens'):
     path_dir=train.get_paths(out_path=exp_path,
-                            ens_type='class_ens',
+                            ens_type=ens_type,
                             dirs=['models','history','results'])
     try:
         chech_dirs(path_dir)
     except:
         return None
     data=dataset.read_csv(in_path)
-    clf_factory=ens.get_ens("class_ens")
+    clf_factory=ens.get_ens(ens_type)
     pred_iter=model_iter(split_path=path_dir['splits'],
                          model_path=path_dir['models'],
                          ens_factory=clf_factory)
@@ -129,7 +134,7 @@ def sig_subsets(sig_df):
 def get_result(path_i):
     info_dict=utils.read_json(f"{path_i}/info.js")
     clf_type=info_dict['ens']
-    if(clf_type=="class_ens"):
+    if("ens" in clf_type ):#clf_type=="class_ens"):
         return clf_type,dataset.read_partial_group(f"{path_i}/results")
     else:
         return clf_type,dataset.read_result_group(f"{path_i}/results")
@@ -141,7 +146,7 @@ def model_iter(split_path,model_path,ens_factory):
         split_i=base.UnaggrSplit.Split(train_index=raw_split["arr_0"],
                                        test_index=raw_split["arr_1"])
         model_i=tf.keras.models.load_model(f"{model_path}/{i}.keras",
-                                           custom_objects={"loss":weighted_loss})
+                                           custom_objects={"loss":deep.WeightedLoss()})
         clf_i=ens_factory()
         clf_i.model=model_i
         yield split_i,clf_i
@@ -157,10 +162,10 @@ def split_iter(exp_path):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.aaropietrzakdd_argument("--data_path", type=str, default="../uci")
+    parser.add_argument("--data_path", type=str, default="../uci")
     parser.add_argument("--exp_path", type=str, default="new_exp")
     parser.add_argument('--type', default=None, 
-                         choices=[None,'class_ens','RF','MLP']) 
+                         choices=[None,'class_ens','purity_ens','RF','MLP']) 
     parser.add_argument('--pairs', default=None,) 
     args = parser.parse_args()
     if(args.type):
@@ -172,8 +177,10 @@ if __name__ == '__main__':
         clfs=args.pairs.split(',')
         if(len(clfs)>1):
             clf_x,clf_y=clfs[0],clfs[1]
-            stat_test(exp_path=args.exp_path,
-                      clf_x=clf_x,
-                      clf_y=clf_y)
+            df=stat_test(exp_path=args.exp_path,
+                         clf_x=clf_x,
+                         clf_y=clf_y,
+                         metric_type="acc")
+            print(df)
         else:
-            print(f"Not a pair{args.pairs}")
+            print(f"Not a pair:{args.pairs}")
