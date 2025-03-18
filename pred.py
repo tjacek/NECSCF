@@ -3,6 +3,7 @@ import utils
 utils.silence_warnings()
 import argparse
 import pandas as pd
+from scipy import stats
 from tqdm import tqdm
 import base,dataset,ens,train
 
@@ -28,7 +29,6 @@ def deep_pred(in_path,
         clf_i=clf_factory.read(model_path_i)
         result_i=split_i.pred(data,clf_i)
         result_i.save(f"{path_dir['results']}/{i}.npz")
-#        print(y_pred)
 
 def summary(exp_path):
     @utils.DirFun({"in_path":0})
@@ -63,16 +63,65 @@ def get_result(path_i):
     else:
         return clf_type,dataset.read_result_group(f"{path_i}/results")
 
+def stat_test(exp_path,
+              clf_x,
+              clf_y,
+              metric_type="acc"):
+    @utils.DirFun({"in_path":0})
+    def helper(in_path):
+        _,result_x=get_result(f"{in_path}/{clf_x}")
+        _,result_y=get_result(f"{in_path}/{clf_y}")
+        x_value=result_x.get_metric(metric_type)
+        y_value=result_y.get_metric(metric_type)
+        mean_x,mean_y=np.mean(x_value),np.mean(y_value)
+        diff= mean_x-mean_y
+        pvalue=stats.ttest_ind(x_value,y_value,
+                               equal_var=False)[1]
+        return mean_x,mean_y,diff,round(pvalue,6)
+    pvalue_dict=helper(exp_path)
+    pvalue_dict=utils.to_id_dir(pvalue_dict,index=-1)
+    lines=[ [name_i]+list(line_i) for name_i,line_i in pvalue_dict.items()]
+    df=pd.DataFrame.from_records(lines,
+                              columns=['data',clf_x,clf_y,"diff","pvalue"])
+    df['sig']=df['pvalue'].apply(lambda pvalue_i:pvalue_i<0.05)
+    df=df.sort_values(by='diff')
+    return df
+
+def sig_subsets(sig_df):
+    subplots={}
+    subplots["no_sig"]=list(sig_df[sig_df["sig"]==False]['data'])
+    sig_df=sig_df[sig_df["sig"]==True]
+    subplots["worse"]=list(sig_df[sig_df["diff"]>0]["data"])
+    subplots["better"]=list(sig_df[sig_df["diff"]<0]["data"])
+    return subplots
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_path", type=str, default="../uci")
     parser.add_argument("--exp_path", type=str, default="new_exp")
     parser.add_argument('--type', default=None, 
                          choices=[None,'class_ens','purity_ens','RF','deep']) 
+    parser.add_argument('--pairs', default=None,) 
     args = parser.parse_args()
     print(args)
     if(args.type):
         pred_exp(data_path=args.data_path,
                  exp_path=args.exp_path,
                  clf_type=args.type)
-    summary(exp_path=args.exp_path)
+#    summary(exp_path=args.exp_path)
+    if(args.pairs):
+        clfs=args.pairs.split(',')
+        if(len(clfs)>1):
+            clf_x,clf_y=clfs[0],clfs[1]
+            df_dict={}
+            for metric_i in ["acc","balance"]:
+                df_i=stat_test(exp_path=args.exp_path,
+                               clf_x=clf_x,
+                               clf_y=clf_y,
+                                metric_type=metric_i)
+                df_dict[metric_i]=df_i
+            for name_i,df_i in df_dict.items():
+            	print(name_i)
+            	print(df_i)
+        else:
+            print(f"Not a pair:{args.pairs}")
