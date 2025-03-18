@@ -8,12 +8,15 @@ import utils
 
 def ensemble_builder(params,
                      hyper_params=None,
+                     class_dict=None,
                      loss_gen=None,
                      full=True):
     if(loss_gen is None):
         loss_gen=WeightedLoss()
     input_layer = Input(shape=(params['dims']))
-    class_dict,n_cats=params['class_weights'],params['n_cats']
+    if(class_dict is None):
+        class_dict=params['class_weights']
+    n_cats=params['n_cats']
     single_cls,loss,metrics=[],{},{}
     for i in range(n_cats):
         nn_i=nn_builder(params=params,
@@ -44,9 +47,11 @@ def ensemble_builder(params,
     return model
 
 def single_builder(params,
-                   hyper_params=None):
+                   hyper_params=None,
+                   class_dict=None):
     input_layer = Input(shape=(params['dims']))
-    class_dict=params['class_weights']
+    if(class_dict is None):
+        class_dict=params['class_weights']
     nn=nn_builder(params=params,
                     hyper_params=hyper_params,
                     input_layer=input_layer,

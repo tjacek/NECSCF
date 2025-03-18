@@ -19,7 +19,7 @@ def top_files(path):
     return paths
 
 def natural_keys(text):
-    return [ atoi(c) for c in re.split('(\d+)', text) ]
+    return [ atoi(c) for c in re.split('(\\d+)', text) ]
 
 def atoi(text):
     return int(text) if text.isdigit() else text
@@ -126,6 +126,8 @@ def to_id_dir(path_dict,index=-1):
                 if(value_i)}
 
 def history_to_dict(history):
+    if(type(history)==list):
+        return [history_to_dict(history_i) for history_i in history]
     history=history.history
     key=list(history.keys())[0]
     hist_dict={'n_epochs':len(history[key])}

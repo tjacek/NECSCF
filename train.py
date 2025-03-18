@@ -36,8 +36,9 @@ def base_train(data_path:str,
         with open(f"{path_dict['history']}/{index}", 'w') as f:
             json.dump(hist_dict_j, f)
     with open(path_dict['info.js'], 'w') as f:
-        callback_type=clf_factory.hyper_params['callback']
-        json.dump({"ens":ens_type,"callback":callback_type}, f)
+        json.dump(clf_factory.get_info(),f)
+#        callback_type=clf_factory.hyper_params['callback']
+#        json.dump({"ens":ens_type,"callback":callback_type}, f)
 
 def get_paths(out_path,ens_type,dirs):
     ens_path=f"{out_path}/{ens_type}"
@@ -60,8 +61,8 @@ if __name__ == '__main__':
     parser.add_argument("--data", type=str, default="../uci/cleveland")
     parser.add_argument("--out_path", type=str, default="new_exp/cleveland")
     parser.add_argument("--start", type=int, default=0)
-    parser.add_argument("--step", type=int, default=20)
-    parser.add_argument("--ens_type", type=str, default="purity_ens")
+    parser.add_argument("--step", type=int, default=10)
+    parser.add_argument("--ens_type", type=str, default="separ_class_ens")
     args = parser.parse_args()
     print(args)
     base_train(data_path=args.data,
