@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 import base,dataset,deep
-import deep,ens_depen,utils
+import dataset,deep,ens_depen,utils
 
 def get_ens(ens_type:str,hyper_params=None):
     if(ens_type=="MLP"):
@@ -164,11 +164,18 @@ class SeparatedEnsFactory(ClfFactory):
                             loss_gen=self.loss_gen)
 
     def read(self,model_path):
-        model_i=tf.keras.models.load_model(model_path,
-                                           custom_objects={"loss":self.loss_gen})
         clf_i=self()
-        clf_i.model=model_i
+        clf_i.model=[]
+        for path_j in utils.top_files(model_path):
+            deep_i=Deep(params=self.params,
+                        hyper_params=self.hyper_params)
+            deep_i.model=tf.keras.models.load_model(path_j,
+                                                    custom_objects={"loss":self.loss_gen})
+            clf_i.model.append(deep_i)
         return clf_i
+
+    def get_info(self):
+        return {"ens":"separ_class_ens","callback":"basic","hyper":self.hyper_params}
 
 class SeparatedEns(ClfAdapter):
     def __init__(self,*args, **kwargs):
@@ -176,7 +183,6 @@ class SeparatedEns(ClfAdapter):
         self.model=[]
     
     def fit(self,X,y):
-#        data=dataset.Dataset(X,y)
         n_cats=self.params["n_cats"]
         history=[]
         for i in range(n_cats):
@@ -190,10 +196,23 @@ class SeparatedEns(ClfAdapter):
             history.append(history_i)
         return history
 
-    def get_info(self):
-        return {"ens":"separ_class_ens","callback":"basic","hyper":self.hyper_params}
-#        raise Exception(self.params["n_cats"])
-#class NECSCF(object):
+    def eval(self,data,split_i):
+        test_data_i=data.selection(split_i.test_index)
+        raw_partial_i=self.partial_predict(test_data_i.X)
+        result_i=dataset.PartialResults(y_true=test_data_i.y,
+                                        y_partial=raw_partial_i)
+        return result_i
+
+    def partial_predict(self,X):
+        votes=[clf_i.predict_proba(X) for clf_i in self.model]
+        return np.array(votes)    
+
+    def save(self,out_path):
+        utils.make_dir(out_path)
+        for i,clf_i in enumerate(self.model):
+            clf_i.save(f"{out_path}/{i}.keras")
+
+
 #    def __init__(self,model):
 #        self.model=all_splits
 #        self.clfs=[]

@@ -1,7 +1,7 @@
 import numpy as np
 import utils
 utils.silence_warnings()
-import argparse
+import argparse,os.path
 import pandas as pd
 from scipy import stats
 from tqdm import tqdm
@@ -10,10 +10,37 @@ import base,dataset,ens,train
 def pred_exp(data_path:str,
              exp_path:str,
              clf_type:str):
-    if(clf_type=="deep"):
-        fun=deep_pred
-    helper=utils.MultiDirFun()(fun)
+    @utils.MultiDirFun()
+    def helper(in_path,exp_path):
+        path_dir=train.get_paths(out_path=exp_path,
+                                 ens_type=clf_type,
+                                 dirs=['models','results',"info.js"])
+        data=dataset.read_csv(in_path)
+        if(os.path.isdir(path_dir["ens"])):
+            info_dict=utils.read_json(path_dir["info.js"])
+            clf_factory=ens.get_ens(info_dict["ens"])
+            utils.make_dir(path_dir["results"])
+            for split_path_i,model_path_i,result_path_i in  tqdm(get_paths(path_dir)):
+                split_i=base.read_split(split_path_i)
+                clf_i=clf_factory.read(model_path_i)#         
+                result_i=clf_i.eval(data,split_i)
+                result_i.save(result_path_i)
+#    if("ens" in clf_type):
+#        fun=ens_pred(in_path=data_path,
+#                     exp_path=exp_path)
+#    if(clf_type=="deep"):
+#        fun=deep_pred
+#    helper=utils.MultiDirFun()(fun)
     output_dict=helper(data_path,exp_path)
+
+def get_paths(path_dir):
+    paths=[] 
+    for i,model_path_i in enumerate(utils.top_files(path_dir["models"])):
+        result_path_i=f"{path_dir['results']}/{i}.npz"
+        if(not os.path.isfile(result_path_i)):
+            split_path_i=f"{path_dir['splits']}/{i}.npz"
+            paths.append((split_path_i,model_path_i,result_path_i))
+    return paths
 
 def deep_pred(in_path,
               exp_path):
@@ -99,8 +126,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_path", type=str, default="../uci")
     parser.add_argument("--exp_path", type=str, default="new_exp")
-    parser.add_argument('--type', default=None, 
-                         choices=[None,'class_ens','purity_ens','RF','deep']) 
+    parser.add_argument('--type', default=None,#'separ_class_ens', 
+                        choices=[None,'class_ens','purity_ens',
+                                  'separ_class_ens','RF','deep']) 
     parser.add_argument('--pairs', default=None,) 
     args = parser.parse_args()
     print(args)
@@ -108,7 +136,7 @@ if __name__ == '__main__':
         pred_exp(data_path=args.data_path,
                  exp_path=args.exp_path,
                  clf_type=args.type)
-#    summary(exp_path=args.exp_path)
+    summary(exp_path=args.exp_path)
     if(args.pairs):
         clfs=args.pairs.split(',')
         if(len(clfs)>1):

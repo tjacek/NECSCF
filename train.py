@@ -28,7 +28,6 @@ def base_train(data_path:str,
         raw_split=np.load(f"{path_dict['splits']}/{index}.npz")
         split_j=base.UnaggrSplit.Split(train_index=raw_split["arr_0"],
                                        test_index=raw_split["arr_1"])
-        print(split_j)
         clf_j=clf_factory()
         clf_j,history_j=split_j.fit_clf(data,clf_j)  
         hist_dict_j=utils.history_to_dict(history_j)
@@ -37,8 +36,6 @@ def base_train(data_path:str,
             json.dump(hist_dict_j, f)
     with open(path_dict['info.js'], 'w') as f:
         json.dump(clf_factory.get_info(),f)
-#        callback_type=clf_factory.hyper_params['callback']
-#        json.dump({"ens":ens_type,"callback":callback_type}, f)
 
 def get_paths(out_path,ens_type,dirs):
     ens_path=f"{out_path}/{ens_type}"
@@ -60,7 +57,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", type=str, default="../uci/cleveland")
     parser.add_argument("--out_path", type=str, default="new_exp/cleveland")
-    parser.add_argument("--start", type=int, default=0)
+    parser.add_argument("--start", type=int, default=10)
     parser.add_argument("--step", type=int, default=10)
     parser.add_argument("--ens_type", type=str, default="separ_class_ens")
     args = parser.parse_args()
