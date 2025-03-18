@@ -13,8 +13,9 @@ def get_ens(ens_type:str,hyper_params=None):
         return MultuEnsFactory(hyper_params=hyper_params,
                                loss_gen=ens_depen.PurityLoss())
     if(ens_type=="separ_class_ens"):
+        loss_gen=deep.WeightedLoss(multi=False)
         return SeparatedEnsFactory(hyper_params=None,
-                                   loss_gen=deep.WeightedLoss())
+                                   loss_gen=loss_gen)
     if(ens_type=="deep"):
         return DeepFactory()
     if(ens_type=="RF"):
@@ -183,17 +184,22 @@ class SeparatedEns(ClfAdapter):
         self.model=[]
     
     def fit(self,X,y):
+        data=dataset.Dataset(X,y)
+        self.loss_gen.init(data)
         n_cats=self.params["n_cats"]
         history=[]
-        for i in range(n_cats):
-            class_dict_i=self.class_dict.copy()
-            class_dict_i[i]*= (n_cats/2.0)
+        indexes= list(range(n_cats))+[None]
+        for i in indexes:#range(n_cats):
+#            class_dict_i=self.class_dict.copy()
+#            class_dict_i[i]*= (n_cats/2.0)
+            class_dict_i=self.loss_gen(i,self.class_dict)
             model_i=Deep(params=self.params,
                          hyper_params=self.hyper_params,
                          class_dict=class_dict_i)
             self.model.append(model_i)
             history_i=model_i.fit(X,y)
             history.append(history_i)
+
         return history
 
     def eval(self,data,split_i):
@@ -211,22 +217,3 @@ class SeparatedEns(ClfAdapter):
         utils.make_dir(out_path)
         for i,clf_i in enumerate(self.model):
             clf_i.save(f"{out_path}/{i}.keras")
-
-
-#    def __init__(self,model):
-#        self.model=all_splits
-#        self.clfs=[]
-
-#    def fit(X,y,clf_type="RF"):
-#        feats=self.get_features(X)
-#        self.clfs=[]
-#        for feat_i in feats:
-#            clf_i=base.get_clf(clf_type)
-#            clf_i.fit(feat_i,y)
-#            self.clfs.append(clf_i)
-
-#    def pred(self,X):
-#        feats=self.get_features(X)
-#        votes=[clf_i.pred(feat_i) for feat_i,clf_i in zip(feats,self.clfs)]
-#        y=np.sum(np.array(y),axis=0)
-#        return np.argmax(y,axis=1)

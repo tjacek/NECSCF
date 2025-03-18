@@ -88,17 +88,26 @@ def nn_builder(params,
     return x_i
 
 class WeightedLoss(object):
+    def __init__(self,multi=True):
+        self.multi=multi
+
     def init(self,data):
         pass
     
     def __call__(self,specific,class_dict):
-        n_cats=len(class_dict)
-        class_weights=np.zeros(n_cats,dtype=np.float32)
-        for i in range(n_cats):
-            class_weights[i]=class_dict[i]
-        if(not (specific is None)):
-            class_weights[specific]*=  (len(class_dict)/2)
-        return keras_loss(class_weights)
+        if(self.multi):
+            n_cats=len(class_dict)
+            class_weights=np.zeros(n_cats,dtype=np.float32)
+            for i in range(n_cats):
+                class_weights[i]=class_dict[i]
+            if(not (specific is None)):
+                class_weights[specific]*=  (len(class_dict)/2)
+            return keras_loss(class_weights)
+        else:
+            class_dict=class_dict.copy()
+            if(not (specific is None)):
+                class_dict[specific]*=(len(class_dict)/2)
+            return class_dict
 
 @keras.saving.register_keras_serializable(name="weighted_loss")
 def keras_loss( class_weights):

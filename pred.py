@@ -126,7 +126,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_path", type=str, default="../uci")
     parser.add_argument("--exp_path", type=str, default="new_exp")
-    parser.add_argument('--type', default=None,#'separ_class_ens', 
+    parser.add_argument('--type', default='separ_class_ens', 
                         choices=[None,'class_ens','purity_ens',
                                   'separ_class_ens','RF','deep']) 
     parser.add_argument('--pairs', default=None,) 
