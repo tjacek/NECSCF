@@ -49,7 +49,8 @@ def model_exist(model_path,start):
     if(not os.path.isdir(model_path)):
          return False
     first_path=f"{model_path}/{start}.keras"
-    if(not os.path.isfile(first_path)):
+    if(not (os.path.isfile(first_path) or
+             os.path.isdir(first_path))):
         return False
     return True
 
@@ -59,7 +60,7 @@ if __name__ == '__main__':
     parser.add_argument("--out_path", type=str, default="new_exp/cleveland")
     parser.add_argument("--start", type=int, default=10)
     parser.add_argument("--step", type=int, default=10)
-    parser.add_argument("--ens_type", type=str, default="separ_class_ens")
+    parser.add_argument("--ens_type", type=str, default="separ_purity_ens")
     args = parser.parse_args()
     print(args)
     base_train(data_path=args.data,

@@ -109,6 +109,12 @@ class WeightedLoss(object):
                 class_dict[specific]*=(len(class_dict)/2)
             return class_dict
 
+    def __str__(self):
+        name="class_ens"
+        if(not self.multi):
+            name=f"separ_{name}"
+        return name
+
 @keras.saving.register_keras_serializable(name="weighted_loss")
 def keras_loss( class_weights):
     def loss(y_obs,y_pred):        

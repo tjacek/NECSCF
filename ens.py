@@ -16,6 +16,10 @@ def get_ens(ens_type:str,hyper_params=None):
         loss_gen=deep.WeightedLoss(multi=False)
         return SeparatedEnsFactory(hyper_params=None,
                                    loss_gen=loss_gen)
+    if(ens_type=="separ_purity_ens"):
+        loss_gen=ens_depen.PurityLoss(multi=False)
+        return SeparatedEnsFactory(hyper_params=None,
+                                   loss_gen=loss_gen)
     if(ens_type=="deep"):
         return DeepFactory()
     if(ens_type=="RF"):
@@ -176,7 +180,7 @@ class SeparatedEnsFactory(ClfFactory):
         return clf_i
 
     def get_info(self):
-        return {"ens":"separ_class_ens","callback":"basic","hyper":self.hyper_params}
+        return {"ens":str(self.loss_gen),"callback":"basic","hyper":self.hyper_params}
 
 class SeparatedEns(ClfAdapter):
     def __init__(self,*args, **kwargs):

@@ -4,7 +4,8 @@ import tensorflow as tf
 import desc,deep
 
 class PurityLoss(object):
-    def __init__(self):
+    def __init__(self,multi=True):
+        self.multi=multi
         self.hist=None
 
     def init(self,data):
@@ -12,19 +13,37 @@ class PurityLoss(object):
 
     def __call__(self,specific,class_dict):
         n_cats=len(class_dict)
-        class_weights=np.zeros(n_cats,dtype=np.float32)
-        if(specific is None):
-            for i in range(n_cats):
-                class_weights[i]=class_dict[i]
-        else:
-            purity_s=self.hist[specific,:]
-            for i in range(n_cats):
-                if(i==specific):
-                    class_weights[i]=2*class_dict[i]
-                else:
-                    class_weights[i]=(1.0-purity_s[i])*class_dict[i]
+        if(self.multi):
+            class_weights=np.zeros(n_cats,dtype=np.float32)
+            if(specific is None):
+                for i in range(n_cats):
+                    class_weights[i]=class_dict[i]
+            else:
+                purity_s=self.hist[specific,:]
+                for i in range(n_cats):
+                    if(i==specific):
+                        class_weights[i]=2*class_dict[i]
+                    else:
+                        class_weights[i]=(1.0-purity_s[i])*class_dict[i]
 
-        return deep.keras_loss(class_weights)
+            return deep.keras_loss(class_weights)
+        else:
+            class_dict=class_dict.copy()
+            if(specific is None):
+                return class_dict
+            for i in range(n_cats):
+                if(i!=specific):
+                    purity_s=self.hist[specific,:]
+                    class_dict[i]=(1.0-purity_s[i])*class_dict[i]
+                else:
+                    class_dict[i]=2*class_dict[i]
+            return class_dict
+    
+    def __str__(self):
+        name="purity_ens"
+        if(not self.multi):
+            name=f"separ_{name}"
+        return name
 
 def get_callback(callback_type):
     if(callback_type=="min"):

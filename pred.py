@@ -80,7 +80,8 @@ def summary(exp_path):
             lines.append(line_j)
     df=pd.DataFrame.from_records(lines,
                                   columns=["data","clf"]+metrics)
-    print(df.round(4))
+    with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
+        print(df.round(4))
 
 def get_result(path_i):
     info_dict=utils.read_json(f"{path_i}/info.js")
@@ -126,9 +127,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_path", type=str, default="../uci")
     parser.add_argument("--exp_path", type=str, default="new_exp")
-    parser.add_argument('--type', default='separ_class_ens', 
+    parser.add_argument('--type', default=None, 
                         choices=[None,'class_ens','purity_ens',
-                                  'separ_class_ens','RF','deep']) 
+                                  'separ_purity_ens','RF','deep']) 
     parser.add_argument('--pairs', default=None,) 
     args = parser.parse_args()
     print(args)
