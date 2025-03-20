@@ -74,7 +74,7 @@ class DeepFactory(ClfFactory):
         return clf_i
 
     def get_info(self):
-        return {"ens":"deep","callback":"basic","hyper":self.hyper_params}
+        return {"ens":"deep","callback":"total","hyper":self.hyper_params}
 
 class Deep(ClfAdapter):
 
@@ -115,6 +115,9 @@ class MultiEnsFactory(ClfFactory):
         clf_i=self()
         clf_i.model=model_i
         return clf_i
+
+    def get_info(self):
+        return {"ens":str(self.loss_gen),"callback":"total","hyper":self.hyper_params}
 
 class MultiEns(ClfAdapter):
 
@@ -180,7 +183,7 @@ class SeparatedEnsFactory(ClfFactory):
         return clf_i
 
     def get_info(self):
-        return {"ens":str(self.loss_gen),"callback":"basic","hyper":self.hyper_params}
+        return {"ens":str(self.loss_gen),"callback":"total","hyper":self.hyper_params}
 
 class SeparatedEns(ClfAdapter):
     def __init__(self,*args, **kwargs):
