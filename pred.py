@@ -8,33 +8,35 @@ from tqdm import tqdm
 import base,dataset,ens,train
 
 def pred_exp(data_path:str,
-             exp_path:str,
-             clf_type:str):
+             exp_path:str):
+#             clf_type:str):
     @utils.MultiDirFun()
     def helper(in_path,exp_path):
-        path_dir=train.get_paths(out_path=exp_path,
-                                 ens_type=clf_type,
-                                 dirs=['models','results',"info.js"])
-        data=dataset.read_csv(in_path)
-        if(os.path.isdir(path_dir["ens"])):
-            info_dict=utils.read_json(path_dir["info.js"])
-            clf_factory=ens.get_ens(info_dict["ens"])
-            utils.make_dir(path_dir["results"])
-            for split_path_i,model_path_i,result_path_i in  tqdm(get_paths(path_dir)):
-                split_i=base.read_split(split_path_i)
-                clf_i=clf_factory.read(model_path_i)#         
-                result_i=clf_i.eval(data,split_i)
-                result_i.save(result_path_i)
-#    if("ens" in clf_type):
-#        fun=ens_pred(in_path=data_path,
-#                     exp_path=exp_path)
-#    if(clf_type=="deep"):
-#        fun=deep_pred
-#    helper=utils.MultiDirFun()(fun)
-    output_dict=helper(data_path,exp_path)
+        data=None
+        for path_i in utils.top_files(exp_path):
+            info_path=f"{path_i}/info.js" 
+            if(not os.path.isfile(info_path)):
+                continue
+            info_dict=utils.read_json(info_path)
+            if(not ("ens" in info_dict["ens"] or 
+                      "deep"==info_dict["ens"])):
+                continue
+            path_dir=train.get_paths(out_path=exp_path,
+                                     ens_type=path_i.split("/")[-1],
+                                     dirs=['models','results'])
+            paths=get_paths(path_dir)
+            if(len(paths)>0):
+                clf_factory=ens.get_ens(info_dict["ens"])
+                if(data is None):
+                    data=dataset.read_csv(in_path)
+                pred_from_models(data,
+                                 paths,
+                                 clf_factory)
+    helper(data_path,exp_path)
 
 def get_paths(path_dir):
     paths=[] 
+    utils.make_dir(path_dir["results"])
     for i,model_path_i in enumerate(utils.top_files(path_dir["models"])):
         result_path_i=f"{path_dir['results']}/{i}.npz"
         if(not os.path.isfile(result_path_i)):
@@ -42,20 +44,14 @@ def get_paths(path_dir):
             paths.append((split_path_i,model_path_i,result_path_i))
     return paths
 
-def deep_pred(in_path,
-              exp_path):
-    path_dir=train.get_paths(out_path=exp_path,
-                            ens_type="deep",
-                            dirs=['models','results'])
-    model_path=utils.top_files(path_dir["models"])
-    data=dataset.read_csv(in_path)
-    utils.make_dir(path_dir["results"])
-    clf_factory=ens.get_ens("deep")
-    for i,model_path_i in tqdm(enumerate(model_path)):
-        split_i=base.read_split(f"{path_dir['splits']}/{i}.npz")
+def pred_from_models(data,
+                     paths,
+                     clf_factory):
+    for split_path_i,model_path_i,result_path_i in tqdm(paths):
+        split_i=base.read_split(split_path_i)
         clf_i=clf_factory.read(model_path_i)
-        result_i=split_i.pred(data,clf_i)
-        result_i.save(f"{path_dir['results']}/{i}.npz")
+        result_i=clf_i.eval(data,split_i)
+        result_i.save(result_path_i)
 
 def summary(exp_path):
     @utils.DirFun({"in_path":0})
@@ -127,16 +123,16 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_path", type=str, default="../uci")
     parser.add_argument("--exp_path", type=str, default="new_exp")
-    parser.add_argument('--type', default=None, 
-                        choices=[None,'class_ens','purity_ens',
-                                  'separ_purity_ens','RF','deep']) 
-    parser.add_argument('--pairs', default=None,) 
+#    parser.add_argument('--type', default=None,#'separ_purity_ens', 
+#                        choices=[None,'class_ens','purity_ens',
+#                                  'separ_purity_ens','RF','deep']) 
+    parser.add_argument('--pairs', default='separ_purity_ens,deep') 
     args = parser.parse_args()
     print(args)
-    if(args.type):
-        pred_exp(data_path=args.data_path,
-                 exp_path=args.exp_path,
-                 clf_type=args.type)
+#    if(args.type):
+    pred_exp(data_path=args.data_path,
+             exp_path=args.exp_path)
+#                 clf_type=args.type)
     summary(exp_path=args.exp_path)
     if(args.pairs):
         clfs=args.pairs.split(',')
