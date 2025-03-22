@@ -26,6 +26,9 @@ def get_ens(ens_type:str,hyper_params=None):
         return ClasicalClfFactory(ens_type)
     raise Exception(f"Unknown ens type:{ens_type}")
 
+def is_neural(ens_type):
+    return ("ens" in ens_type or "deep"==ens_type)
+
 def default_hyperparams():
     return {'layers':2, 'units_0':2,
             'units_1':1,'batch':False}
@@ -55,7 +58,6 @@ class ClfFactory(object):
     def get_info(self):
         raise NotImplementedError()
 
-
 class ClfAdapter(object):
     def __init__(self, params,
                        hyper_params,
@@ -70,12 +72,18 @@ class ClfAdapter(object):
         self.loss_gen=loss_gen
         self.verbose=verbose
 
+    def fit(self,X,y):
+        raise NotImplementedError()
+
     def eval(self,data,split_i):
         test_data_i=data.selection(split_i.test_index)
         raw_partial_i=self.partial_predict(test_data_i.X)
         result_i=dataset.PartialResults(y_true=test_data_i.y,
                                         y_partial=raw_partial_i)
         return result_i
+
+    def save(self,out_path):
+        raise NotImplementedError()
 
 class DeepFactory(ClfFactory):
     def __call__(self):
@@ -121,7 +129,7 @@ class Deep(ClfAdapter):
 
 class ClasicalClfFactory(ClfFactory):
     def __init__(self,clf_type="RF"):
-        self.clf_type
+        self.clf_type=clf_type
     
     def init(self,data):
         pass
@@ -135,6 +143,18 @@ class ClasicalClfFactory(ClfFactory):
     def get_info(self):
         return {"ens":self.clf,"callback":None,"hyper":None}
 
+class ClasicalClfAdapter(ClfAdapter):
+    def __init__(self,clf):
+        self.clf=clf
+    
+    def fit(self,X,y):
+        return self.clf.fit(X,y)
+
+    def eval(self,data,split_i):
+        return split_i.pred(data,self.clf)
+
+    def save(self,out_path):
+        pass
 
 class MultiEnsFactory(ClfFactory):
 

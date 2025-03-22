@@ -7,9 +7,8 @@ from scipy import stats
 from tqdm import tqdm
 import base,dataset,ens,train
 
-def pred_exp(data_path:str,
-             exp_path:str):
-#             clf_type:str):
+def pred_neural(data_path:str,
+                 exp_path:str):
     @utils.MultiDirFun()
     def helper(in_path,exp_path):
         data=None
@@ -18,8 +17,7 @@ def pred_exp(data_path:str,
             if(not os.path.isfile(info_path)):
                 continue
             info_dict=utils.read_json(info_path)
-            if(not ("ens" in info_dict["ens"] or 
-                      "deep"==info_dict["ens"])):
+            if(not ens.is_neural(info_dict["ens"])):
                 continue
             path_dir=train.get_paths(out_path=exp_path,
                                      ens_type=path_i.split("/")[-1],
@@ -76,13 +74,13 @@ def summary(exp_path):
             lines.append(line_j)
     df=pd.DataFrame.from_records(lines,
                                   columns=["data","clf"]+metrics)
-    with pd.option_context('display.max_rows', None, 'display.max_columns', None):  # more options can be specified also
+    with pd.option_context('display.max_rows', None, 'display.max_columns', None):  
         print(df.round(4))
 
 def get_result(path_i):
     info_dict=utils.read_json(f"{path_i}/info.js")
     clf_type=info_dict['ens']
-    if("ens" in clf_type ):#clf_type=="class_ens"):
+    if("ens" in clf_type ):
         return clf_type,dataset.read_partial_group(f"{path_i}/results")
     else:
         return clf_type,dataset.read_result_group(f"{path_i}/results")
@@ -123,16 +121,17 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_path", type=str, default="../uci")
     parser.add_argument("--exp_path", type=str, default="new_exp")
+    parser.add_argument('--nn', action='store_true')
+
 #    parser.add_argument('--type', default=None,#'separ_purity_ens', 
 #                        choices=[None,'class_ens','purity_ens',
 #                                  'separ_purity_ens','RF','deep']) 
-    parser.add_argument('--pairs', default='separ_purity_ens,deep') 
+    parser.add_argument('--pairs', default='purity_ens,class_ens') 
     args = parser.parse_args()
     print(args)
-#    if(args.type):
-    pred_exp(data_path=args.data_path,
-             exp_path=args.exp_path)
-#                 clf_type=args.type)
+    if(args.nn):
+        pred_neural(data_path=args.data_path,
+                    exp_path=args.exp_path)
     summary(exp_path=args.exp_path)
     if(args.pairs):
         clfs=args.pairs.split(',')
