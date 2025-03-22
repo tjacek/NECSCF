@@ -10,7 +10,7 @@ def get_ens(ens_type:str,hyper_params=None):
         return MultiEnsFactory(hyper_params=None,
                                loss_gen=deep.WeightedLoss())
     if(ens_type=="purity_ens"):
-        return MultuEnsFactory(hyper_params=hyper_params,
+        return MultiEnsFactory(hyper_params=hyper_params,
                                loss_gen=ens_depen.PurityLoss())
     if(ens_type=="separ_class_ens"):
         loss_gen=deep.WeightedLoss(multi=False)
@@ -23,7 +23,7 @@ def get_ens(ens_type:str,hyper_params=None):
     if(ens_type=="deep"):
         return DeepFactory()
     if(ens_type=="RF"):
-        return base.ClfFactory(ens_type)
+        return ClasicalClfFactory(ens_type)
     raise Exception(f"Unknown ens type:{ens_type}")
 
 def default_hyperparams():
@@ -44,7 +44,17 @@ class ClfFactory(object):
         self.params={'dims': (data.dim(),),
                      'n_cats':data.n_cats(),
                      'n_epochs':1000}
-        self.class_dict=dataset.get_class_weights(data.y) 
+        self.class_dict=dataset.get_class_weights(data.y)
+
+    def __call__(self):
+        raise NotImplementedError()
+
+    def read(self,model_path):
+        raise NotImplementedError()
+
+    def get_info(self):
+        raise NotImplementedError()
+
 
 class ClfAdapter(object):
     def __init__(self, params,
@@ -59,6 +69,13 @@ class ClfAdapter(object):
         self.model = model
         self.loss_gen=loss_gen
         self.verbose=verbose
+
+    def eval(self,data,split_i):
+        test_data_i=data.selection(split_i.test_index)
+        raw_partial_i=self.partial_predict(test_data_i.X)
+        result_i=dataset.PartialResults(y_true=test_data_i.y,
+                                        y_partial=raw_partial_i)
+        return result_i
 
 class DeepFactory(ClfFactory):
     def __call__(self):
@@ -101,6 +118,23 @@ class Deep(ClfAdapter):
 
     def save(self,out_path):
         self.model.save(out_path) 
+
+class ClasicalClfFactory(ClfFactory):
+    def __init__(self,clf_type="RF"):
+        self.clf_type
+    
+    def init(self,data):
+        pass
+
+    def __call__(self):
+        return base.get_clf(self.clf_type)
+
+    def read(self,model_path):
+        raise Exception(f"Clasical Clf {self.clf_type} cannot be serialized ")
+
+    def get_info(self):
+        return {"ens":self.clf,"callback":None,"hyper":None}
+
 
 class MultiEnsFactory(ClfFactory):
 
@@ -197,8 +231,6 @@ class SeparatedEns(ClfAdapter):
         history=[]
         indexes= list(range(n_cats))+[None]
         for i in indexes:#range(n_cats):
-#            class_dict_i=self.class_dict.copy()
-#            class_dict_i[i]*= (n_cats/2.0)
             class_dict_i=self.loss_gen(i,self.class_dict)
             model_i=Deep(params=self.params,
                          hyper_params=self.hyper_params,
@@ -208,13 +240,6 @@ class SeparatedEns(ClfAdapter):
             history.append(history_i)
 
         return history
-
-    def eval(self,data,split_i):
-        test_data_i=data.selection(split_i.test_index)
-        raw_partial_i=self.partial_predict(test_data_i.X)
-        result_i=dataset.PartialResults(y_true=test_data_i.y,
-                                        y_partial=raw_partial_i)
-        return result_i
 
     def partial_predict(self,X):
         votes=[clf_i.predict_proba(X) for clf_i in self.model]

@@ -33,12 +33,11 @@ class DataSplits(object):
             results.append(split_k.pred(self.data,clf_k))
         return dataset.ResultGroup(results)
 
-#    def selection(self,i,train=False):
-#        split_i=self.splits[i]
-#        if(train):
-#            return self.data.selection(split_i.train_index)
-#        else:
-#            return self.data.selection(split_i.test_index)
+    def iter(self,fun,clf_factory):
+        clf_factory.init(self.data)
+        for split_k in tqdm(self.splits):
+            clf_k=clf_factory()
+            yield fun(split_k,clf_k)        
 
     def selection_iter(self,train=False):
         for i,split_i in enumerate(self.splits):
@@ -140,16 +139,6 @@ def get_protocol(prot_type):
     if(prot_type=="unaggr"):
         return UnaggrSplit
     raise Exception(f"No protocol{prot_type}")
-
-class ClfFactory(object):
-    def __init__(self,clf_type="RF"):
-        self.clf_type=clf_type
-    
-    def init(self,data):
-        pass
-
-    def __call__(self):
-        return get_clf(self.clf_type)
 
 def get_clf(clf_type):
     if(clf_type=="RF"): 
