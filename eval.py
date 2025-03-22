@@ -28,7 +28,7 @@ class DynamicSubsets(object):
 def read_dynamic_subsets(in_path):
     @utils.DirFun({"in_path":0})
     def helper(in_path):
-        result_path=f"{in_path}/class_ens/results"
+        result_path=f"{in_path}/purity_ens/results"
         result_group=dataset.read_partial_group(result_path)
         return result_group
     output_dict=utils.to_id_dir(helper(in_path))
@@ -190,7 +190,21 @@ def sig_dict(df):
     sig_dict['worse']=sig_df['data'][ sig_df['diff']>0].tolist()
     print(sig_dict)
 
+def find_best(in_path,nn_only=True):
+    df=pred.summary(exp_path="new_exp")
+    if(nn_only):
+        df=df[df['clf']!='RF']
+    dataset=df['data'].unique()
+    id_acc=df_group=df.groupby('data')['acc'].idxmax()
+    df_acc=df.loc[id_acc,]
+    print(df_acc)
+    id_balance=df_group=df.groupby('data')['balance'].idxmax()
+    df_balance=df.loc[id_balance,]
+    print(df_balance)
+
+find_best("new_exp")
+
 #history_acc("new_exp")
 #eval_exp("new_exp",
 #         ord_path="ord/size.json")
-eval_exp(conf_path="conf/basic2.js")
+#eval_exp(conf_path="conf/basic2.js")
