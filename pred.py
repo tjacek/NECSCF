@@ -32,6 +32,28 @@ def pred_neural(data_path:str,
                                  clf_factory)
     helper(data_path,exp_path)
 
+def pred_clf(data_path:str,
+                 exp_path:str,
+                 clf_type="RF"):
+    @utils.MultiDirFun()
+    def helper(in_path,exp_path):
+        data=dataset.read_csv(in_path)
+        path_dir=train.get_paths(out_path=exp_path,
+                                 ens_type=clf_type,
+                                 dirs=['results','info.js'])
+        utils.make_dir(path_dir["ens"])
+        clf_factory=ens.get_ens(clf_type)
+        split_path=utils.top_files(path_dir['splits'])
+        for i,split_path_i in tqdm(enumerate(split_path)):
+            split_i=base.read_split(split_path_i)
+            clf_i=clf_factory()
+            split_i.fit_clf(data,clf_i)
+            result_i=clf_i.eval(data,split_i)
+            result_i.save(f"{path_dir['results']}/{i}.npz")
+        utils.save_json(value=clf_factory.get_info(),
+                        out_path=path_dict['info.js'])
+    helper(data_path,exp_path)
+
 def get_paths(path_dir):
     paths=[] 
     utils.make_dir(path_dir["results"])
@@ -122,6 +144,7 @@ if __name__ == '__main__':
     parser.add_argument("--data_path", type=str, default="../uci")
     parser.add_argument("--exp_path", type=str, default="new_exp")
     parser.add_argument('--nn', action='store_true')
+    parser.add_argument('--clf',  type=str, default=None)
 
 #    parser.add_argument('--type', default=None,#'separ_purity_ens', 
 #                        choices=[None,'class_ens','purity_ens',
@@ -132,6 +155,9 @@ if __name__ == '__main__':
     if(args.nn):
         pred_neural(data_path=args.data_path,
                     exp_path=args.exp_path)
+    if(args.clf):
+        pred_clf(data_path=args.data_path,
+                 exp_path=args.exp_path)
     summary(exp_path=args.exp_path)
     if(args.pairs):
         clfs=args.pairs.split(',')
