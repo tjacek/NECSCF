@@ -177,20 +177,35 @@ def make_plot(all_subplots,
         plt.show()
         plt.clf()  
 
-def sig_dict(df):
+def sig_summary(exp_path):
+    clf_types=['class_ens','deep','purity_ens','separ_class_ens','separ_purity_ens']
+    metrics=['acc','balance']
+    for clf_i in clf_types:
+        for metric_j in metrics:
+            df_ij=pred.stat_test(exp_path=exp_path,
+                                 clf_x="RF",
+                                 clf_y=clf_i,
+                                 metric_type=metric_j)
+            sig_dict_ij=sig_dict(df_ij,verbose=False)
+            print(f"{clf_i}-{metric_j}")
+            for key_k,data_k in sig_dict_ij.items():
+                print(f"  {key_k}:{','.join(data_k)}")
+
+def sig_dict(df,verbose=True):
     if(type(df)==str):
         df=pred.stat_test(exp_path=df,
                           clf_x="RF",
                           clf_y="class_ens",
                           metric_type="acc")
-    print(df)    
+    if(verbose):
+        print(df)    
     sig_dict={'no_sig':df['data'][df['sig']==False].tolist()}
     sig_df=df[df["sig"]==True]
     sig_dict['better']=sig_df['data'][ sig_df['diff']<0].tolist()
     sig_dict['worse']=sig_df['data'][ sig_df['diff']>0].tolist()
-    print(sig_dict)
+    return sig_dict
 
-def find_best(in_path,nn_only=True):
+def find_best(in_path,nn_only=False):
     df=pred.summary(exp_path="new_exp")
     if(nn_only):
         df=df[df['clf']!='RF']
@@ -202,7 +217,7 @@ def find_best(in_path,nn_only=True):
     df_balance=df.loc[id_balance,]
     print(df_balance)
 
-find_best("new_exp")
+sig_summary("new_exp")
 
 #history_acc("new_exp")
 #eval_exp("new_exp",
