@@ -1,6 +1,7 @@
 import numpy as np
 import os
 from tqdm import tqdm
+import pandas as pd
 import matplotlib.pyplot as plt
 import scipy.stats
 import dataset,pred,utils
@@ -180,16 +181,27 @@ def make_plot(all_subplots,
 def sig_summary(exp_path):
     clf_types=['class_ens','deep','purity_ens','separ_class_ens','separ_purity_ens']
     metrics=['acc','balance']
-    for clf_i in clf_types:
-        for metric_j in metrics:
+    for metric_i in metrics:
+        hist_i,data=None,None
+        for j,clf_j in  enumerate(clf_types):
             df_ij=pred.stat_test(exp_path=exp_path,
                                  clf_x="RF",
-                                 clf_y=clf_i,
-                                 metric_type=metric_j)
+                                 clf_y=clf_j,
+                                 metric_type=metric_i)
             sig_dict_ij=sig_dict(df_ij,verbose=False)
-            print(f"{clf_i}-{metric_j}")
-            for key_k,data_k in sig_dict_ij.items():
-                print(f"  {key_k}:{','.join(data_k)}")
+            if(hist_i is None):
+                data=df_ij['data']
+                hist_i=np.zeros((len(data),len(clf_types)))
+                data={data_k:k  for k,data_k in enumerate(data)}
+            for k,key_k in enumerate(["worse","no_sig",'better']):
+                for data_t in sig_dict_ij[key_k]: 
+                    hist_i[data[data_t]][j]=k-1
+        lines=[]
+        for data_k,k in data.items():
+            lines.append([data_k] +hist_i[k].tolist())
+        sig_df=pd.DataFrame.from_records(lines,
+                                         columns=["dataset"]+clf_types)
+        print(sig_df)
 
 def sig_dict(df,verbose=True):
     if(type(df)==str):
