@@ -6,70 +6,6 @@ import matplotlib.pyplot as plt
 import scipy.stats
 import dataset,pred,utils
 
-class DynamicSubsets(object):
-    def __init__(self,partial_dict):
-        self.partial_dict=partial_dict
-
-    def transform(self,fun):
-        return { name_i:fun(name_i,subsets_i)
-                   for name_i,subsets_i in self.partial_dict.items()}
-
-    def all_subsets(self,metric_type="acc"):
-        for name_i,partial_i in self.partial_dict.items():
-            clf_i=partial_i.n_clfs()
-            subsets_i=list(utils.powerset(range(clf_i)))
-            values_i=[]
-            for subset_j in tqdm(subsets_i):
-                metric_j=partial_i.get_metric(metric_type=metric_type,
-                                              subset=subset_j)
-                metric_j=np.mean(metric_j)
-                values_i.append((subset_j,metric_j))
-            yield name_i,values_i  
-
-def read_dynamic_subsets(in_path):
-    @utils.DirFun({"in_path":0})
-    def helper(in_path):
-        result_path=f"{in_path}/purity_ens/results"
-        result_group=dataset.read_partial_group(result_path)
-        return result_group
-    output_dict=utils.to_id_dir(helper(in_path))
-    return DynamicSubsets(output_dict)
-
-class StaticSubsets(object):
-    def __init__(self,subset_dict,value_dict):
-        self.subset_dict=subset_dict
-        self.value_dict=value_dict
-    
-    def n_clfs(self):
-        values=[len(subset_i) 
-            for subset_i in self.subset_dict.values()]
-        return max(values)
-
-    def shapley(self,k):
-        singlton,margin=set([k]),[]
-        for id_i,set_i in self.subset_dict.items():
-            if(len(set_i)==1):
-                continue
-            if(k in set_i):
-                diff_i=set_i.difference(singlton)
-                one_out_id=get_id(diff_i)
-                in_value=self.value_dict[id_i]
-                out_value=self.value_dict[one_out_id]
-                margin.append(in_value-out_value)
-        return np.mean(margin)
-
-def read_static_subsets(in_path):
-    @utils.DirFun({"in_path":0})
-    def helper(in_path):
-        raw_i=utils.read_json(in_path)
-        subest_dict,value_dict={},{}
-        for subset_j,value_j in raw_i:
-            id_j=get_id(subset_j)
-            subest_dict[id_j]=set(subset_j)
-            value_dict[id_j]=value_j
-        return StaticSubsets(subest_dict,value_dict)
-    return utils.to_id_dir(helper(in_path))
-
 def eval_exp(conf_path):
     conf_dict=utils.read_json(conf_path)
     if(conf_dict["eval_type"]=="selection"):
@@ -146,8 +82,6 @@ def selection_eval(conf_dict):
         acc=subsets_i.order_acc(ord_i)         
         acc=np.array(acc)
         acc= np.mean(acc,axis=1)
-#        if(z_score):
-#            acc= acc-np.mean(acc)
         return acc
     acc_dict=dynamic_subsets.transform(helper)
     subplots={ key_i: [ (name_j,acc_dict[name_j])
@@ -179,13 +113,13 @@ def make_plot(all_subplots,
         plt.clf()  
 
 def sig_summary(exp_path):
-    clf_types=['class_ens','deep','purity_ens','separ_class_ens','separ_purity_ens']
+    clf_types=['deep','class_ens','purity_ens','separ_class_ens','separ_purity_ens']
     metrics=['acc','balance']
     for metric_i in metrics:
         hist_i,data=None,None
         for j,clf_j in  enumerate(clf_types):
             df_ij=pred.stat_test(exp_path=exp_path,
-                                 clf_x="RF",
+                                 clf_x="deep",
                                  clf_y=clf_j,
                                  metric_type=metric_i)
             sig_dict_ij=sig_dict(df_ij,verbose=False)
@@ -201,7 +135,7 @@ def sig_summary(exp_path):
             lines.append([data_k] +hist_i[k].tolist())
         sig_df=pd.DataFrame.from_records(lines,
                                          columns=["dataset"]+clf_types)
-        print(sig_df)
+        print(sig_df.to_latex())
 
 def sig_dict(df,verbose=True):
     if(type(df)==str):
@@ -229,9 +163,10 @@ def find_best(in_path,nn_only=False):
     df_balance=df.loc[id_balance,]
     print(df_balance)
 
-sig_summary("new_exp")
 
-#history_acc("new_exp")
-#eval_exp("new_exp",
-#         ord_path="ord/size.json")
-#eval_exp(conf_path="conf/basic2.js")
+if __name__ == '__main__':
+    sig_summary("new_exp")
+    #history_acc("new_exp")
+    #eval_exp("new_exp",
+    #         ord_path="ord/size.json")
+    #eval_exp(conf_path="conf/basic2.js")
