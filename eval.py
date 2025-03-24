@@ -58,11 +58,6 @@ def total_scater(point_dict,conf_dict):
     plt.xlabel(y_label)
     plt.show()
 
-def get_id(subset):
-    id_j=list(subset)
-    id_j.sort()
-    return str(id_j)
-
 def selection_eval(conf_dict):
     if(conf_dict["subplots"] is None):
         sig_df=pred.stat_test(exp_path=conf_dict["exp_path"],
