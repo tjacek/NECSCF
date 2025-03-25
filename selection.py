@@ -1,5 +1,6 @@
 import numpy as np
 from tqdm import tqdm
+import pandas as pd
 from functools import wraps
 import ens,dataset,utils
 
@@ -40,15 +41,6 @@ class DynamicSubsets(object):
                 value_i.append(metric_j)
             yield value_i  
 
-#def read_dynamic_subsets(in_path,clf_type):
-#    @utils.DirFun({"in_path":0})
-#    def helper(in_path):
-#        result_path=f"{in_path}/{clf_type}/results"
-#        result_group=dataset.read_partial_group(result_path)
-#        return result_group
-#    output_dict=utils.to_id_dir(helper(in_path))
-#    return DynamicSubsets(output_dict)
-
 class StaticSubsets(object):
     def __init__(self,subset_dict,
                       value_dict,
@@ -57,6 +49,16 @@ class StaticSubsets(object):
         self.value_dict=value_dict
         self.metric_types=metric_types
     
+    def best(self,type):
+        k=self.metric_types[type]
+        best,best_subset=0,None
+        for id_i,value_i in self.value_dict.items():
+            value_k=value_i[k]
+            if(best<value_k):
+                best=value_k
+                subset=id_i
+        return best,subset
+
     def n_clfs(self):
         values=[len(subset_i) 
             for subset_i in self.subset_dict.values()]
@@ -96,25 +98,23 @@ def get_id(subset):
     id_j=list(subset)
     id_j.sort()
     return str(id_j)
-#def read_static_subsets(in_path):
-#    @utils.DirFun({"in_path":0})
-#    def helper(in_path):
-#        raw_i=utils.read_json(in_path)
-#        subest_dict,value_dict={},{}
-#        for subset_j,value_j in raw_i:
-#            id_j=get_id(subset_j)
-#            subest_dict[id_j]=set(subset_j)
-#            value_dict[id_j]=value_j
-#        return StaticSubsets(subest_dict,value_dict)
-#    return utils.to_id_dir(helper(in_path))
 
-
-def max_acc(in_path):
+def best_df(in_path):
     read=ensemble_fun(read_static_subsets)
+    lines=[]
     for data_i,ens_i,value_i in  read(in_path):
-        print(data_i)
-        print(ens_i)
-        print(value_i)
+        line_i=[data_i,ens_i]
+        for type_k in value_i.metric_types:
+            best_i,subset_i=value_i.best(type_k)
+            line_i.append(best_i)
+            line_i.append(subset_i.strip())
+        lines.append(line_i)
+    cols=["data","ens_type",'acc','acc_subset','balance','balance_subset']
+    df=pd.DataFrame.from_records(lines,
+                                  columns=cols)
+    with pd.option_context('display.max_rows', None, 'display.max_columns', None):  
+        print(df[["data","ens_type",'balance','balance_subset']].round(4))
+    return df
 
 def gen_subsets(in_path,out_path):
     @ensemble_fun
@@ -130,4 +130,4 @@ def gen_subsets(in_path,out_path):
         utils.save_json(output,out_path)
     helper(in_path,out_path)
 
-max_acc("subsets")
+best_df("subsets")
