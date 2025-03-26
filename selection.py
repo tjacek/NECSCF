@@ -41,7 +41,7 @@ def ens_type_fun(fun):
                     output.append((id_i,id_j,value_ij))
         return output
     return helper
-    
+
 class DynamicSubsets(object):
     def __init__(self,partial):
         self.partial=partial
@@ -83,16 +83,17 @@ class StaticSubsets(object):
             for subset_i in self.subset_dict.values()]
         return max(values)
 
-    def shapley(self,k):
+    def shapley(self,k,metric_type="acc"):
         singlton,margin=set([k]),[]
+        m=self.metric_types[metric_type]
         for id_i,set_i in self.subset_dict.items():
             if(len(set_i)==1):
                 continue
             if(k in set_i):
                 diff_i=set_i.difference(singlton)
                 one_out_id=get_id(diff_i)
-                in_value=self.value_dict[id_i]
-                out_value=self.value_dict[one_out_id]
+                in_value=self.value_dict[id_i][m]
+                out_value=self.value_dict[one_out_id][m]
                 margin.append(in_value-out_value)
         return np.mean(margin)
 
@@ -149,4 +150,17 @@ def gen_subsets(in_path,out_path):
         utils.save_json(output,out_path)
     helper(in_path,out_path)
 
-best_df("subsets")
+def compute_shapley(in_path,metric_type="balance"):
+    @ens_type_fun
+    def helper(in_path,out_path):
+        subsets=read_static_subsets(in_path)
+        return [subsets.shapley(k,metric_type=metric_type) 
+                    for k in range(subsets.n_clfs())]
+    output_list=helper(in_path)
+    output_dict={}
+    for data_i,_,value_i  in output_list:
+        output_dict[data_i]=value_i
+    print(output_dict)
+
+
+compute_shapley("subsets")
