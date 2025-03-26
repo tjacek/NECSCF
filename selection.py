@@ -23,6 +23,25 @@ def ensemble_fun(fun):
         return output
     return helper
 
+def ens_type_fun(fun):
+    @wraps(fun)
+    def helper(in_path,
+               out_path=None,
+               clf_type="class_ens"):
+        output=[]
+        for path_i in utils.top_files(in_path):
+            id_i=path_i.split('/')[-1]
+            if(out_path):
+                utils.make_dir(f"{out_path}/{id_i}")
+            for path_j in utils.top_files(path_i):
+                id_j=path_j.split("/")[-1]
+                if(id_j==clf_type):
+                    out_ij=f"{out_path}/{id_i}/{id_j}"
+                    value_ij=fun(path_j,out_ij)
+                    output.append((id_i,id_j,value_ij))
+        return output
+    return helper
+    
 class DynamicSubsets(object):
     def __init__(self,partial):
         self.partial=partial
@@ -113,7 +132,7 @@ def best_df(in_path):
     df=pd.DataFrame.from_records(lines,
                                   columns=cols)
     with pd.option_context('display.max_rows', None, 'display.max_columns', None):  
-        print(df[["data","ens_type",'balance','balance_subset']].round(4))
+        print(df[["data","ens_type",'acc','acc_subset']].round(4).to_latex())
     return df
 
 def gen_subsets(in_path,out_path):
