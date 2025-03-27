@@ -98,7 +98,6 @@ class StaticSubsets(object):
         return np.mean(margin)
 
 def read_static_subsets(in_path,out_path=None):
-    print(in_path)
     raw=utils.read_json(in_path)
     metric_types,raw_subsets=raw['metric_types'],raw['subsets']
     metric_types={ type_i:i 
@@ -150,17 +149,43 @@ def gen_subsets(in_path,out_path):
         utils.save_json(output,out_path)
     helper(in_path,out_path)
 
-def compute_shapley(in_path,metric_type="balance"):
+def compute_shapley(in_path,
+                    clf_type="class_ens",
+                    metric_type="balance",
+                    verbose=False):
     @ens_type_fun
     def helper(in_path,out_path):
         subsets=read_static_subsets(in_path)
         return [subsets.shapley(k,metric_type=metric_type) 
                     for k in range(subsets.n_clfs())]
-    output_list=helper(in_path)
+    output_list=helper(in_path,clf_type=clf_type)
     output_dict={}
     for data_i,_,value_i  in output_list:
         output_dict[data_i]=value_i
-    print(output_dict)
+    if(verbose):
+        print(output_dict)
+    return output_dict
 
+def shapley_plot(in_path):
+    dict_x=compute_shapley(in_path,
+                              clf_type="class_ens",
+                              metric_type="acc",
+                              verbose=False)
+    dict_y=compute_shapley(in_path,
+                           clf_type="separ_class_ens",
+                              metric_type="acc",
+                              verbose=False)
+    points=[]
+    for key_i in dict_x:
+        points_x,points_y=dict_x[key_i],dict_y[key_i]
+        points+=list(zip(points_x,points_y))
+    points=np.array(points)
+    import matplotlib.pyplot as plt
+    fig, ax = plt.subplots()
+    scatter = ax.scatter(points[:,0], points[:,1])
+    plt.ylabel("class_ens")
+    plt.ylabel("separ_class_ens")
+    plt.show()
+#    print(len(points))
 
-compute_shapley("subsets")
+shapley_plot("subsets")
