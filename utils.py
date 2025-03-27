@@ -80,6 +80,30 @@ class DirFun(object):
                 args[i]=new_values[arg_i]
         return fun(*args, **kwargs)
 
+
+class FunArgs(object):
+    def __init__(self,args,kwargs):
+        self.args=list(args)
+        self.kwargs=kwargs
+    
+    def copy(self):
+        return FunArgs(args=self.args.copy(),
+                       kwargs=self.kwargs.copy())
+    
+    def get(self,pair):
+        name,index=pair
+        if(name in self.kwargs):
+            return self.kwargs[name]
+        else:
+            return self.args[index]
+
+    def set(self,pair,value):
+        name,index=pair
+        if(name in self.kwargs):
+            self.kwargs[name]=value
+        else:
+            self.args[index]=value
+
 class MultiDirFun(object):
     def __call__(self, fun):
         @wraps(fun)
