@@ -1,49 +1,7 @@
 import numpy as np
 from tqdm import tqdm
 import pandas as pd
-from functools import wraps
 import ens,dataset,utils
-
-class EnsembleFun(object):
-    def __init__(self,in_path=None,
-                      out_path=None,
-                      selector=None):
-        if(in_path is None):
-            in_path=("in_path",0)
-        if(type(out_path)==str):
-            out_path=(out_path,1)
-        if(selector is None):
-            selector=ens.is_ensemble
-        if(type(selector)==str):
-            clf_type=selector
-            selector=lambda id_i: id_i==clf_type
-        self.in_path=in_path
-        self.out_path=out_path
-        self.selector=selector
-
-    def __call__(self,fun):
-        @wraps(fun)
-        def helper(*args, **kwargs):
-            if(self.out_path):
-                utils.make_dir(self.out_path[0])
-            original_args=utils.FunArgs(args,kwargs)
-            in_path=original_args.get(self.in_path)
-            output=[]
-            for path_i in utils.top_files(in_path):
-                id_i=path_i.split('/')[-1]
-                if(self.out_path):
-                    utils.make_dir(f"{self.out_path[0]}/{id_i}")
-                for path_j in utils.top_files(path_i):
-                    id_j=path_j.split("/")[-1]
-                    if(self.selector(id_j)):
-                        new_args=original_args.copy()
-                        new_args.set(self.in_path,path_j)
-                        if(self.out_path):
-                            new_args.set(self.out_path,f"{self.out_path[0]}/{id_i}/{id_j}")
-                        value_ij=fun(*new_args.args,**new_args.kwargs)
-                        output.append((id_i,id_j,value_ij))
-            return output
-        return helper
 
 class DynamicSubsets(object):
     def __init__(self,partial):
@@ -139,7 +97,7 @@ def best_df(in_path):
     return df
 
 def gen_subsets(in_path,out_path):
-    @EnsembleFun("in_path","out_path")
+    @utils.EnsembleFun("in_path","out_path")
     def helper(in_path,out_path):
         print(out_path)
         result_path=f"{in_path}/results"
@@ -156,7 +114,7 @@ def compute_shapley(in_path,
                     clf_type="class_ens",
                     metric_type="balance",
                     verbose=False):
-    @EnsembleFun(selector=clf_type)
+    @utils.EnsembleFun(selector=clf_type)
     def helper(in_path):
         subsets=read_static_subsets(in_path)
         return [subsets.shapley(k,metric_type=metric_type) 
@@ -170,13 +128,14 @@ def compute_shapley(in_path,
     return output_dict
 
 def shapley_plot(in_path):
-    dict_x=compute_shapley(in_path,
-                              clf_type="class_ens",
-                              metric_type="acc",
+    conf=utils.read_json(in_path)
+    dict_x=compute_shapley(in_path=conf['subset_path'],
+                              clf_type=conf['clf_x'],
+                              metric_type=conf['metric_type'],
                               verbose=False)
-    dict_y=compute_shapley(in_path,
-                           clf_type="separ_class_ens",
-                              metric_type="acc",
+    dict_y=compute_shapley(in_path=conf['subset_path'],
+                           clf_type=conf['clf_y'],
+                              metric_type=conf['metric_type'],
                               verbose=False)
     points=[]
     for key_i in dict_x:
@@ -186,8 +145,9 @@ def shapley_plot(in_path):
     import matplotlib.pyplot as plt
     fig, ax = plt.subplots()
     scatter = ax.scatter(points[:,0], points[:,1])
-    plt.ylabel("class_ens")
-    plt.ylabel("separ_class_ens")
+    plt.ylabel(conf['clf_y'])
+    plt.xlabel(conf['clf_x'])
     plt.show()
 
-shapley_plot("subsets")
+if __name__ == '__main__':
+    shapley_plot("conf/basic2.js")

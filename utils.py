@@ -80,6 +80,46 @@ class DirFun(object):
                 args[i]=new_values[arg_i]
         return fun(*args, **kwargs)
 
+class EnsembleFun(object):
+    def __init__(self,in_path=None,
+                      out_path=None,
+                      selector=None):
+        if(in_path is None):
+            in_path=("in_path",0)
+        if(type(out_path)==str):
+            out_path=(out_path,1)
+        if(selector is None):
+            selector=ens.is_ensemble
+        if(type(selector)==str):
+            clf_type=selector
+            selector=lambda id_i: id_i==clf_type
+        self.in_path=in_path
+        self.out_path=out_path
+        self.selector=selector
+
+    def __call__(self,fun):
+        @wraps(fun)
+        def helper(*args, **kwargs):
+            if(self.out_path):
+                utils.make_dir(self.out_path[0])
+            original_args=FunArgs(args,kwargs)
+            in_path=original_args.get(self.in_path)
+            output=[]
+            for path_i in top_files(in_path):
+                id_i=path_i.split('/')[-1]
+                if(self.out_path):
+                    utils.make_dir(f"{self.out_path[0]}/{id_i}")
+                for path_j in top_files(path_i):
+                    id_j=path_j.split("/")[-1]
+                    if(self.selector(id_j)):
+                        new_args=original_args.copy()
+                        new_args.set(self.in_path,path_j)
+                        if(self.out_path):
+                            new_args.set(self.out_path,f"{self.out_path[0]}/{id_i}/{id_j}")
+                        value_ij=fun(*new_args.args,**new_args.kwargs)
+                        output.append((id_i,id_j,value_ij))
+            return output
+        return helper
 
 class FunArgs(object):
     def __init__(self,args,kwargs):
