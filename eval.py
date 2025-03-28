@@ -23,17 +23,20 @@ def shapley_plot(conf):
 def get_series(param_dict):
     if(param_dict["type"]=="shapley"):
         return compute_shapley(in_path=param_dict['subset_path'],
-                               clf_type=param_dict['clf'],
+                               clf_type=param_dict['name'],
                                metric_type=param_dict['metric'],
                                verbose=False)
+    if(param_dict["type"]=="cls_desc"):
+        return utils.read_json(param_dict["desc_path"])
+
 
 def scatter_plot(points,conf):
     x,y=points[:,0], points[:,1]
     print(scipy.stats.pearsonr(x, y) )
     fig, ax = plt.subplots()
     scatter = ax.scatter(x, y)
-    plt.xlabel(conf['x']['clf'])
-    plt.ylabel(conf['y']['clf'])
+    plt.xlabel(conf['x']['name'])
+    plt.ylabel(conf['y']['name'])
     plt.show()
 
 
