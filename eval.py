@@ -4,36 +4,38 @@ from tqdm import tqdm
 import pandas as pd
 import matplotlib.pyplot as plt
 import scipy.stats
+from functools import wraps
+from selection import compute_shapley
 import dataset,pred,utils
 
-def eval_exp(conf_path):
-    conf_dict=utils.read_json(conf_path)
-    if(conf_dict["eval_type"]=="selection"):
-        selection_eval(conf_dict)
-    if(conf_dict["eval_type"]=="shapley"):
-        shapley_eval(conf_dict)
+def shapley_plot(conf):
+    if(type(conf)==str):
+        conf=utils.read_json(conf)
+    dict_x=get_series(conf["x"])
+    dict_y=get_series(conf["y"])
+    points=[]
+    for key_i in dict_x:
+        points_x,points_y=dict_x[key_i],dict_y[key_i]
+        points+=list(zip(points_x,points_y))
+    points=np.array(points)
+    scatter_plot(points,conf)
 
-def shapley_eval(conf_dict):
-    subset_path=conf_dict["subset_path"]
-    if(not os.path.isdir(subset_path)):
-        utils.make_dir(subset_path)
-        dynamic_subsets=read_dynamic_subsets(conf_dict["exp_path"])
-        subset_iter=dynamic_subsets.all_subsets(conf_dict["metric_type"])
-        for name_i,values_i in dynamic_subsets.all_subsets():
-            print(name_i)
-            utils.save_json(values_i,f"{subset_path}/{name_i}")
-    subset_dict=read_static_subsets(subset_path)
-    ord_dict=utils.read_json(conf_dict["ord_path"])
-    point_dict={}
-    for name_i,subset_i in subset_dict.items():
-        n_clfs=subset_i.n_clfs()
-        ord_i=ord_dict[name_i]
-        if(len(ord_i) <n_clfs):
-            n_clfs-=1
-        shapley=[subset_i.shapley(k) for k in range(n_clfs)]
-        point_dict[name_i]=(ord_i,shapley)
-#    indiv_scatter(point_dict,conf_dict["plot_path"])
-    total_scater(point_dict,conf_dict)
+def get_series(param_dict):
+    if(param_dict["type"]=="shapley"):
+        return compute_shapley(in_path=param_dict['subset_path'],
+                               clf_type=param_dict['clf'],
+                               metric_type=param_dict['metric'],
+                               verbose=False)
+
+def scatter_plot(points,conf):
+    x,y=points[:,0], points[:,1]
+    print(scipy.stats.pearsonr(x, y) )
+    fig, ax = plt.subplots()
+    scatter = ax.scatter(x, y)
+    plt.xlabel(conf['x']['clf'])
+    plt.ylabel(conf['y']['clf'])
+    plt.show()
+
 
 def indiv_scatter(point_dict,plot_path):
     plot_path=conf_dict["plot_path"]
@@ -58,31 +60,31 @@ def total_scater(point_dict,conf_dict):
     plt.xlabel(y_label)
     plt.show()
 
-def selection_eval(conf_dict):
-    if(conf_dict["subplots"] is None):
-        sig_df=pred.stat_test(exp_path=conf_dict["exp_path"],
-                              clf_x="RF",
-                              clf_y="class_ens",
-                              metric_type=conf_dict["metric_type"])
-        subplots=pred.sig_subsets(sig_df)
-    else:
-        subplots=conf_dict["subplots"]
-    print(subplots)
-    dynamic_subsets=read_dynamic_subsets(conf_dict["exp_path"])
-    ord_dict=utils.read_json(conf_dict["ord_path"])
+#def selection_eval(conf_dict):
+#    if(conf_dict["subplots"] is None):
+#        sig_df=pred.stat_test(exp_path=conf_dict["exp_path"],
+#                              clf_x="RF",
+#                              clf_y="class_ens",
+#                              metric_type=conf_dict["metric_type"])
+#        subplots=pred.sig_subsets(sig_df)
+#    else:
+#        subplots=conf_dict["subplots"]
+#    print(subplots)
+#    dynamic_subsets=read_dynamic_subsets(conf_dict["exp_path"])
+#    ord_dict=utils.read_json(conf_dict["ord_path"])
 
-    def helper(name_i,subsets_i):
-        ord_i=ord_dict[name_i]
-        ord_i=np.argsort(ord_i)
-        acc=subsets_i.order_acc(ord_i)         
-        acc=np.array(acc)
-        acc= np.mean(acc,axis=1)
-        return acc
-    acc_dict=dynamic_subsets.transform(helper)
-    subplots={ key_i: [ (name_j,acc_dict[name_j])
-               for name_j in value_i] 
-                   for key_i,value_i in subplots.items()}
-    make_plot(subplots)
+#    def helper(name_i,subsets_i):
+#        ord_i=ord_dict[name_i]
+#        ord_i=np.argsort(ord_i)
+#        acc=subsets_i.order_acc(ord_i)         
+#        acc=np.array(acc)
+#        acc= np.mean(acc,axis=1)
+#        return acc
+#    acc_dict=dynamic_subsets.transform(helper)
+#    subplots={ key_i: [ (name_j,acc_dict[name_j])
+#               for name_j in value_i] 
+#                   for key_i,value_i in subplots.items()}
+#    make_plot(subplots)
 
 def make_plot(all_subplots,
               title="Size",
@@ -160,7 +162,8 @@ def find_best(in_path,nn_only=False):
 
 
 if __name__ == '__main__':
-    sig_summary("new_exp")
+    shapley_plot("conf/basic2.js")
+    #sig_summary("new_exp")
     #history_acc("new_exp")
     #eval_exp("new_exp",
     #         ord_path="ord/size.json")

@@ -127,27 +127,5 @@ def compute_shapley(in_path,
         print(output_dict)
     return output_dict
 
-def shapley_plot(in_path):
-    conf=utils.read_json(in_path)
-    dict_x=compute_shapley(in_path=conf['subset_path'],
-                              clf_type=conf['clf_x'],
-                              metric_type=conf['metric_type'],
-                              verbose=False)
-    dict_y=compute_shapley(in_path=conf['subset_path'],
-                           clf_type=conf['clf_y'],
-                              metric_type=conf['metric_type'],
-                              verbose=False)
-    points=[]
-    for key_i in dict_x:
-        points_x,points_y=dict_x[key_i],dict_y[key_i]
-        points+=list(zip(points_x,points_y))
-    points=np.array(points)
-    import matplotlib.pyplot as plt
-    fig, ax = plt.subplots()
-    scatter = ax.scatter(points[:,0], points[:,1])
-    plt.ylabel(conf['clf_y'])
-    plt.xlabel(conf['clf_x'])
-    plt.show()
-
-if __name__ == '__main__':
-    shapley_plot("conf/basic2.js")
+#if __name__ == '__main__':
+#    shapley_plot("conf/basic2.js")
