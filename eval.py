@@ -13,12 +13,24 @@ def shapley_plot(conf):
         conf=utils.read_json(conf)
     dict_x=get_series(conf["x"])
     dict_y=get_series(conf["y"])
-    points=[]
-    for key_i in dict_x:
-        points_x,points_y=dict_x[key_i],dict_y[key_i]
-        points+=list(zip(points_x,points_y))
-    points=np.array(points)
-    scatter_plot(points,conf)
+    if(conf['plot']=='total'):    
+        points=[]
+        for key_i in dict_x:
+            points_x,points_y=dict_x[key_i],dict_y[key_i]
+            points+=list(zip(points_x,points_y))
+        points=np.array(points)
+        scatter_plot(points=points,
+                     title=conf['title'],
+                     clf_x=conf['x']['name'],
+                     clf_y=conf['y']['name'])
+    else:
+        for key_i in dict_x: 
+            points_x,points_y=dict_x[key_i],dict_y[key_i]
+            points_i=np.array(list(zip(points_x,points_y)))
+            scatter_plot(points=points_i,
+                         title=key_i,
+                         clf_x=conf['x']['name'],
+                         clf_y=conf['y']['name'])
 
 def get_series(param_dict):
     if(param_dict["type"]=="shapley"):
@@ -29,38 +41,17 @@ def get_series(param_dict):
     if(param_dict["type"]=="cls_desc"):
         return utils.read_json(param_dict["desc_path"])
 
-
-def scatter_plot(points,conf):
+def scatter_plot(points,
+                 title,
+                 clf_x, 
+                 clf_y):
     x,y=points[:,0], points[:,1]
     print(scipy.stats.pearsonr(x, y) )
     fig, ax = plt.subplots()
     scatter = ax.scatter(x, y)
-    plt.xlabel(conf['x']['name'])
-    plt.ylabel(conf['y']['name'])
-    plt.show()
-
-
-def indiv_scatter(point_dict,plot_path):
-    plot_path=conf_dict["plot_path"]
-    utils.make_dir(plot_path)
-    for name_i,(x_i,y_i) in point_dict.items():
-        fig, ax = plt.subplots()
-        scatter = ax.scatter(x_i, y_i)
-        plt.savefig(f'{plot_path}/{name_i}')
-
-def total_scater(point_dict,conf_dict):
-    x,y=[],[]
-    for name_i,(x_i,y_i) in point_dict.items():
-        x.append(x_i)
-        y.append(y_i)
-    x,y=np.concatenate(x),np.concatenate(y)
-    print(scipy.stats.pearsonr(x, y) )
-    fig, ax = plt.subplots()
-    scatter = ax.scatter(x, y)
-    plt.title("Classes in each dataset")
-    plt.ylabel(conf_dict["eval_type"])
-    x_label=conf_dict["ord_path"].split("/")[-1].split(".")[0]
-    plt.xlabel(y_label)
+    plt.title(title)
+    plt.xlabel(clf_x)
+    plt.ylabel(clf_y)
     plt.show()
 
 #def selection_eval(conf_dict):
