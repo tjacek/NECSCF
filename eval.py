@@ -8,6 +8,12 @@ from functools import wraps
 from selection import compute_shapley
 import dataset,pred,utils
 
+def eval_exp(conf):
+    if(type(conf)==str):
+        conf=utils.read_json(conf)
+    if(conf['type']=="scatter"):
+        shapley_plot(conf)
+
 def shapley_plot(conf):
     if(type(conf)==str):
         conf=utils.read_json(conf)
@@ -44,7 +50,8 @@ def get_series(param_dict):
 def scatter_plot(points,
                  title,
                  clf_x, 
-                 clf_y):
+                 clf_y,
+                 out_path=None):
     x,y=points[:,0], points[:,1]
     print(scipy.stats.pearsonr(x, y) )
     fig, ax = plt.subplots()
@@ -53,7 +60,8 @@ def scatter_plot(points,
     plt.xlabel(clf_x)
     plt.ylabel(clf_y)
     plt.show()
-
+    if(out_path):
+        fig.savefig(f'{out_path}.png')
 #def selection_eval(conf_dict):
 #    if(conf_dict["subplots"] is None):
 #        sig_df=pred.stat_test(exp_path=conf_dict["exp_path"],
@@ -156,7 +164,7 @@ def find_best(in_path,nn_only=False):
 
 
 if __name__ == '__main__':
-    shapley_plot("conf/basic2.js")
+    shapley_plot("new_eval/conf/scatter.js")
     #sig_summary("new_exp")
     #history_acc("new_exp")
     #eval_exp("new_exp",
