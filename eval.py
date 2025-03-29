@@ -13,6 +13,8 @@ def eval_exp(conf):
         conf=utils.read_json(conf)
     if(conf['type']=="scatter"):
         shapley_plot(conf)
+    if(conf['type']=="desc"):
+        desc_plot(conf)
 
 def shapley_plot(conf):
     if(type(conf)==str):
@@ -62,6 +64,19 @@ def scatter_plot(points,
     plt.show()
     if(out_path):
         fig.savefig(f'{out_path}.png')
+
+
+def desc_plot(conf):   
+    desc_df=pd.read_csv(conf['desc_path'])
+    sig_df=pd.read_csv(conf['sig_path'])
+
+    grouped=sig_df.groupby(by=conf["sig_clf"])
+    def helper(df):
+        return df['dataset'].tolist()
+    out=grouped.apply(helper)
+    for name_i,data_i in out.items():
+        indexes=desc_df['dataset'].isin(set(data_i))
+        print(desc_df[indexes])
 #def selection_eval(conf_dict):
 #    if(conf_dict["subplots"] is None):
 #        sig_df=pred.stat_test(exp_path=conf_dict["exp_path"],
@@ -164,7 +179,7 @@ def find_best(in_path,nn_only=False):
 
 
 if __name__ == '__main__':
-    shapley_plot("new_eval/conf/scatter.js")
+    eval_exp("new_eval/conf/desc.js")
     #sig_summary("new_exp")
     #history_acc("new_exp")
     #eval_exp("new_exp",
