@@ -65,18 +65,66 @@ def scatter_plot(points,
     if(out_path):
         fig.savefig(f'{out_path}.png')
 
-
 def desc_plot(conf):   
     desc_df=pd.read_csv(conf['desc_path'])
     sig_df=pd.read_csv(conf['sig_path'])
-
     grouped=sig_df.groupby(by=conf["sig_clf"])
     def helper(df):
         return df['dataset'].tolist()
     out=grouped.apply(helper)
+    series_dict={}
     for name_i,data_i in out.items():
-        indexes=desc_df['dataset'].isin(set(data_i))
-        print(desc_df[indexes])
+        df_i=desc_df[desc_df['dataset'].isin(set(data_i))]
+        data_names=df_i['dataset'].tolist()
+        x=df_i[conf['x_feat']].tolist()
+        y=df_i[conf['y_feat']].tolist()
+        values=list(zip(x,y))
+        points=list(zip(data_names,values))
+        series_dict[name_i]=points
+    plot_series(series_dict,
+                x_label=conf['x_feat'],
+                y_label=conf['y_feat'])
+
+def plot_series(series_dict,
+                title="Scatter",
+                x_label='x',
+                y_label='y'):
+    labels=['r','g','b']
+    plt.figure()
+    plt.title(title)
+    for i,(_,points_i) in enumerate(series_dict.items()):
+        for name_j,point_j in points_i:
+            plt.text(point_j[0], 
+                    point_j[1], 
+                    name_j,
+                    color=labels[i],
+                    fontdict={'weight': 'bold', 'size': 9})
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    plt.show()
+
+def _make_plot(all_subplots,
+              title="Size",
+              x_label="n_clf",
+              y_label="acc",
+              default_x=True):
+    for i,(title_i,subplot_i) in enumerate(all_subplots.items()):
+        _, ax_k = plt.subplots()
+        print(subplot_i)
+        for name_j,value_j in subplot_i:
+            if(default_x):
+                y=value_j
+                x=np.arange(len(y))+1
+            else:
+                x,y=value_j
+            ax_k.plot(x,y,
+                      label=name_j)
+        plt.title(title)
+        plt.xlabel(x_label)
+        plt.ylabel(y_label)
+        plt.legend()
+        plt.show()
+        plt.clf()  
 #def selection_eval(conf_dict):
 #    if(conf_dict["subplots"] is None):
 #        sig_df=pred.stat_test(exp_path=conf_dict["exp_path"],
@@ -102,29 +150,6 @@ def desc_plot(conf):
 #               for name_j in value_i] 
 #                   for key_i,value_i in subplots.items()}
 #    make_plot(subplots)
-
-def make_plot(all_subplots,
-              title="Size",
-              x_label="n_clf",
-              y_label="acc",
-              default_x=True):
-    for i,(title_i,subplot_i) in enumerate(all_subplots.items()):
-        _, ax_k = plt.subplots()
-        print(subplot_i)
-        for name_j,value_j in subplot_i:
-            if(default_x):
-                y=value_j
-                x=np.arange(len(y))+1
-            else:
-                x,y=value_j
-            ax_k.plot(x,y,
-                      label=name_j)
-        plt.title(title)
-        plt.xlabel(x_label)
-        plt.ylabel(y_label)
-        plt.legend()
-        plt.show()
-        plt.clf()  
 
 def sig_summary(exp_path):
     clf_types=['deep','class_ens','purity_ens','separ_class_ens','separ_purity_ens']
