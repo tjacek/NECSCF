@@ -81,14 +81,20 @@ def desc_plot(conf):
         values=list(zip(x,y))
         points=list(zip(data_names,values))
         series_dict[name_i]=points
+    x_feat=desc_df[conf['x_feat']]
+    y_feat=desc_df[conf['y_feat']]
+    plt_limts=((x_feat.min(),x_feat.max()),
+               (y_feat.min(),y_feat.max()))
     plot_series(series_dict,
                 x_label=conf['x_feat'],
-                y_label=conf['y_feat'])
+                y_label=conf['y_feat'],
+                plt_limts=plt_limts)
 
 def plot_series(series_dict,
                 title="Scatter",
                 x_label='x',
-                y_label='y'):
+                y_label='y',
+                plt_limts=None):
     labels=['r','g','b']
     plt.figure()
     plt.title(title)
@@ -101,30 +107,11 @@ def plot_series(series_dict,
                     fontdict={'weight': 'bold', 'size': 9})
     plt.xlabel(x_label)
     plt.ylabel(y_label)
+    if(plt_limts):
+        plt.xlim(plt_limts[0])
+        plt.ylim(plt_limts[1])
     plt.show()
 
-def _make_plot(all_subplots,
-              title="Size",
-              x_label="n_clf",
-              y_label="acc",
-              default_x=True):
-    for i,(title_i,subplot_i) in enumerate(all_subplots.items()):
-        _, ax_k = plt.subplots()
-        print(subplot_i)
-        for name_j,value_j in subplot_i:
-            if(default_x):
-                y=value_j
-                x=np.arange(len(y))+1
-            else:
-                x,y=value_j
-            ax_k.plot(x,y,
-                      label=name_j)
-        plt.title(title)
-        plt.xlabel(x_label)
-        plt.ylabel(y_label)
-        plt.legend()
-        plt.show()
-        plt.clf()  
 #def selection_eval(conf_dict):
 #    if(conf_dict["subplots"] is None):
 #        sig_df=pred.stat_test(exp_path=conf_dict["exp_path"],
