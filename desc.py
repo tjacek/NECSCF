@@ -24,13 +24,14 @@ def purity_hist(in_path,k=10):
     return hist
 
 def history_epoch(exp_path,
-                  ens_type="separ_purity_ens"):
+                  ens_type="purity_ens"):
     @utils.EnsembleFun(selector=ens_type)
     def helper(in_path):
         history_path=f"{in_path}/history"
         all_history=[ utils.read_json(path_i)
                 for path_i in utils.top_files(history_path)]
-#        raise Exception(all_history[0])
+        if(not "separ" in ens_type):
+            all_history=[ [history_i] for history_i in all_history]
         desc_vector,n_clfs=[],len(all_history[0])
         for i in range(n_clfs):
             epochs=[history_j[i]['n_epochs'] for history_j in all_history]
