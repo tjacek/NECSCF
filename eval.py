@@ -66,7 +66,7 @@ def scatter_plot(points,
         fig.savefig(f'{out_path}.png')
 
 def desc_plot(conf):   
-    desc_df=pd.read_csv(conf['desc_path'])
+    desc_df=read_desc(conf['desc_path'])
     sig_df=pd.read_csv(conf['sig_path'])
     grouped=sig_df.groupby(by=conf["sig_clf"])
     def helper(df):
@@ -83,12 +83,21 @@ def desc_plot(conf):
         series_dict[name_i]=points
     x_feat=desc_df[conf['x_feat']]
     y_feat=desc_df[conf['y_feat']]
-    plt_limts=((x_feat.min(),x_feat.max()),
-               (y_feat.min(),y_feat.max()))
+    plt_limts=((x_feat.min(),x_feat.max()+0.1),
+               (y_feat.min(),y_feat.max()+0.1))
     plot_series(series_dict,
+                title=conf["title"],
                 x_label=conf['x_feat'],
                 y_label=conf['y_feat'],
                 plt_limts=plt_limts)
+
+def read_desc(desc_path):
+    if(type(desc_path)==list):
+        sub_dfs=[pd.read_csv(path_i) for path_i in desc_path]
+        df= sub_dfs[0].merge(sub_dfs[1],on='dataset')#,axis=1)#'dataset')
+        return df
+    else:
+        return pd.read_csv(desc_path)
 
 def plot_series(series_dict,
                 title="Scatter",
