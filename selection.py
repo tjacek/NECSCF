@@ -80,7 +80,8 @@ def get_id(subset):
     return str(id_j)
 
 def best_df(in_path):
-    read=ensemble_fun(read_static_subsets)
+    read=utils.EnsembleFun()(read_static_subsets)
+    print(read(in_path))
     lines=[]
     for data_i,ens_i,value_i in  read(in_path):
         line_i=[data_i,ens_i]
@@ -127,5 +128,6 @@ def compute_shapley(in_path,
         print(output_dict)
     return output_dict
 
-#if __name__ == '__main__':
+if __name__ == '__main__':
+    best_df("new_eval/subsets")
 #    shapley_plot("conf/basic2.js")
