@@ -79,9 +79,8 @@ def get_id(subset):
     id_j.sort()
     return str(id_j)
 
-def best_df(in_path):
+def best_df(in_path,glob=True):
     read=utils.EnsembleFun()(read_static_subsets)
-    print(read(in_path))
     lines=[]
     for data_i,ens_i,value_i in  read(in_path):
         line_i=[data_i,ens_i]
@@ -93,8 +92,17 @@ def best_df(in_path):
     cols=["data","ens_type",'acc','acc_subset','balance','balance_subset']
     df=pd.DataFrame.from_records(lines,
                                   columns=cols)
-    with pd.option_context('display.max_rows', None, 'display.max_columns', None):  
-        print(df[["data","ens_type",'acc','acc_subset']].round(4).to_latex())
+
+    grouped=df.groupby(by="data")
+    def helper(df):
+        i= df["acc"].argmax()
+        t= df["balance"].argmax()
+        return df.iloc[[i,t]]
+    df=grouped.apply(helper)
+    print(df)
+#    cols=["data","ens_type",'acc','acc_subset']
+#    with pd.option_context('display.max_rows', None, 'display.max_columns', None):  
+#        print(df[cols].round(4))#.to_latex())
     return df
 
 def gen_subsets(in_path,out_path):
