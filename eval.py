@@ -13,6 +13,8 @@ def eval_exp(conf):
         conf=utils.read_json(conf)
     if(conf['type']=="scatter"):
         shapley_plot(conf)
+    if(conf['type']=='selection'):
+        selection_plot(conf)
     if(conf['type']=="desc"):
         desc_plot(conf)
 
@@ -121,31 +123,20 @@ def plot_series(series_dict,
         plt.ylim(plt_limts[1])
     plt.show()
 
-#def selection_eval(conf_dict):
-#    if(conf_dict["subplots"] is None):
-#        sig_df=pred.stat_test(exp_path=conf_dict["exp_path"],
-#                              clf_x="RF",
-#                              clf_y="class_ens",
-#                              metric_type=conf_dict["metric_type"])
-#        subplots=pred.sig_subsets(sig_df)
-#    else:
-#        subplots=conf_dict["subplots"]
-#    print(subplots)
-#    dynamic_subsets=read_dynamic_subsets(conf_dict["exp_path"])
-#    ord_dict=utils.read_json(conf_dict["ord_path"])
-
-#    def helper(name_i,subsets_i):
-#        ord_i=ord_dict[name_i]
-#        ord_i=np.argsort(ord_i)
-#        acc=subsets_i.order_acc(ord_i)         
-#        acc=np.array(acc)
-#        acc= np.mean(acc,axis=1)
-#        return acc
-#    acc_dict=dynamic_subsets.transform(helper)
-#    subplots={ key_i: [ (name_j,acc_dict[name_j])
-#               for name_j in value_i] 
-#                   for key_i,value_i in subplots.items()}
-#    make_plot(subplots)
+def selection_plot(conf):
+    x=get_series(conf['x'])
+    y=get_series(conf['y'])
+    point_dict={}
+    for key_i in x:
+        x_i,y_i=x[key_i],y[key_i]
+        indexes=np.argsort(x_i)  
+        points=[(x_i[j],y_i[j]) for j in indexes]
+        point_dict[key_i]=np.array(points)
+    for key_i,point_i in point_dict.items():
+        scatter_plot(point_i,
+                title=key_i,
+                clf_x='x',#conf['x']['name'],
+                clf_y='y')
 
 def sig_summary(exp_path):
     clf_types=['deep','class_ens','purity_ens','separ_class_ens','separ_purity_ens']
@@ -200,9 +191,7 @@ def find_best(in_path,nn_only=False):
 
 
 if __name__ == '__main__':
-    eval_exp("new_eval/conf/desc.js")
-    #sig_summary("new_exp")
-    #history_acc("new_exp")
-    #eval_exp("new_exp",
-    #         ord_path="ord/size.json")
-    #eval_exp(conf_path="conf/basic2.js")
+#    eval_exp("new_eval/conf/desc.js")
+#    sig_summary("new_exp")
+#    find_best("new_exp")
+    eval_exp("new_eval/conf/scatter.js")
