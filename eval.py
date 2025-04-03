@@ -4,9 +4,9 @@ from tqdm import tqdm
 import pandas as pd
 import matplotlib.pyplot as plt
 import scipy.stats
-from functools import wraps
+#from functools import wraps
 from selection import compute_shapley
-import dataset,pred,utils
+import dataset,pred,selection,utils
 
 def eval_exp(conf):
     if(type(conf)==str):
@@ -124,20 +124,25 @@ def plot_series(series_dict,
     plt.show()
 
 def selection_plot(conf):
-    x=get_series(conf['x'])
-    y=get_series(conf['y'])
-    point_dict={}
-    for key_i in x:
-        x_i,y_i=x[key_i],y[key_i]
-        indexes=np.argsort(x_i)  
-        points=[(x_i[j],y_i[j]) for j in indexes]
-        point_dict[key_i]=np.array(points)
-    for key_i,point_i in point_dict.items():
-        scatter_plot(point_i,
+    @utils.EnsembleFun(selector=conf["clf_type"])
+    def helper(in_path):
+        return selection.read_static_subsets(in_path)
+    output= helper(conf["subset_path"])
+    output_dict={key_i:value_i for key_i,_,value_i in output}
+    ord_value=get_series(conf['ord_value'])
+    for key_i in ord_value:
+        value_i,all_subsets_i=ord_value[key_i],output_dict[key_i]
+        order_i=np.argsort(value_i)
+        metric_value=[all_subsets_i(subset_k,metric_type=conf['metric']) 
+                        for subset_k in utils.selected_subsets(order_i)]
+        x=[i for i in range(len(metric_value))]
+        points=np.array([x,metric_value])
+        scatter_plot(points,
                 title=key_i,
-                clf_x='x',#conf['x']['name'],
-                clf_y='y')
-
+                clf_x=conf['ord_value']['name'],
+                clf_y=conf['metric'])
+        print(points)
+        
 def sig_summary(exp_path):
     clf_types=['deep','class_ens','purity_ens','separ_class_ens','separ_purity_ens']
     metrics=['acc','balance']
@@ -194,4 +199,4 @@ if __name__ == '__main__':
 #    eval_exp("new_eval/conf/desc.js")
 #    sig_summary("new_exp")
 #    find_best("new_exp")
-    eval_exp("new_eval/conf/scatter.js")
+    eval_exp("new_eval/conf/selection.js")

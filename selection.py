@@ -29,6 +29,11 @@ class StaticSubsets(object):
         self.value_dict=value_dict
         self.metric_types=metric_types
     
+    def __call__(self,subset,metric_type='acc'):
+        id_i=get_id(subset)
+        k=self.metric_types[metric_type]
+        return self.value_dict[id_i][k]
+
     def best(self,type):
         k=self.metric_types[type]
         best,best_subset=0,None
@@ -99,7 +104,7 @@ def best_df(in_path,glob=True):
         t= df["balance"].argmax()
         return df.iloc[[i,t]]
     df=grouped.apply(helper)
-    print(df)
+    print(df[["data","ens_type","acc","balance"]].round(4))
 #    cols=["data","ens_type",'acc','acc_subset']
 #    with pd.option_context('display.max_rows', None, 'display.max_columns', None):  
 #        print(df[cols].round(4))#.to_latex())
