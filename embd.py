@@ -8,7 +8,38 @@ class NECSCF(object):
     def __init__(self,model,clf_type="RF"):
         self.model=model	
         self.clf_type=clf_type
+        self.extractor=None
         self.clfs=[]
+    
+    def fit(self,X,y):
+        full_feats=self.get_embd(X)
+        for feat_i in full_feats:
+            clf_i=base.get_clf(self.clf_type)
+            clf_i.fit(feat_i,y)
+            self.clfs.append(clf_i)
+        return self
+    
+    def predict(self,X):
+        full_feats=self.get_embd(X)
+        votes=[ clf_i.predict_proba(full_feats[i])
+                for i,clf_i in enumerate(self.clfs)]
+        votes=np.array(votes)
+        votes=np.sum(votes,axis=0)
+        return np.argmax(votes,axis=1)
+
+    def eval(self,data,split_i):
+        result,_=split_i.eval(data,self)
+        return result
+
+    def get_embd(self,X):
+        if(self.extractor is None):
+            self.extractor=Model(inputs=self.model.inputs, 
+                                 outputs=list(self.get_outputs()))
+        cs_feats= self.extractor(X, training=False)
+        cs_feats=[ cs_i.numpy() for cs_i in cs_feats]
+        full_feats=[np.concatenate([X,cs_i],axis=1) 
+                        for cs_i in cs_feats]        
+        return full_feats
 
     def get_outputs(self):
         pattern=re.compile(r"(\D)+_(\d)+_1")
@@ -16,21 +47,14 @@ class NECSCF(object):
             name_i=layer_i.name
             if(pattern.match(name_i)):
                 yield layer_i.output
-    
-    def fit(self,X,y):
-        extractor=Model(inputs=self.model.inputs, 
-                        outputs=list(self.get_outputs()))
-#        extractor.summary()
-        cs_feats= extractor(X, training=False)
-        raise Exception([cs_i.shape for cs_i in cs_feats])
-
-    def eval(self,data,split_i):
-    	clf=split_i.eval(data,self)
 
 def embd_exp(data_path,model_path):
     data=dataset.read_csv(data_path)
+    acc=[]
     for i,model_i,split_i in read_models(model_path):
-        model_i.eval(data,split_i)	
+        result_i=model_i.eval(data,split_i)	
+        acc.append(result_i.get_acc())
+    print(np.mean(acc))
 
 def read_models(in_path,
                 ens_type="class_ens",
