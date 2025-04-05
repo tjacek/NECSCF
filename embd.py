@@ -1,5 +1,6 @@
 import numpy as np
 import tensorflow as tf
+from tensorflow.keras import Input, Model
 import re
 import base,dataset,deep
 
@@ -9,16 +10,19 @@ class NECSCF(object):
         self.clf_type=clf_type
         self.clfs=[]
 
-    def get_layers(self):
-        pattern=re.compile(r"(\D)+_\d_1")
+    def get_outputs(self):
+        pattern=re.compile(r"(\D)+_(\d)+_1")
         for layer_i in self.model.layers:
             name_i=layer_i.name
             if(pattern.match(name_i)):
-                yield name_i
+                yield layer_i.output
     
     def fit(self,X,y):
-        n_cats=max(y)+1
-        raise Exception(list(self.get_layers()))
+        extractor=Model(inputs=self.model.inputs, 
+                        outputs=list(self.get_outputs()))
+#        extractor.summary()
+        cs_feats= extractor(X, training=False)
+        raise Exception([cs_i.shape for cs_i in cs_feats])
 
     def eval(self,data,split_i):
     	clf=split_i.eval(data,self)
