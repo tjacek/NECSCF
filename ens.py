@@ -29,6 +29,12 @@ def get_ens(ens_type:str,hyper_params=None):
 def is_neural(ens_type):
     return ("ens" in ens_type or "deep"==ens_type)
 
+def is_ensemble(ens_type):
+    return "ens" in ens_type
+
+def is_separ(ens_type):
+    return "separ" in ens_type
+
 def default_hyperparams():
     return {'layers':2, 'units_0':2,
             'units_1':1,'batch':False}

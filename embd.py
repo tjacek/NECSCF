@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras import Input, Model
 import re
-import base,dataset,deep,utils
+import base,dataset,deep,ens,utils
 
 class NECSCF(object):
     def __init__(self,model,clf_type="RF"):
@@ -97,6 +97,14 @@ class SeparReader(object):
             models.append(model_i)
         return SeparNECSCF(models)
 
+def get_reader(in_path):
+    info_dict=utils.read_json(in_path)
+    ens_type=info_dict['ens']
+    if(ens.is_separ(ens_type)):
+        return SeparReader(ens_type)
+    else:
+        return MultiReader(ens_type)
+
 def embd_exp(data_path,model_path):
     data=dataset.read_csv(data_path)
     acc=[]
@@ -111,7 +119,8 @@ def read_models(in_path,
                 step=10):
     split_path=f"{in_path}/splits"
     model_path=f"{in_path}/{ens_type}/models"
-    reader=SeparReader(ens_type)
+    info_path=f"{in_path}/{ens_type}/info.js"
+    reader=get_reader(info_path)#SeparReader(ens_type)
     for index in range(step):
         i=start+index
         model_path_i=f"{model_path}/{i}.keras"
@@ -122,5 +131,5 @@ def read_models(in_path,
                                        test_index=raw_split["arr_1"])
         yield i,ens_i,split_i
 
-data='wine-quality-red'
+data='vehicle'
 embd_exp(f"../uci/{data}",f"new_exp/{data}")
