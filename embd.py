@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras import Input, Model
 import re
-import base,dataset,deep
+import base,dataset,deep,utils
 
 class NECSCF(object):
     def __init__(self,model,clf_type="RF"):
@@ -52,6 +52,30 @@ class MultiNECSCF(NECSCF):
             if(pattern.match(name_i)):
                 yield layer_i.output
 
+class SeparNECSCF(NECSCF):
+    def get_embd(self,X):
+        if(self.extractor is None):
+            self.make_extractor()
+        cs_feats=[extractor_i(X,training=False).numpy() 
+                    for extractor_i in self.extractor]
+        full_feats=[np.concatenate([X,cs_i],axis=1) 
+                        for cs_i in cs_feats] 
+        return full_feats
+
+    def make_extractor(self):
+        self.extractor=[]
+        pattern=re.compile(r"(\D)+_(\d)+_1")
+        for model_i in self.model:
+            for layer_j in model_i.layers:
+                name_j=layer_j.name
+                if(pattern.match(name_j)):
+                    print(name_j)
+                    extractor_i=Model(inputs=model_i.inputs, 
+                                 outputs=[layer_j.output])
+                    self.extractor.append(extractor_i)
+                    continue
+        return self.extractor
+
 class MultiReader(object):
     def __init__(self,ens_type):
         self.ens_type=ens_type
@@ -60,6 +84,18 @@ class MultiReader(object):
         model=tf.keras.models.load_model(path,
                                         custom_objects={"loss":deep.WeightedLoss()})
         return MultiNECSCF(model)
+
+class SeparReader(object):
+    def __init__(self,ens_type):
+        self.ens_type=ens_type
+
+    def __call__(self,path):
+        models=[]
+        for path_i in utils.top_files(path):
+            model_i=tf.keras.models.load_model(path_i,
+                                               custom_objects={"loss":deep.WeightedLoss()})
+            models.append(model_i)
+        return SeparNECSCF(models)
 
 def embd_exp(data_path,model_path):
     data=dataset.read_csv(data_path)
@@ -70,18 +106,16 @@ def embd_exp(data_path,model_path):
     print(np.mean(acc))
 
 def read_models(in_path,
-                ens_type="class_ens",
+                ens_type="separ_purity_ens",
                 start=0,
                 step=10):
     split_path=f"{in_path}/splits"
     model_path=f"{in_path}/{ens_type}/models"
-    reader=MultiReader(ens_type)
+    reader=SeparReader(ens_type)
     for index in range(step):
         i=start+index
         model_path_i=f"{model_path}/{i}.keras"
         print(model_path_i)
-#        model_i=tf.keras.models.load_model(model_path_i,
-#                                           custom_objects={"loss":deep.WeightedLoss()})
         ens_i=reader(model_path_i)
         raw_split=np.load(f"{split_path}/{i}.npz")
         split_i=base.UnaggrSplit.Split(train_index=raw_split["arr_0"],
