@@ -1,6 +1,7 @@
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras import Input, Model
+from tqdm import tqdm
 import re
 import base,dataset,deep,ens,utils,train
 
@@ -107,28 +108,41 @@ def get_reader(in_path):
 
 def embd_exp(data_path,
              model_path,
-             ens_type="class_ens"):
+             ens_type="class_ens",
+             n_iters=25):
     @utils.DirFun({"in_path":0,"model_path":1})
     def helper(in_path,model_path):
+        print(in_path)
         data=dataset.read_csv(in_path)
         path_dict=train.get_paths(out_path=model_path,
                         ens_type=ens_type,
                         dirs=['models','info.js'])
-        print(in_path)
-        print(path_dict)
-    helper(data_path,model_path)
+        model_iter=read_models(path_dict=path_dict,
+                               start=0,
+                               step=n_iters)
+        results=[]
+        for i,model_i,split_i in tqdm(model_iter):
+            results.append( model_i.eval(data,split_i)) 
+        return dataset.ResultGroup(results)
+    output_dict=helper(data_path,model_path)
+    for path_i,result_i in output_dict.items():
+        line_i=path_i.split('/')[-1]
+        for metric_j in ['acc','balance']:
+            value_j=np.mean(result_i.get_metric(metric_j))
+            line_i+=f",{value_j:.4f}"
+        print(line_i)
 
 def simple_exp(data_path,
                model_path,
                ens_type="class_ens"):
     data=dataset.read_csv(data_path)
-    acc=[]
     path_dict=train.get_paths(out_path=model_path,
                         ens_type=ens_type,
                         dirs=['models','info.js'])
     model_iter=read_models(path_dict=path_dict,
                            start=0,
                            step=10)
+    acc=[]
     for i,model_i,split_i in model_iter:
         result_i=model_i.eval(data,split_i)	
         acc.append(result_i.get_acc())
@@ -141,7 +155,6 @@ def read_models(path_dict,
     for index in range(step):
         i=start+index
         model_path_i=f"{path_dict['models']}/{i}.keras"
-        print(model_path_i)
         ens_i=reader(model_path_i)
         raw_split=np.load(f"{path_dict['splits']}/{i}.npz")
         split_i=base.UnaggrSplit.Split(train_index=raw_split["arr_0"],
@@ -149,5 +162,5 @@ def read_models(path_dict,
         yield i,ens_i,split_i
 
 data='vehicle'
-#embd_exp("../uci","new_exp")
-simple_exp(f"../uci/{data}",f"new_exp/{data}")
+embd_exp("../uci","new_exp")
+#simple_exp(f"../uci/{data}",f"new_exp/{data}")
