@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras import Input, Model
 import re
-import base,dataset,deep,ens,utils
+import base,dataset,deep,ens,utils,train
 
 class NECSCF(object):
     def __init__(self,model,clf_type="RF"):
@@ -105,31 +105,49 @@ def get_reader(in_path):
     else:
         return MultiReader(ens_type)
 
-def embd_exp(data_path,model_path):
+def embd_exp(data_path,
+             model_path,
+             ens_type="class_ens"):
+    @utils.DirFun({"in_path":0,"model_path":1})
+    def helper(in_path,model_path):
+        data=dataset.read_csv(in_path)
+        path_dict=train.get_paths(out_path=model_path,
+                        ens_type=ens_type,
+                        dirs=['models','info.js'])
+        print(in_path)
+        print(path_dict)
+    helper(data_path,model_path)
+
+def simple_exp(data_path,
+               model_path,
+               ens_type="class_ens"):
     data=dataset.read_csv(data_path)
     acc=[]
-    for i,model_i,split_i in read_models(model_path):
+    path_dict=train.get_paths(out_path=model_path,
+                        ens_type=ens_type,
+                        dirs=['models','info.js'])
+    model_iter=read_models(path_dict=path_dict,
+                           start=0,
+                           step=10)
+    for i,model_i,split_i in model_iter:
         result_i=model_i.eval(data,split_i)	
         acc.append(result_i.get_acc())
     print(np.mean(acc))
 
-def read_models(in_path,
-                ens_type="separ_purity_ens",
+def read_models(path_dict,
                 start=0,
                 step=10):
-    split_path=f"{in_path}/splits"
-    model_path=f"{in_path}/{ens_type}/models"
-    info_path=f"{in_path}/{ens_type}/info.js"
-    reader=get_reader(info_path)#SeparReader(ens_type)
+    reader=get_reader(path_dict['info.js'])
     for index in range(step):
         i=start+index
-        model_path_i=f"{model_path}/{i}.keras"
+        model_path_i=f"{path_dict['models']}/{i}.keras"
         print(model_path_i)
         ens_i=reader(model_path_i)
-        raw_split=np.load(f"{split_path}/{i}.npz")
+        raw_split=np.load(f"{path_dict['splits']}/{i}.npz")
         split_i=base.UnaggrSplit.Split(train_index=raw_split["arr_0"],
                                        test_index=raw_split["arr_1"])
         yield i,ens_i,split_i
 
 data='vehicle'
-embd_exp(f"../uci/{data}",f"new_exp/{data}")
+#embd_exp("../uci","new_exp")
+simple_exp(f"../uci/{data}",f"new_exp/{data}")
