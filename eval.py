@@ -4,7 +4,6 @@ from tqdm import tqdm
 import pandas as pd
 import matplotlib.pyplot as plt
 import scipy.stats
-#from functools import wraps
 from selection import compute_shapley
 import dataset,pred,selection,utils
 
@@ -17,6 +16,8 @@ def eval_exp(conf):
         selection_plot(conf)
     if(conf['type']=="desc"):
         desc_plot(conf)
+    if(conf['type']=="plot_xy"):
+        xy_plot(conf)
 
 def shapley_plot(conf):
     if(type(conf)==str):
@@ -101,6 +102,26 @@ def read_desc(desc_path):
     else:
         return pd.read_csv(desc_path)
 
+def xy_plot(conf):   
+    x=utils.read_json(conf["x_plot"])
+    y=utils.read_json(conf["y_plot"])
+    plt.figure()
+    for key_i in x:
+        x_i,y_i=x[key_i],y[key_i]
+        plt.text(x_i, 
+                 y_i, 
+                 key_i,
+                 fontdict={'weight': 'bold', 'size': 9})
+    x_values=list(x.values())
+    y_values=list(y.values())
+    plt.title(conf["title"])
+    plt.xlabel(conf['x_label'])
+    plt.ylabel(conf['y_label'])
+    plt.xlim((min(x_values),max(x_values)*1.25))
+    plt.ylim((min(y_values),max(y_values)*1.25))
+#    plt.ylim((min(x_values),max(x_values)*1.25))
+    plt.show()
+
 def plot_series(series_dict,
                 title="Scatter",
                 x_label='x',
@@ -136,13 +157,12 @@ def selection_plot(conf):
         metric_value=[all_subsets_i(subset_k,metric_type=conf['metric']) 
                         for subset_k in utils.selected_subsets(order_i)]
         x=[i for i in range(len(metric_value))]
-        points=np.array([x,metric_value])
+        points=np.array([x,metric_value]).T
         scatter_plot(points,
                 title=key_i,
                 clf_x=conf['ord_value']['name'],
                 clf_y=conf['metric'])
-        print(points)
-        
+
 def sig_summary(exp_path):
     clf_types=['deep','class_ens','purity_ens','separ_class_ens','separ_purity_ens']
     metrics=['acc','balance']
@@ -199,4 +219,4 @@ if __name__ == '__main__':
 #    eval_exp("new_eval/conf/desc.js")
 #    sig_summary("new_exp")
 #    find_best("new_exp")
-    eval_exp("new_eval/conf/selection.js")
+    eval_exp("new_eval/conf/xy_plot.js")

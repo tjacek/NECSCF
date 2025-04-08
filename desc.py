@@ -43,6 +43,8 @@ def history_epoch(exp_path,
     for data_i,_,vector_i in output:
         if(len(vector_i)>1):
             vector_i=np.mean(vector_i)
+        else:
+            vector_i=vector_i[0]
         output_dict[data_i]=vector_i
     if(out_path):
         utils.save_json(output_dict,out_path)
@@ -98,6 +100,6 @@ def z_score(values):
 
 if __name__ == '__main__':
     history_epoch("new_exp",
-                  ens_type="separ_class_ens",
-                  out_path="new_eval/n_epochs/separ_class_ens")
+                  ens_type="class_ens",
+                  out_path="new_eval/n_epochs/class_ens")
 #    history_acc("new_exp","ord/total_acc.json")
