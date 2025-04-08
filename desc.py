@@ -24,7 +24,8 @@ def purity_hist(in_path,k=10):
     return hist
 
 def history_epoch(exp_path,
-                  ens_type="purity_ens"):
+                  ens_type="separ_class_ens",
+                  out_path=None):
     @utils.EnsembleFun(selector=ens_type)
     def helper(in_path):
         history_path=f"{in_path}/history"
@@ -38,10 +39,14 @@ def history_epoch(exp_path,
             desc_vector.append(np.mean(epochs))
         return desc_vector
     output= helper(exp_path)
+    output_dict={}
     for data_i,_,vector_i in output:
-        print(data_i)
-        print(vector_i)
-
+        if(len(vector_i)>1):
+            vector_i=np.mean(vector_i)
+        output_dict[data_i]=vector_i
+    if(out_path):
+        utils.save_json(output_dict,out_path)
+    print(output_dict)
 
 
 def knn_purity(in_path,k=10):
@@ -92,5 +97,7 @@ def z_score(values):
     return values.tolist()
 
 if __name__ == '__main__':
-    history_epoch("new_exp")
+    history_epoch("new_exp",
+                  ens_type="separ_class_ens",
+                  out_path="new_eval/n_epochs/separ_class_ens")
 #    history_acc("new_exp","ord/total_acc.json")
