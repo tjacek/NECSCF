@@ -46,7 +46,7 @@ def shapley_plot(conf):
 def get_series(param_dict):
     if(param_dict["type"]=="shapley"):
         return compute_shapley(in_path=param_dict['subset_path'],
-                               clf_type=param_dict['name'],
+                               clf_type=param_dict['ens_type'],
                                metric_type=param_dict['metric'],
                                verbose=False)
     if(param_dict["type"]=="cls_desc"):
@@ -219,4 +219,4 @@ if __name__ == '__main__':
 #    eval_exp("new_eval/conf/desc.js")
 #    sig_summary("new_exp")
 #    find_best("new_exp")
-    eval_exp("new_eval/conf/xy_plot.js")
+    eval_exp("new_eval/conf/scatter.js")
