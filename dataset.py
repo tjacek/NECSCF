@@ -2,7 +2,8 @@ import pandas as pd
 import numpy as np
 #from sklearn.decomposition import PCA
 from sklearn import preprocessing
-from sklearn.metrics import accuracy_score,classification_report,balanced_accuracy_score
+from sklearn.metrics import accuracy_score,f1_score,balanced_accuracy_score
+from sklearn.metrics import classification_report
 import utils
 
 class Dataset(object):
@@ -172,8 +173,9 @@ def dispatch_metric(metric_type):
         return accuracy_score
     if(metric_type=="balance"):
         return balanced_accuracy_score
+    if(metric_type=="f1-score"):
+        return f1_score
     raise Exception(f"Unknow metric type{ens_type}")
-
 
 class WeightDict(dict):
     def __init__(self, arg=[]):
@@ -217,10 +219,6 @@ def read_partial_group(in_path:str):
     results= [ read_partial(path_i) 
                  for path_i in utils.top_files(in_path)]
     return PartialGroup(results)
-#def compare_results(first_path,second_path):
-#    first,second=read_result(first_path),read_result(second_path)
-#    comp=first.true_pos() + (2*second.true_pos())
-#    return comp
 
 def read_csv(in_path:str):
     if(type(in_path)==tuple):
@@ -244,14 +242,6 @@ def get_class_weights(y):
         else:
             params[i]=0
     return params.norm()
-
-#def unify_results(partial_results):
-#    pairs=[ (result_i.y_pred,result_i.y_true) 
-#            for result_i in partial_results]
-#    y_pred,y_true=list(zip(*pairs))
-#    y_pred=np.concatenate(y_pred)
-#    y_true=np.concatenate(y_true)
-#    return Result(y_pred,y_true)
 
 if __name__ == '__main__':
     data=read_csv("../uci/lymphography")
