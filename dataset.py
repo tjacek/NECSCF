@@ -174,7 +174,8 @@ def dispatch_metric(metric_type):
     if(metric_type=="balance"):
         return balanced_accuracy_score
     if(metric_type=="f1-score"):
-        return f1_score
+        return lambda y_pred,y_true:f1_score(y_pred,y_true,
+                                        average='micro')
     raise Exception(f"Unknow metric type{ens_type}")
 
 class WeightDict(dict):

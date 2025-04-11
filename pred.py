@@ -85,7 +85,7 @@ def summary(exp_path):
         return output_dict
     output_dict=helper(exp_path)
     result_dict=utils.to_id_dir(output_dict,index=-1)
-    metrics=["acc","balance"]
+    metrics=["acc","balance","f1-score"]
     lines=[]
     for name_i,output_i in result_dict.items():
         for clf_j,result_j in output_i:
@@ -98,6 +98,7 @@ def summary(exp_path):
                                   columns=["data","clf"]+metrics)
     with pd.option_context('display.max_rows', None, 'display.max_columns', None):  
         print(df.round(4))
+    return df
 
 def get_result(path_i):
     info_dict=utils.read_json(f"{path_i}/info.js")
@@ -145,10 +146,6 @@ if __name__ == '__main__':
     parser.add_argument("--exp_path", type=str, default="new_exp")
     parser.add_argument('--nn', action='store_true')
     parser.add_argument('--clf',  type=str, default=None)
-
-#    parser.add_argument('--type', default=None,#'separ_purity_ens', 
-#                        choices=[None,'class_ens','purity_ens',
-#                                  'separ_purity_ens','RF','deep']) 
     parser.add_argument('--pairs', default='purity_ens,class_ens') 
     args = parser.parse_args()
     print(args)
