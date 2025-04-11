@@ -84,19 +84,20 @@ class SeparNECSCF(NECSCF):
                     continue
         return self.extractor
 
-class MultiReader(object):
+class EmbdReader(object):
     def __init__(self,ens_type):
         self.ens_type=ens_type
+    
+    def get_info(self):
+        return {"ens":f"NECSCF({self.ens_type})","base_ens":self.ens_type}
 
+class MultiReader(EmbdReader):
     def __call__(self,path):
         model=tf.keras.models.load_model(path,
                                         custom_objects={"loss":deep.WeightedLoss()})
         return MultiNECSCF(model)
 
-class SeparReader(object):
-    def __init__(self,ens_type):
-        self.ens_type=ens_type
-
+class SeparReader(EmbdReader):
     def __call__(self,path):
         models=[]
         for path_i in utils.top_files(path):
@@ -140,25 +141,34 @@ def embd_exp(data_path,
         print(line_i)
 
 def simple_exp(data_path,
-               model_path,
+               out_path,
                ens_type="class_ens"):
     data=dataset.read_csv(data_path)
-    path_dict=train.get_paths(out_path=model_path,
+    path_dict=train.get_paths(out_path=out_path,
                         ens_type=ens_type,
                         dirs=['models','info.js'])
+    reader=get_reader(path_dict['info.js'])
     model_iter=read_models(path_dict=path_dict,
+                           reader=reader,
                            start=0,
-                           step=10)
-    acc=[]
+                           step=100)
+    info_dict=reader.get_info()
+    embd_dict=train.get_paths(out_path=out_path,
+                              ens_type=info_dict['ens'],
+                              dirs=['results','info.js'])
+    utils.make_dir(embd_dict['ens'])
+    utils.make_dir(embd_dict['results'])
     for i,model_i,split_i in model_iter:
-        result_i=model_i.eval(data,split_i)	
-        acc.append(result_i.get_metric("acc"))
-    print(np.mean(acc))
+        result_i=model_i.eval(data,split_i)
+        result_i.save(f'{embd_dict['results']}/{i}.npz')
+    utils.save_json(info_dict,embd_dict['info.js'])
 
 def read_models(path_dict,
+                reader=None,
                 start=0,
                 step=10):
-    reader=get_reader(path_dict['info.js'])
+    if(reader is None):
+        reader=get_reader(path_dict['info.js'])
     for index in range(step):
         i=start+index
         model_path_i=f"{path_dict['models']}/{i}.keras"
