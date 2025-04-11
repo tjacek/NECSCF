@@ -19,17 +19,25 @@ class NECSCF(object):
             clf_i.fit(feat_i,y)
             self.clfs.append(clf_i)
         return self
-    
-    def predict(self,X):
+
+    def partial_predict(self,X):
         full_feats=self.get_embd(X)
         votes=[ clf_i.predict_proba(full_feats[i])
                 for i,clf_i in enumerate(self.clfs)]
-        votes=np.array(votes)
+        return np.array(votes) 
+    
+    def predict(self,X):
+        votes=self.partial_predict(X)
         votes=np.sum(votes,axis=0)
         return np.argmax(votes,axis=1)
 
     def eval(self,data,split_i):
-        result,_=split_i.eval(data,self)
+        train_data_i=data.selection(split_i.train_index)
+        self.fit(train_data_i.X,train_data_i.y)
+        test_data_i=data.selection(split_i.test_index)
+        raw_partial_i=self.partial_predict(test_data_i.X)
+        result=dataset.PartialResults(y_true=test_data_i.y,
+                                      y_partial=raw_partial_i)
         return result
 
     def get_embd(self,X):
@@ -70,7 +78,6 @@ class SeparNECSCF(NECSCF):
             for layer_j in model_i.layers:
                 name_j=layer_j.name
                 if(pattern.match(name_j)):
-                    print(name_j)
                     extractor_i=Model(inputs=model_i.inputs, 
                                  outputs=[layer_j.output])
                     self.extractor.append(extractor_i)
@@ -108,8 +115,8 @@ def get_reader(in_path):
 
 def embd_exp(data_path,
              model_path,
-             ens_type="class_ens",
-             n_iters=25):
+             ens_type="separ_purity_ens",
+             n_iters=100):
     @utils.DirFun({"in_path":0,"model_path":1})
     def helper(in_path,model_path):
         print(in_path)
@@ -145,7 +152,7 @@ def simple_exp(data_path,
     acc=[]
     for i,model_i,split_i in model_iter:
         result_i=model_i.eval(data,split_i)	
-        acc.append(result_i.get_acc())
+        acc.append(result_i.get_metric("acc"))
     print(np.mean(acc))
 
 def read_models(path_dict,
@@ -162,5 +169,5 @@ def read_models(path_dict,
         yield i,ens_i,split_i
 
 data='vehicle'
-embd_exp("../uci","new_exp")
-#simple_exp(f"../uci/{data}",f"new_exp/{data}")
+#embd_exp("../uci","new_exp")
+simple_exp(f"../uci/{data}",f"new_exp/{data}")
