@@ -118,29 +118,15 @@ def embd_exp(data_path,
              model_path,
              ens_type="separ_purity_ens",
              n_iters=100):
-    @utils.DirFun({"in_path":0,"model_path":1})
-    def helper(in_path,model_path):
+    @utils.DirFun({"in_path":0,"out_path":1})
+    def helper(in_path,out_path):
         print(in_path)
-        data=dataset.read_csv(in_path)
-        path_dict=train.get_paths(out_path=model_path,
-                        ens_type=ens_type,
-                        dirs=['models','info.js'])
-        model_iter=read_models(path_dict=path_dict,
-                               start=0,
-                               step=n_iters)
-        results=[]
-        for i,model_i,split_i in tqdm(model_iter):
-            results.append( model_i.eval(data,split_i)) 
-        return dataset.ResultGroup(results)
+        single_exp(in_path,
+                   out_path,
+                   ens_type=ens_type)
     output_dict=helper(data_path,model_path)
-    for path_i,result_i in output_dict.items():
-        line_i=path_i.split('/')[-1]
-        for metric_j in ['acc','balance']:
-            value_j=np.mean(result_i.get_metric(metric_j))
-            line_i+=f",{value_j:.4f}"
-        print(line_i)
 
-def simple_exp(data_path,
+def single_exp(data_path,
                out_path,
                ens_type="class_ens"):
     data=dataset.read_csv(data_path)
@@ -158,7 +144,7 @@ def simple_exp(data_path,
                               dirs=['results','info.js'])
     utils.make_dir(embd_dict['ens'])
     utils.make_dir(embd_dict['results'])
-    for i,model_i,split_i in model_iter:
+    for i,model_i,split_i in tqdm(model_iter):
         result_i=model_i.eval(data,split_i)
         result_i.save(f'{embd_dict['results']}/{i}.npz')
     utils.save_json(info_dict,embd_dict['info.js'])
@@ -179,5 +165,5 @@ def read_models(path_dict,
         yield i,ens_i,split_i
 
 data='vehicle'
-#embd_exp("../uci","new_exp")
-simple_exp(f"../uci/{data}",f"new_exp/{data}")
+embd_exp("../uci","new_exp")
+#simple_exp(f"../uci/{data}",f"new_exp/{data}")
