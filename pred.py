@@ -73,10 +73,18 @@ def pred_from_models(data,
         result_i=clf_i.eval(data,split_i)
         result_i.save(result_path_i)
 
-def summary(exp_path):
+def get_result(path_i):
+    info_dict=utils.read_json(f"{path_i}/info.js")
+    clf_type=info_dict['ens']
+    if("ens" in clf_type ):
+        return clf_type,dataset.read_partial_group(f"{path_i}/results")
+    else:
+        return clf_type,dataset.read_result_group(f"{path_i}/results")
+
+def summary(exp_path,
+            metrics:list):
     @utils.DirFun({"in_path":0})
     def helper(in_path):
-        print(in_path)
         output_dict=[]
         for path_i in utils.top_files(in_path):
             if(not "splits" in path_i):
@@ -85,7 +93,6 @@ def summary(exp_path):
         return output_dict
     output_dict=helper(exp_path)
     result_dict=utils.to_id_dir(output_dict,index=-1)
-    metrics=["acc","balance","f1-score"]
     lines=[]
     for name_i,output_i in result_dict.items():
         for clf_j,result_j in output_i:
@@ -100,13 +107,20 @@ def summary(exp_path):
         print(df.round(4))
     return df
 
-def get_result(path_i):
-    info_dict=utils.read_json(f"{path_i}/info.js")
-    clf_type=info_dict['ens']
-    if("ens" in clf_type ):
-        return clf_type,dataset.read_partial_group(f"{path_i}/results")
-    else:
-        return clf_type,dataset.read_result_group(f"{path_i}/results")
+def basic_selector(dir_id):
+    return  not "splits" in dir_id
+
+class EnsSelector(object):
+    def __init__(self,words):
+        self.words=words
+
+    def __call__(self,dir_id):
+        if(not basic_selector(dir_id)):
+            return False
+        for word_i in self.words:
+            if(word_i in dir_id):
+                return True
+        return False    
 
 def stat_test(exp_path,
               clf_x,
@@ -155,7 +169,8 @@ if __name__ == '__main__':
     if(args.clf):
         pred_clf(data_path=args.data_path,
                  exp_path=args.exp_path)
-    summary(exp_path=args.exp_path)
+    summary(exp_path=args.exp_path,
+            metrics=["acc","balance"])
     if(args.pairs):
         clfs=args.pairs.split(',')
         if(len(clfs)>1):
