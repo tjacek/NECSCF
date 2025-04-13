@@ -19,7 +19,7 @@ def eval_exp(conf):
     if(conf['type']=="plot_xy"):
         xy_plot(conf)
     if(conf['type']=='df'):
-        show_summary(conf)
+        df_eval(conf)
 
 def shapley_plot(conf):
     if(type(conf)==str):
@@ -165,11 +165,22 @@ def selection_plot(conf):
                 clf_x=conf['ord_value']['name'],
                 clf_y=conf['metric'])
 
-def show_summary(conf):
-    pred.summary(exp_path=conf['exp_path'],
-                 selector=conf['selector'],
-                 metrics=conf['metrics'])
-#    raise Exception(conf)
+def df_eval(conf):
+    if('summary' in conf):
+        s_conf=conf['summary']
+        pred.summary(exp_path=conf['exp_path'],
+                     selector=s_conf['selector'],
+                     metrics=s_conf['metrics'])
+    if('sig_pairs' in conf):
+        s_conf=conf['sig_pairs']
+        for pair_i in s_conf['pairs']:
+            clf_x,clf_y=pair_i.split(",")
+            df=pred.stat_test(conf['exp_path'],
+                              clf_x,
+                              clf_y,
+                              metric_type=s_conf['metric'])
+            print(df)
+
 
 
 
