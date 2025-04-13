@@ -18,6 +18,8 @@ def eval_exp(conf):
         desc_plot(conf)
     if(conf['type']=="plot_xy"):
         xy_plot(conf)
+    if(conf['type']=='df'):
+        show_summary(conf)
 
 def shapley_plot(conf):
     if(type(conf)==str):
@@ -163,6 +165,14 @@ def selection_plot(conf):
                 clf_x=conf['ord_value']['name'],
                 clf_y=conf['metric'])
 
+def show_summary(conf):
+    pred.summary(exp_path=conf['exp_path'],
+                 selector=conf['selector'],
+                 metrics=conf['metrics'])
+#    raise Exception(conf)
+
+
+
 def sig_summary(exp_path):
     clf_types=['deep','class_ens','purity_ens','separ_class_ens','separ_purity_ens']
     metrics=['acc','balance']
@@ -219,4 +229,4 @@ if __name__ == '__main__':
 #    eval_exp("new_eval/conf/desc.js")
 #    sig_summary("new_exp")
 #    find_best("new_exp")
-    eval_exp("new_eval/conf/scatter.js")
+    eval_exp("new_eval/conf/df.js")

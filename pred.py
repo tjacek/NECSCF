@@ -82,12 +82,23 @@ def get_result(path_i):
         return clf_type,dataset.read_result_group(f"{path_i}/results")
 
 def summary(exp_path,
-            metrics:list):
+            selector=None,
+            metrics=None):
+    if(selector is None):
+        selector=basic_selector
+    if(type(selector)==list):
+        selector=EnsSelector(selector)
+    if(metrics is None):
+        metrics=['acc','balance']
+#    raise Exception(selector)
+
     @utils.DirFun({"in_path":0})
     def helper(in_path):
         output_dict=[]
         for path_i in utils.top_files(in_path):
-            if(not "splits" in path_i):
+            dir_id=path_i.split('/')[-1]
+#            if(not "splits" in path_i):
+            if(selector(dir_id)):
                 clf_type,result=get_result(path_i)
                 output_dict.append((clf_type,result))
         return output_dict
