@@ -83,21 +83,19 @@ def get_result(path_i):
 
 def summary(exp_path,
             selector=None,
-            metrics=None):
+            metrics=None,
+            sort=False):
     if(selector is None):
         selector=basic_selector
     if(type(selector)==list):
         selector=EnsSelector(selector)
     if(metrics is None):
         metrics=['acc','balance']
-#    raise Exception(selector)
-
     @utils.DirFun({"in_path":0})
     def helper(in_path):
         output_dict=[]
         for path_i in utils.top_files(in_path):
             dir_id=path_i.split('/')[-1]
-#            if(not "splits" in path_i):
             if(selector(dir_id)):
                 clf_type,result=get_result(path_i)
                 output_dict.append((clf_type,result))
@@ -113,9 +111,17 @@ def summary(exp_path,
                 line_j.append(np.mean(value_j))
             lines.append(line_j)
     df=pd.DataFrame.from_records(lines,
-                                  columns=["data","clf"]+metrics)
-    with pd.option_context('display.max_rows', None, 'display.max_columns', None):  
+                                  columns=["dataset","clf"]+metrics)
+    
+    grouped=df.groupby(by='dataset')
+    def helper(df):
+        df=df.sort_values(by='f1-score')
         print(df.round(4))
+        return df['dataset'].tolist()
+    out=grouped.apply(helper)
+
+#    with pd.option_context('display.max_rows', None, 'display.max_columns', None):  
+#        print(df.round(4))
     return df
 
 def basic_selector(dir_id):

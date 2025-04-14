@@ -168,6 +168,8 @@ def selection_plot(conf):
 def df_eval(conf):
     if('summary' in conf):
         s_conf=conf['summary']
+        if(not 'selector' in s_conf):
+            s_conf['selector']=None
         pred.summary(exp_path=conf['exp_path'],
                      selector=s_conf['selector'],
                      metrics=s_conf['metrics'])
@@ -180,8 +182,6 @@ def df_eval(conf):
                               clf_y,
                               metric_type=s_conf['metric'])
             print(df)
-
-
 
 
 def sig_summary(exp_path):
