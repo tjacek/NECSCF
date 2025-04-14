@@ -1,6 +1,7 @@
 import numpy as np
 from tqdm import tqdm
 import pandas as pd
+import os.path
 import ens,dataset,utils
 
 class DynamicSubsets(object):
@@ -110,9 +111,12 @@ def best_df(in_path,glob=True):
 #        print(df[cols].round(4))#.to_latex())
     return df
 
-def gen_subsets(in_path,out_path):
-    @utils.EnsembleFun("in_path","out_path")
+def gen_subsets(in_path,
+                out_path):
+    @utils.EnsembleFun(out_path="out_path")
     def helper(in_path,out_path):
+        if(os.path.exists(out_path)):
+            return
         print(out_path)
         result_path=f"{in_path}/results"
         result_group=dataset.read_partial_group(result_path)
@@ -142,5 +146,5 @@ def compute_shapley(in_path,
     return output_dict
 
 if __name__ == '__main__':
-    best_df("new_eval/subsets")
-#    shapley_plot("conf/basic2.js")
+    gen_subsets("new_exp",
+                "new_eval/subsets")
