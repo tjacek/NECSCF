@@ -181,17 +181,29 @@ def df_eval(conf):
                               clf_x,
                               clf_y,
                               metric_type=s_conf['metric'])
-            print(df)
+            print(df.round(4))
+    if('sig_summary' in conf):
+        s_conf=conf['sig_summary']
+        sig_summary(exp_path=conf['exp_path'],
+                    main_clf=s_conf["main_clf"],
+                    clf_types=s_conf['clf_types'],
+                    metrics=s_conf['metrics'])
 
 
-def sig_summary(exp_path):
-    clf_types=['deep','class_ens','purity_ens','separ_class_ens','separ_purity_ens']
-    metrics=['acc','balance']
+def sig_summary(exp_path,
+                main_clf="RF",
+                clf_types=None,
+                metrics=None):
+    if(clf_types is None):
+        clf_types=['deep','class_ens','purity_ens',
+                   'separ_class_ens','separ_purity_ens']
+    if(metrics is None):
+        metrics=['acc','balance']
     for metric_i in metrics:
         hist_i,data=None,None
         for j,clf_j in  enumerate(clf_types):
             df_ij=pred.stat_test(exp_path=exp_path,
-                                 clf_x="deep",
+                                 clf_x=main_clf,
                                  clf_y=clf_j,
                                  metric_type=metric_i)
             sig_dict_ij=sig_dict(df_ij,verbose=False)
@@ -207,7 +219,7 @@ def sig_summary(exp_path):
             lines.append([data_k] +hist_i[k].tolist())
         sig_df=pd.DataFrame.from_records(lines,
                                          columns=["dataset"]+clf_types)
-        print(sig_df.to_latex())
+        print(sig_df)#.to_latex())
 
 def sig_dict(df,verbose=True):
     if(type(df)==str):
