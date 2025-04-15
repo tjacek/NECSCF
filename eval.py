@@ -60,12 +60,19 @@ def scatter_plot(points,
                  clf_y,
                  out_path=None):
     x,y=points[:,0], points[:,1]
-    print(scipy.stats.pearsonr(x, y) )
+    pearson=scipy.stats.pearsonr(x, y) 
+    text=f"corelation:{pearson.correlation:.4f},pvalue:{pearson.pvalue:.4f}"
     fig, ax = plt.subplots()
     scatter = ax.scatter(x, y)
     plt.title(title)
     plt.xlabel(clf_x)
     plt.ylabel(clf_y)
+    ax.annotate(text,
+                xy = (0.7, -0.15),
+                xycoords='axes fraction',
+                ha='right',
+                va="center")
+    fig.tight_layout()
     plt.show()
     if(out_path):
         fig.savefig(f'{out_path}.png')
@@ -258,7 +265,6 @@ def find_best(in_path,nn_only=False):
     id_balance=df_group=df.groupby('data')['balance'].idxmax()
     df_balance=df.loc[id_balance,]
     print(df_balance)
-
 
 if __name__ == '__main__':
 #    eval_exp("new_eval/conf/desc.js")
