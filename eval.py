@@ -189,6 +189,17 @@ def df_eval(conf):
                     clf_types=s_conf['clf_types'],
                     metrics=s_conf['metrics'])
 
+class DFView(object):
+    def __init__(self,df):
+        self.df=df
+    
+    def to_latex(self):
+        cols=self.df.columns.tolist()
+        for index, row in self.df.iterrows():
+            dict_i=row.to_dict()
+            line_i=" & ".join([str(dict_i[col_j]) for col_j in cols])
+            line_i=f"\\hline {line_i} \\\\"
+            print(line_i)
 
 def sig_summary(exp_path,
                 main_clf="RF",
@@ -219,7 +230,8 @@ def sig_summary(exp_path,
             lines.append([data_k] +hist_i[k].tolist())
         sig_df=pd.DataFrame.from_records(lines,
                                          columns=["dataset"]+clf_types)
-        print(sig_df)#.to_latex())
+        sig_df=DFView(sig_df)
+        print(sig_df.to_latex())
 
 def sig_dict(df,verbose=True):
     if(type(df)==str):
@@ -252,4 +264,4 @@ if __name__ == '__main__':
 #    eval_exp("new_eval/conf/desc.js")
 #    sig_summary("new_exp")
 #    find_best("new_exp")
-    eval_exp("new_eval/conf/df.js")
+    eval_exp("new_eval/conf/scatter.js")
