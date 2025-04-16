@@ -198,7 +198,7 @@ def df_eval(conf):
 
 class DFView(object):
     def __init__(self,df):
-        self.df=df
+        self.df=df.round(4)
     
     def to_latex(self):
         cols=self.df.columns.tolist()
@@ -207,6 +207,10 @@ class DFView(object):
             line_i=" & ".join([str(dict_i[col_j]) for col_j in cols])
             line_i=f"\\hline {line_i} \\\\"
             print(line_i)
+
+    def print(self):
+        with pd.option_context('display.max_rows', None, 'display.max_columns', None):  
+            print(self.df)
 
 def sig_summary(exp_path,
                 main_clf="RF",
@@ -238,7 +242,7 @@ def sig_summary(exp_path,
         sig_df=pd.DataFrame.from_records(lines,
                                          columns=["dataset"]+clf_types)
         sig_df=DFView(sig_df)
-        print(sig_df.to_latex())
+        sig_df.print()#.to_latex())
 
 def sig_dict(df,verbose=True):
     if(type(df)==str):
@@ -270,4 +274,4 @@ if __name__ == '__main__':
 #    eval_exp("new_eval/conf/desc.js")
 #    sig_summary("new_exp")
 #    find_best("new_exp")
-    eval_exp("new_eval/conf/scatter.js")
+    eval_exp("new_eval/conf/df.js")
