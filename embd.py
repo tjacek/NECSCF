@@ -116,7 +116,7 @@ def get_reader(in_path):
 
 def embd_exp(data_path,
              model_path,
-             ens_type="separ_purity_ens",
+             ens_type="class_ens",
              n_iters=100):
     @utils.DirFun({"in_path":0,"out_path":1})
     def helper(in_path,out_path):
@@ -133,37 +133,44 @@ def single_exp(data_path,
     path_dict=train.get_paths(out_path=out_path,
                         ens_type=ens_type,
                         dirs=['models','info.js'])
-    reader=get_reader(path_dict['info.js'])
-    model_iter=read_models(path_dict=path_dict,
-                           reader=reader,
-                           start=0,
-                           step=100)
-    info_dict=reader.get_info()
+    model_iter=ModelIterator(path_dict)
     embd_dict=train.get_paths(out_path=out_path,
                               ens_type=info_dict['ens'],
                               dirs=['results','info.js'])
     utils.make_dir(embd_dict['ens'])
     utils.make_dir(embd_dict['results'])
-    for i,model_i,split_i in tqdm(model_iter):
+    for i,model_i,split_i in tqdm(model_iter(start=0,step=100)):
         result_i=model_i.eval(data,split_i)
         result_i.save(f'{embd_dict['results']}/{i}.npz')
+    info_dict=model_iter.reader.get_info()
     utils.save_json(info_dict,embd_dict['info.js'])
 
-def read_models(path_dict,
-                reader=None,
-                start=0,
-                step=10):
-    if(reader is None):
-        reader=get_reader(path_dict['info.js'])
-    for index in range(step):
-        i=start+index
-        model_path_i=f"{path_dict['models']}/{i}.keras"
-        ens_i=reader(model_path_i)
-        raw_split=np.load(f"{path_dict['splits']}/{i}.npz")
-        split_i=base.UnaggrSplit.Split(train_index=raw_split["arr_0"],
+class ModelIterator(object):
+    def __init__(self,path_dict,reader=None):
+        if(reader is None):
+            reader=get_reader(path_dict['info.js'])
+        self.path_dict=path_dict
+        self.reader=reader 
+
+    def __call__(self,start=0,step=10):
+        for index in range(step):
+            i=start+index
+            model_path_i=f"{self.path_dict['models']}/{i}.keras"
+            ens_i=self.reader(model_path_i)
+            raw_split=np.load(f"{self.path_dict['splits']}/{i}.npz")
+            split_i=base.UnaggrSplit.Split(train_index=raw_split["arr_0"],
                                        test_index=raw_split["arr_1"])
-        yield i,ens_i,split_i
+            yield i,ens_i,split_i
+
+def knn_purity_inter(data_path,ens_type):
+    path_dict=train.get_paths(out_path=data_path,
+                              ens_type=ens_type,
+                        dirs=['models','info.js'])
+    model_iter=ModelIterator(path_dict)
+    for i,model_i,split_i in tqdm(model_iter(start=0,step=10)):
+        print(type(model_i))
 
 data='vehicle'
-embd_exp("../uci","new_exp")
+knn_purity_inter(f"new_exp/{data}","class_ens")
+#embd_exp("../uci","new_exp")
 #simple_exp(f"../uci/{data}",f"new_exp/{data}")
