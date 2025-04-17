@@ -89,50 +89,6 @@ class UnaggrSplit(object):
             test_size=self.test_index.shape[0]
             return f"train:{train_size},test:{test_size}"
 
-#class AggrSplit(object):
-#    def __init__(self,n_splits,n_repeats):
-#        self.n_splits=n_splits
-#        self.n_repeats=n_repeats
-
-#    def get_split(self,data):
-#        rskf=RepeatedStratifiedKFold(n_repeats=self.n_repeats, 
-#                                       n_splits=self.n_splits, 
-#                                       random_state=0)
-#        splits=[]
-#        for t,(train_index,test_index) in enumerate(rskf.split(data.X,data.y)):
-#            if((t % self.n_splits)==0):
-#            	splits.append([])
-#            splits[-1].append((train_index,test_index))
-#        splits=[self.Split(indexes) for indexes in splits]
-#        return splits
-
-#    class Split(object):
-#        def __init__(self,indexes):
-#            self.indexes=indexes
-
-#        def eval(self,data,clf):
-#            all_clf=self.fit_clf(data,clf)
-#            return self.pred(data,all_clf)
-
-#        def fit_clf(self,data,clf):
-#            return [ data.fit_clf(train_t) 
-#                        for train_t,_ in self.indexes]
-
-#        def pred(self,data,clf):
-#            all_pred,all_test=[],[]
-#            for i,(_,test_t) in enumerate(self.indexes):
-#                pred_t,test_t=data.pred(test_index=test_t,
-#                                        clf=clf[i],
-#                                        as_result=False)
-#                all_pred.append(pred_t)
-#                all_test.append(test_t)
-#            all_pred=np.concatenate(all_pred)
-#            all_test=np.concatenate(all_test)
-#            return dataset.Result(all_pred,all_test)
-
-#        def save(self,out_path):
-#            return np.savez(out_path,self.indexes)
-
 def get_protocol(prot_type):
     if(prot_type=="aggr"):
         return AggrSplit
@@ -166,3 +122,11 @@ def read_split(in_path):
     raw_split=np.load(in_path)
     return UnaggrSplit.Split(train_index=raw_split["arr_0"],
                              test_index=raw_split["arr_1"])
+
+def get_paths(out_path,ens_type,dirs):
+    ens_path=f"{out_path}/{ens_type}"
+    path_dir={dir_i:f"{ens_path}/{dir_i}" 
+                    for dir_i in dirs}
+    path_dir['ens']=ens_path
+    path_dir['splits']=f"{out_path}/splits"
+    return path_dir

@@ -3,7 +3,7 @@ import tensorflow as tf
 from tensorflow.keras import Input, Model
 from tqdm import tqdm
 import re
-import base,dataset,deep,ens,utils,train
+import base,dataset,deep,ens,utils
 
 class NECSCF(object):
     def __init__(self,model,clf_type="RF"):
@@ -130,11 +130,11 @@ def single_exp(data_path,
                out_path,
                ens_type="class_ens"):
     data=dataset.read_csv(data_path)
-    path_dict=train.get_paths(out_path=out_path,
+    path_dict=base.get_paths(out_path=out_path,
                         ens_type=ens_type,
                         dirs=['models','info.js'])
     model_iter=ModelIterator(path_dict)
-    embd_dict=train.get_paths(out_path=out_path,
+    embd_dict=base.get_paths(out_path=out_path,
                               ens_type=info_dict['ens'],
                               dirs=['results','info.js'])
     utils.make_dir(embd_dict['ens'])
@@ -163,7 +163,7 @@ class ModelIterator(object):
             yield i,ens_i,split_i
 
 def knn_purity_inter(data_path,ens_type):
-    path_dict=train.get_paths(out_path=data_path,
+    path_dict=base.get_paths(out_path=data_path,
                               ens_type=ens_type,
                         dirs=['models','info.js'])
     model_iter=ModelIterator(path_dict)

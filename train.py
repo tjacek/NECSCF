@@ -11,9 +11,9 @@ def base_train(data_path:str,
                ens_type="class_ens",
                start=0,
                step=10):
-    path_dict=get_paths(out_path=out_path,
-                        ens_type=ens_type,
-                        dirs=['models','history','info.js'])
+    path_dict=base.get_paths(out_path=out_path,
+                             ens_type=ens_type,
+                             dirs=['models','history','info.js'])
     utils.make_dir(path_dict['ens'])    
     model_paths=get_model_paths(path_dict['models'],start,step)
     print(model_paths)
@@ -37,14 +37,6 @@ def base_train(data_path:str,
     with open(path_dict['info.js'], 'w') as f:
         json.dump(clf_factory.get_info(),f)
 
-def get_paths(out_path,ens_type,dirs):
-    ens_path=f"{out_path}/{ens_type}"
-    path_dir={dir_i:f"{ens_path}/{dir_i}" 
-                    for dir_i in dirs}
-    path_dir['ens']=ens_path
-    path_dir['splits']=f"{out_path}/splits"
-    return path_dir
-
 def get_model_paths(model_path,start,step):
     indexs=[start+j for j in range(step)]
     paths=[ (index,f"{model_path}/{index}.keras") 
@@ -60,10 +52,10 @@ def get_model_paths(model_path,start,step):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--data", type=str, default="../uci/wall-following")
-    parser.add_argument("--out_path", type=str, default="new_exp/wine")
-    parser.add_argument("--start", type=int, default=28)
+    parser.add_argument("--out_path", type=str, default="new_exp/wall-following")
+    parser.add_argument("--start", type=int, default=0)
     parser.add_argument("--step", type=int, default=100)
-    parser.add_argument("--ens_type", type=str, default="separ_class_ens")
+    parser.add_argument("--ens_type", type=str, default="separ_purity_ens")
     args = parser.parse_args()
     print(args)
     base_train(data_path=args.data,

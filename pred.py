@@ -5,7 +5,7 @@ import argparse,os.path
 import pandas as pd
 from scipy import stats
 from tqdm import tqdm
-import base,dataset,ens,train
+import base,dataset,ens
 
 def pred_neural(data_path:str,
                  exp_path:str):
@@ -19,7 +19,7 @@ def pred_neural(data_path:str,
             info_dict=utils.read_json(info_path)
             if(not ens.is_neural(info_dict["ens"])):
                 continue
-            path_dir=train.get_paths(out_path=exp_path,
+            path_dir=base.get_paths(out_path=exp_path,
                                      ens_type=path_i.split("/")[-1],
                                      dirs=['models','results'])
             paths=get_paths(path_dir)
@@ -38,7 +38,7 @@ def pred_clf(data_path:str,
     @utils.MultiDirFun()
     def helper(in_path,exp_path):
         data=dataset.read_csv(in_path)
-        path_dir=train.get_paths(out_path=exp_path,
+        path_dir=base.get_paths(out_path=exp_path,
                                  ens_type=clf_type,
                                  dirs=['results','info.js'])
         utils.make_dir(path_dir["ens"])
@@ -115,7 +115,7 @@ def summary(exp_path,
     
     grouped=df.groupby(by='dataset')
     def helper(df):
-        df=df.sort_values(by='f1-score')
+        df=df.sort_values(by='acc')
         print(df.round(4))
         return df['dataset'].tolist()
     out=grouped.apply(helper)
