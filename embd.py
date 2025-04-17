@@ -48,7 +48,7 @@ class MultiNECSCF(NECSCF):
         if(self.extractor is None):
             self.extractor=Model(inputs=self.model.inputs, 
                                  outputs=list(self.get_outputs()))
-        cs_feats= self.extractor(X, training=False)
+        cs_feats= self.extractor([X], training=False)
         cs_feats=[ cs_i.numpy() for cs_i in cs_feats]
         full_feats=[np.concatenate([X,cs_i],axis=1) 
                         for cs_i in cs_feats]        
@@ -106,6 +106,23 @@ class SeparReader(EmbdReader):
             models.append(model_i)
         return SeparNECSCF(models)
 
+class ModelIterator(object):
+    def __init__(self,path_dict,reader=None):
+        if(reader is None):
+            reader=get_reader(path_dict['info.js'])
+        self.path_dict=path_dict
+        self.reader=reader 
+
+    def __call__(self,start=0,step=10):
+        for index in range(step):
+            i=start+index
+            model_path_i=f"{self.path_dict['models']}/{i}.keras"
+            ens_i=self.reader(model_path_i)
+            raw_split=np.load(f"{self.path_dict['splits']}/{i}.npz")
+            split_i=base.UnaggrSplit.Split(train_index=raw_split["arr_0"],
+                                       test_index=raw_split["arr_1"])
+            yield i,ens_i,split_i
+
 def get_reader(in_path):
     info_dict=utils.read_json(in_path)
     ens_type=info_dict['ens']
@@ -145,32 +162,18 @@ def single_exp(data_path,
     info_dict=model_iter.reader.get_info()
     utils.save_json(info_dict,embd_dict['info.js'])
 
-class ModelIterator(object):
-    def __init__(self,path_dict,reader=None):
-        if(reader is None):
-            reader=get_reader(path_dict['info.js'])
-        self.path_dict=path_dict
-        self.reader=reader 
 
-    def __call__(self,start=0,step=10):
-        for index in range(step):
-            i=start+index
-            model_path_i=f"{self.path_dict['models']}/{i}.keras"
-            ens_i=self.reader(model_path_i)
-            raw_split=np.load(f"{self.path_dict['splits']}/{i}.npz")
-            split_i=base.UnaggrSplit.Split(train_index=raw_split["arr_0"],
-                                       test_index=raw_split["arr_1"])
-            yield i,ens_i,split_i
-
-def knn_purity_inter(data_path,ens_type):
-    path_dict=base.get_paths(out_path=data_path,
+def knn_purity_inter(data_path,exp_path,ens_type):
+    data=dataset.read_csv(data_path)
+    path_dict=base.get_paths(out_path=exp_path,
                               ens_type=ens_type,
                         dirs=['models','info.js'])
     model_iter=ModelIterator(path_dict)
     for i,model_i,split_i in tqdm(model_iter(start=0,step=10)):
-        print(type(model_i))
+        feats=model_i.get_embd(data.X)
+        print(type(feats[0]))
 
 data='vehicle'
-knn_purity_inter(f"new_exp/{data}","class_ens")
+knn_purity_inter(f"../uci/{data}",f"new_exp/{data}","class_ens")
 #embd_exp("../uci","new_exp")
 #simple_exp(f"../uci/{data}",f"new_exp/{data}")
