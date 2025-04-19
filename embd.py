@@ -3,6 +3,7 @@ import tensorflow as tf
 from tensorflow.keras import Input, Model
 from tqdm import tqdm
 import re
+from sklearn.neighbors import BallTree
 import base,dataset,deep,ens,utils
 
 class NECSCF(object):
@@ -163,7 +164,10 @@ def single_exp(data_path,
     utils.save_json(info_dict,embd_dict['info.js'])
 
 
-def knn_purity_inter(data_path,exp_path,ens_type):
+def knn_purity_inter(data_path,
+                     exp_path,
+                     ens_type,
+                     k=10):
     data=dataset.read_csv(data_path)
     path_dict=base.get_paths(out_path=exp_path,
                               ens_type=ens_type,
@@ -171,9 +175,22 @@ def knn_purity_inter(data_path,exp_path,ens_type):
     model_iter=ModelIterator(path_dict)
     for i,model_i,split_i in tqdm(model_iter(start=0,step=10)):
         feats=model_i.get_embd(data.X)
-        print(type(feats[0]))
+        train_data=data.selection(split_i.train_index)
+        test_data=data.selection(split_i.test_index)
+        tree=BallTree(train_data.X)
+        indces= tree.query(test_data.X,
+                           k=k+1,
+                          return_distance=False)
+        for j,ind_j in enumerate(indces):
+            y_k=[train_data.y[k]  for k in ind_j]
+            y_j=test_data.y[j]
+            print(y_j)
+            print(y_k)
+        raise Exception(indces)
 
-data='vehicle'
-knn_purity_inter(f"../uci/{data}",f"new_exp/{data}","class_ens")
+
+if __name__ == '__main__':
+    data='vehicle'
+    knn_purity_inter(f"../uci/{data}",f"new_exp/{data}","class_ens")
 #embd_exp("../uci","new_exp")
 #simple_exp(f"../uci/{data}",f"new_exp/{data}")
