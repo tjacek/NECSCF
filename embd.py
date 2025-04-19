@@ -66,7 +66,7 @@ class SeparNECSCF(NECSCF):
     def get_embd(self,X):
         if(self.extractor is None):
             self.make_extractor()
-        cs_feats=[extractor_i(X,training=False).numpy() 
+        cs_feats=[extractor_i([X],training=False).numpy()
                     for extractor_i in self.extractor]
         full_feats=[np.concatenate([X,cs_i],axis=1) 
                         for cs_i in cs_feats] 
@@ -159,6 +159,10 @@ class PurityHistogram(object):
         for arr_i in self.arr:
             print(arr_i)
 
+    def to_dict(self):
+        return {i:arr_i.tolist() 
+                for i,arr_i in enumerate(self.arr)}
+
 def get_reader(in_path):
     info_dict=utils.read_json(in_path)
     ens_type=info_dict['ens']
@@ -198,12 +202,12 @@ def single_exp(data_path,
     info_dict=model_iter.reader.get_info()
     utils.save_json(info_dict,embd_dict['info.js'])
 
-def knn_purity_inter(data_path,
-                     exp_path,
-                     ens_type,
-                     n_splits=10,
-                     n_iters=10,
-                     k=10):
+def knn_purity_hist(data_path,
+                    exp_path,
+                    ens_type,
+                    n_splits=10,
+                    n_iters=10,
+                    k=10):
     data=dataset.read_csv(data_path)
     path_dict=base.get_paths(out_path=exp_path,
                              ens_type=ens_type,
@@ -215,10 +219,37 @@ def knn_purity_inter(data_path,
                                     start=start_i,
                                     step=n_splits,
                                     k=k)
+        yield hist_i
+
+def multi_hist(data_path,exp_path,out_path):
+    def selector(ens_type):
+         return ("ens" in ens_type) and (not "NECSCF" in ens_type)
+
+    @utils.EnsembleFun(out_path="out_path",
+                       selector=selector)
+    def helper(in_path,out_path):
+        raw=in_path.split("/")
+        ens_type, data_id= raw[-1],raw[-2]
+        hist_iter=knn_purity_hist(data_path=f"{data_path}/{data_id}",
+                                  exp_path="/".join(raw[:-1]),
+                                  ens_type=ens_type,
+                                  n_splits=10,
+                                  n_iters=10,
+                                  k=10)
+        utils.make_dir(out_path)
+        for i,hist_i in tqdm(enumerate(hist_iter)):
+            out_i=f"{out_path}/{i}"
+            utils.save_json(hist_i.to_dict(),out_i)
+    utils.make_dir(out_path)
+    helper(exp_path,out_path)
+
+def single_hist(data_path,exp_path,ens_type):
+    for hist_i in knn_purity_hist(data_path,exp_path,ens_type):
         hist_i.print()
 
 if __name__ == '__main__':
     data='vehicle'
-    knn_purity_inter(f"../uci/{data}",f"new_exp/{data}","class_ens")
+#    single_hist(f"../uci/{data}",f"new_exp/{data}","separ_purity_ens")
+    multi_hist("../uci","new_exp","new_eval/purity")
 #embd_exp("../uci","new_exp")
 #simple_exp(f"../uci/{data}",f"new_exp/{data}")
