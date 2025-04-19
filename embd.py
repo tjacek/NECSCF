@@ -163,6 +163,24 @@ def single_exp(data_path,
     info_dict=model_iter.reader.get_info()
     utils.save_json(info_dict,embd_dict['info.js'])
 
+class PurityHistogram(object):
+    def __init__(self,k,n_cats,n_clf):
+        self.k=k
+        self.arr=[ np.zeros((n_cats,n_cats)) for _ in range(n_clf)]
+
+    def add_embd(self,k,data_k,split):
+        hist_k=self.arr[k]
+        train_data=data_k.selection(split.train_index)
+        test_data=data_k.selection(split.test_index)    
+        tree=BallTree(train_data.X)
+        indces= tree.query(test_data.X,
+                           k=self.k+1,
+                           return_distance=False)
+        for i,ind_i in enumerate(indces):
+            y_i=int(test_data.y[i])
+            for j in ind_i:#[1:]:
+                y_j=int(train_data.y[j])
+                hist_k[y_i][y_j]+=1
 
 def knn_purity_inter(data_path,
                      exp_path,
@@ -173,21 +191,14 @@ def knn_purity_inter(data_path,
                               ens_type=ens_type,
                         dirs=['models','info.js'])
     model_iter=ModelIterator(path_dict)
+    n_cats=data.n_cats()
+    hist=PurityHistogram(k,n_cats,n_cats+1)
     for i,model_i,split_i in tqdm(model_iter(start=0,step=10)):
-        feats=model_i.get_embd(data.X)
-        train_data=data.selection(split_i.train_index)
-        test_data=data.selection(split_i.test_index)
-        tree=BallTree(train_data.X)
-        indces= tree.query(test_data.X,
-                           k=k+1,
-                          return_distance=False)
-        for j,ind_j in enumerate(indces):
-            y_k=[train_data.y[k]  for k in ind_j]
-            y_j=test_data.y[j]
-            print(y_j)
-            print(y_k)
-        raise Exception(indces)
-
+        for j,X_j in enumerate(model_i.get_embd(data.X)):
+            data_j=dataset.Dataset(X_j,data.y)
+            hist.add_embd(j,data_j,split_i)
+    for arr_i in hist.arr:
+        print(arr_i)
 
 if __name__ == '__main__':
     data='vehicle'
