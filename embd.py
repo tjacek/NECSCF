@@ -124,6 +124,41 @@ class ModelIterator(object):
                                        test_index=raw_split["arr_1"])
             yield i,ens_i,split_i
 
+    def make_hist(self,data,
+                      start=0,
+                      step=10,
+                      k=10):
+        n_cats=data.n_cats()
+        hist=PurityHistogram(k,n_cats,n_cats+1)
+        for i,model_i,split_i in self(start=start,step=step):
+            for j,X_j in enumerate(model_i.get_embd(data.X)):
+                data_j=dataset.Dataset(X_j,data.y)
+                hist.add_embd(j,data_j,split_i)
+        return hist
+
+class PurityHistogram(object):
+    def __init__(self,k,n_cats,n_clf):
+        self.k=k
+        self.arr=[ np.zeros((n_cats,n_cats)) for _ in range(n_clf)]
+
+    def add_embd(self,k,data_k,split):
+        hist_k=self.arr[k]
+        train_data=data_k.selection(split.train_index)
+        test_data=data_k.selection(split.test_index)    
+        tree=BallTree(train_data.X)
+        indces= tree.query(test_data.X,
+                           k=self.k+1,
+                           return_distance=False)
+        for i,ind_i in enumerate(indces):
+            y_i=int(test_data.y[i])
+            for j in ind_i:
+                y_j=int(train_data.y[j])
+                hist_k[y_i][y_j]+=1
+
+    def print(self):
+        for arr_i in self.arr:
+            print(arr_i)
+
 def get_reader(in_path):
     info_dict=utils.read_json(in_path)
     ens_type=info_dict['ens']
@@ -163,42 +198,24 @@ def single_exp(data_path,
     info_dict=model_iter.reader.get_info()
     utils.save_json(info_dict,embd_dict['info.js'])
 
-class PurityHistogram(object):
-    def __init__(self,k,n_cats,n_clf):
-        self.k=k
-        self.arr=[ np.zeros((n_cats,n_cats)) for _ in range(n_clf)]
-
-    def add_embd(self,k,data_k,split):
-        hist_k=self.arr[k]
-        train_data=data_k.selection(split.train_index)
-        test_data=data_k.selection(split.test_index)    
-        tree=BallTree(train_data.X)
-        indces= tree.query(test_data.X,
-                           k=self.k+1,
-                           return_distance=False)
-        for i,ind_i in enumerate(indces):
-            y_i=int(test_data.y[i])
-            for j in ind_i:#[1:]:
-                y_j=int(train_data.y[j])
-                hist_k[y_i][y_j]+=1
-
 def knn_purity_inter(data_path,
                      exp_path,
                      ens_type,
+                     n_splits=10,
+                     n_iters=10,
                      k=10):
     data=dataset.read_csv(data_path)
     path_dict=base.get_paths(out_path=exp_path,
-                              ens_type=ens_type,
-                        dirs=['models','info.js'])
+                             ens_type=ens_type,
+                             dirs=['models','info.js'])
     model_iter=ModelIterator(path_dict)
-    n_cats=data.n_cats()
-    hist=PurityHistogram(k,n_cats,n_cats+1)
-    for i,model_i,split_i in tqdm(model_iter(start=0,step=10)):
-        for j,X_j in enumerate(model_i.get_embd(data.X)):
-            data_j=dataset.Dataset(X_j,data.y)
-            hist.add_embd(j,data_j,split_i)
-    for arr_i in hist.arr:
-        print(arr_i)
+    for i in tqdm(range(n_iters)):
+        start_i= i*n_splits
+        hist_i=model_iter.make_hist(data,
+                                    start=start_i,
+                                    step=n_splits,
+                                    k=k)
+        hist_i.print()
 
 if __name__ == '__main__':
     data='vehicle'
