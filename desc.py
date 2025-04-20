@@ -99,13 +99,20 @@ def z_score(values):
     return values.tolist()
 
 def tranform_purity(in_path,out_path):
-    @utils.DirFun()
+    @utils.DirFun({"in_path":0,"out_path":1})
     def helper(in_path,out_path):
         print(in_path)
+        utils.make_dir(out_path)
         for ens_path_i in utils.top_files(in_path):
-            for iter_j in utils.top_files(ens_path_i):
+            ens_type=ens_path_i.split("/")[-1]
+            out_ens=f"{out_path}/{ens_type}"
+            utils.make_dir(out_ens)
+            for i,iter_j in enumerate(utils.top_files(ens_path_i)):
                 dir_j=utils.read_json(iter_j)
-                diff_purity(dir_j)
+                new_dict=diff_purity(dir_j)
+                new_dict={ i:np.round(hist_i,4).tolist() 
+                        for i,hist_i in new_dict.items()}
+                utils.save_json(new_dict,f"{out_ens}/{i}")
     helper(in_path,out_path)
 
 def diff_purity(dict_j):
@@ -121,7 +128,7 @@ def diff_purity(dict_j):
     mean_hist=np.mean(all_hist,axis=0)
     new_dict={i:hist_i-mean_hist
                     for i,hist_i in new_dict.items()}
-    raise Exception(new_dict)
+    return new_dict
 
 
 if __name__ == '__main__':
