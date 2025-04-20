@@ -98,8 +98,36 @@ def z_score(values):
     values=np.round(values,4)
     return values.tolist()
 
+def tranform_purity(in_path,out_path):
+    @utils.DirFun()
+    def helper(in_path,out_path):
+        print(in_path)
+        for ens_path_i in utils.top_files(in_path):
+            for iter_j in utils.top_files(ens_path_i):
+                dir_j=utils.read_json(iter_j)
+                diff_purity(dir_j)
+    helper(in_path,out_path)
+
+def diff_purity(dict_j):
+    new_dict={}
+    for cat_i,hist_i in dict_j.items():
+        hist_i=np.array(hist_i)
+        cat_size=np.sum(hist_i,axis=1)
+        for j,size_j in enumerate(cat_size):
+            hist_i[j]/=size_j
+        new_dict[cat_i]=hist_i
+    all_hist=list(new_dict.values())
+    all_hist=np.array(all_hist)
+    mean_hist=np.mean(all_hist,axis=0)
+    new_dict={i:hist_i-mean_hist
+                    for i,hist_i in new_dict.items()}
+    raise Exception(new_dict)
+
+
 if __name__ == '__main__':
-    history_epoch("new_exp",
-                  ens_type="class_ens",
-                  out_path="new_eval/n_epochs/class_ens")
+    tranform_purity("new_eval/purity",
+                    "new_eval/s_purity")
+#    history_epoch("new_exp",
+#                  ens_type="class_ens",
+#                  out_path="new_eval/n_epochs/class_ens")
 #    history_acc("new_exp","ord/total_acc.json")
