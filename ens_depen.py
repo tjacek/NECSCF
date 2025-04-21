@@ -1,7 +1,8 @@
 import numpy as np 
 import keras
 import tensorflow as tf
-import desc,deep
+from sklearn.neighbors import BallTree
+import deep
 
 class PurityLoss(object):
     def __init__(self,multi=True):
@@ -9,7 +10,7 @@ class PurityLoss(object):
         self.hist=None
 
     def init(self,data):
-        self.hist=desc.purity_hist(data)
+        self.hist=purity_hist(data)
 
     def __call__(self,specific,class_dict):
         n_cats=len(class_dict)
@@ -180,3 +181,23 @@ class TotalEarlyStopping(keras.callbacks.Callback):
             self.model.set_weights(self.best_weights)
         else:
             self.best_weights = self.model.get_weights()
+
+def purity_hist(in_path,k=10):
+    data_i=dataset.read_csv(in_path)
+    tree=BallTree(data_i.X)
+    indces= tree.query(data_i.X,
+                           k=k+1,
+                          return_distance=False)
+    n_cats=data_i.n_cats()
+    hist=np.zeros((n_cats,n_cats))
+    sizes=np.zeros(n_cats)
+    for i,ind_i in enumerate(indces):
+        point_i=int(data_i.y[i])
+        sizes[point_i]+=1
+        for ind_j in ind_i[1:]:
+            near_j=int(data_i.y[ind_j])
+            hist[point_i][near_j]+=1
+    hist/=k
+    for i,size_i in enumerate(sizes):
+        hist[i,:]/=size_i
+    return hist

@@ -1,27 +1,6 @@
 import numpy as np
 import os.path
-from sklearn.neighbors import BallTree
-import dataset,utils
-
-def purity_hist(in_path,k=10):
-    data_i=dataset.read_csv(in_path)
-    tree=BallTree(data_i.X)
-    indces= tree.query(data_i.X,
-                           k=k+1,
-                          return_distance=False)
-    n_cats=data_i.n_cats()
-    hist=np.zeros((n_cats,n_cats))
-    sizes=np.zeros(n_cats)
-    for i,ind_i in enumerate(indces):
-        point_i=int(data_i.y[i])
-        sizes[point_i]+=1
-        for ind_j in ind_i[1:]:
-            near_j=int(data_i.y[ind_j])
-            hist[point_i][near_j]+=1
-    hist/=k
-    for i,size_i in enumerate(sizes):
-        hist[i,:]/=size_i
-    return hist
+import ens_depen,dataset,utils
 
 def history_epoch(exp_path,
                   ens_type="separ_class_ens",
@@ -50,9 +29,8 @@ def history_epoch(exp_path,
         utils.save_json(output_dict,out_path)
     print(output_dict)
 
-
 def knn_purity(in_path,k=10):
-    helper=utils.DirFun({"in_path":0})(purity_hist)
+    helper=utils.DirFun({"in_path":0})(ens_depen.purity_hist)
     output_dict=helper(in_path,k)
     for name_i,value_i in output_dict.items():
         value_i=np.round(value_i,4)
@@ -110,7 +88,7 @@ def tranform_purity(in_path,out_path):
             for i,iter_j in enumerate(utils.top_files(ens_path_i)):
                 dir_j=utils.read_json(iter_j)
                 new_dict=diff_purity(dir_j)
-                new_dict={ i:np.round(hist_i,4).tolist() 
+                new_dict={ i:np.round(hist_i,2).tolist() 
                         for i,hist_i in new_dict.items()}
                 utils.save_json(new_dict,f"{out_ens}/{i}")
     helper(in_path,out_path)
@@ -123,11 +101,11 @@ def diff_purity(dict_j):
         for j,size_j in enumerate(cat_size):
             hist_i[j]/=size_j
         new_dict[cat_i]=hist_i
-    all_hist=list(new_dict.values())
-    all_hist=np.array(all_hist)
-    mean_hist=np.mean(all_hist,axis=0)
-    new_dict={i:hist_i-mean_hist
-                    for i,hist_i in new_dict.items()}
+#    all_hist=list(new_dict.values())
+#    all_hist=np.array(all_hist)
+#    mean_hist=np.mean(all_hist,axis=0)
+#    new_dict={i:hist_i-mean_hist
+#                    for i,hist_i in new_dict.items()}
     return new_dict
 
 

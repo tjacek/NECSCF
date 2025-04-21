@@ -154,13 +154,16 @@ class PurityHistogram(object):
             for j in ind_i:
                 y_j=int(train_data.y[j])
                 hist_k[y_i][y_j]+=1
+        cat_size=np.sum(hist_k,axis=1)
+        for j,size_j in enumerate(cat_size):
+            hist_k[j]/=size_j
 
     def print(self):
         for arr_i in self.arr:
             print(arr_i)
 
     def to_dict(self):
-        return {i:arr_i.tolist() 
+        return {i:np.round(arr_i,4).tolist() 
                 for i,arr_i in enumerate(self.arr)}
 
 def get_reader(in_path):
