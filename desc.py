@@ -13,19 +13,20 @@ class PurityVectors(object):
         self.vectors-=mean
         return self
 
-    def outliners(self):
+    def outliners(self,get_id=False):
         clf = svm.OneClassSVM(nu=0.1, kernel="rbf", gamma=0.1)
         vec_nan=np.isnan(self.vectors)
-        if(not np.any(vec_nan)):
-            clf.fit(self.vectors)
-            y_pred = clf.predict(self.vectors)
-            n_outliners=len( y_pred[y_pred==(-1)])
+        clf.fit(self.vectors)
+        y_pred = clf.predict(self.vectors)
+        n_outliners=len( y_pred[y_pred==(-1)])
+        if(get_id):
             out_ids=[]
             for i,pred_i in enumerate(y_pred):
                 if(pred_i==(-1)):
                     out_ids.append(self.ids[i])
             return n_outliners,out_ids
-
+        return n_outliners
+        
 def detect_outliners(in_path):
     @utils.EnsembleFun(selector=lambda ens_id:True)
     def helper(in_path):

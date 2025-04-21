@@ -154,9 +154,12 @@ class PurityHistogram(object):
             for j in ind_i:
                 y_j=int(train_data.y[j])
                 hist_k[y_i][y_j]+=1
-        cat_size=np.sum(hist_k,axis=1)
-        for j,size_j in enumerate(cat_size):
-            hist_k[j]/=size_j
+   
+    def norm(self):
+        for hist_k in self.arr:    
+            cat_size=np.sum(hist_k,axis=1)
+            for j,size_j in enumerate(cat_size):
+                hist_k[j]/=size_j
 
     def print(self):
         for arr_i in self.arr:
@@ -222,6 +225,7 @@ def knn_purity_hist(data_path,
                                     start=start_i,
                                     step=n_splits,
                                     k=k)
+        hist_i.norm()
         yield hist_i
 
 def multi_hist(data_path,exp_path,out_path):
