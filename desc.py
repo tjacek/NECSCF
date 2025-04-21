@@ -1,6 +1,46 @@
 import numpy as np
 import os.path
+from sklearn import svm
 import ens_depen,dataset,utils
+
+class PurityVectors(object):
+    def __init__(self,ids,vectors):
+        self.ids=ids
+        self.vectors=vectors
+    
+    def sub_mean(self):
+        mean=np.mean(self.vectors,axis=0)
+        self.vectors-=mean
+        return self
+
+    def outliners(self):
+        clf = svm.OneClassSVM(nu=0.1, kernel="rbf", gamma=0.1)
+        vec_nan=np.isnan(self.vectors)
+        if(not np.any(vec_nan)):
+            clf.fit(self.vectors)
+            y_pred = clf.predict(self.vectors)
+            n_outliners=len( y_pred[y_pred==(-1)])
+            return n_outliners
+
+def detect_outliners(in_path):
+    @utils.EnsembleFun(selector=lambda ens_id:True)
+    def helper(in_path):
+        return read_purity(in_path)
+    output=helper(in_path)
+    for data_i,ens_i,purity_i in output:
+        n_out=purity_i.outliners()
+        print((data_i,ens_i,n_out)) 
+
+def read_purity(in_path):
+    ids,vectors=[],[]
+    for i,path_i in enumerate(utils.top_files(in_path)):
+        dict_i=utils.read_json(path_i)
+        for cat_j,hist_j in dict_i.items():
+            id_ij=f"{i}_{cat_j}"
+            vector_j=np.array(hist_j).flatten()
+            ids.append(id_ij)
+            vectors.append(vector_j)
+    return PurityVectors(ids,np.array(vectors)).sub_mean()
 
 def history_epoch(exp_path,
                   ens_type="separ_class_ens",
@@ -110,8 +150,7 @@ def diff_purity(dict_j):
 
 
 if __name__ == '__main__':
-    tranform_purity("new_eval/purity",
-                    "new_eval/s_purity")
+    detect_outliners("new_eval/purity")#"vehicle/class_ens")
 #    history_epoch("new_exp",
 #                  ens_type="class_ens",
 #                  out_path="new_eval/n_epochs/class_ens")
