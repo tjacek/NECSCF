@@ -1,6 +1,7 @@
 import numpy as np
 import os.path
 from sklearn import svm
+from sklearn.decomposition import PCA
 import ens_depen,dataset,utils
 
 class PurityVectors(object):
@@ -13,9 +14,8 @@ class PurityVectors(object):
         self.vectors-=mean
         return self
 
-    def outliners(self,get_id=False):
+    def outliners(self,get_id=True):
         clf = svm.OneClassSVM(nu=0.1, kernel="rbf", gamma=0.1)
-        vec_nan=np.isnan(self.vectors)
         clf.fit(self.vectors)
         y_pred = clf.predict(self.vectors)
         n_outliners=len( y_pred[y_pred==(-1)])
@@ -45,7 +45,17 @@ def read_purity(in_path):
             vector_j=np.array(hist_j).flatten()
             ids.append(id_ij)
             vectors.append(vector_j)
-    return PurityVectors(ids,np.array(vectors)).sub_mean()
+    return PurityVectors(ids,np.array(vectors))#.sub_mean()
+
+def pca_purity(in_path):
+    vector_dict={path_i.split("/")[-1]:read_purity(path_i)
+            for path_i in utils.top_files(in_path)}
+    all_vectors=[]
+    for purity_i in vector_dict.values():
+        all_vectors+=purity_i.vectors.tolist()
+    pca=PCA()
+    pca.fit(all_vectors)
+    print(pca.explained_variance_ratio_)
 
 def history_epoch(exp_path,
                   ens_type="separ_class_ens",
@@ -122,7 +132,8 @@ def z_score(values):
     return values.tolist()
 
 if __name__ == '__main__':
-    detect_outliners("new_eval/purity")#"vehicle/class_ens")
+    pca_purity("new_eval/purity/vehicle/")
+#    detect_outliners("new_eval/purity")#"vehicle/class_ens")
 #    history_epoch("new_exp",
 #                  ens_type="class_ens",
 #                  out_path="new_eval/n_epochs/class_ens")
