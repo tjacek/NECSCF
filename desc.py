@@ -2,6 +2,7 @@ import numpy as np
 import os.path
 from sklearn import svm
 from sklearn.decomposition import PCA
+import matplotlib.pyplot as plt
 import ens_depen,dataset,utils
 
 class PurityVectors(object):
@@ -52,7 +53,7 @@ def read_purity(in_path):
             vectors.append(vector_j)
     return PurityVectors(ids,np.array(vectors))#.sub_mean()
 
-def pca_purity(in_path):
+def pca_purity(in_path,verbose=False):
     vector_dict={path_i.split("/")[-1]:read_purity(path_i)
             for path_i in utils.top_files(in_path)}
     all_vectors=[]
@@ -60,12 +61,31 @@ def pca_purity(in_path):
         all_vectors+=purity_i.vectors.tolist()
     pca=PCA()
     pca.fit(all_vectors)
-    print(pca.explained_variance_ratio_)
-    for name_i,purity_i in vector_dict.items():
+    if(verbose):
+        print(pca.explained_variance_ratio_)
+        for name_i,purity_i in vector_dict.items():
+            pairs_i= purity_i.reduce(pca)
+            for id_j,vec_j in pairs_i:
+                print(f"{name_i}_{id_j}")
+                print(np.round(vec_j,4))
+    plt.figure()
+    plt.title("PCA")
+    labels=['r','g','b','y']
+    label_dict={}
+    for i,(name_i,purity_i) in enumerate(vector_dict.items()):
         pairs_i= purity_i.reduce(pca)
         for id_j,vec_j in pairs_i:
-            print(f"{name_i}_{id_j}")
-            print(np.round(vec_j,4))
+            plt.text(vec_j[0], 
+                     vec_j[1], 
+                     id_j,
+                     color=labels[i],
+                     fontdict={'weight': 'bold', 'size': 9})
+        label_dict[name_i]=labels[i]
+    print(label_dict)
+    plt.xlim((-0.1,0.1))
+    plt.ylim((-0.1,0.1))
+    plt.show()
+
 def history_epoch(exp_path,
                   ens_type="separ_class_ens",
                   out_path=None):
