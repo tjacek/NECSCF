@@ -14,6 +14,11 @@ class PurityVectors(object):
         self.vectors-=mean
         return self
 
+    def reduce(self,alg):
+        new_feats=alg.transform(self.vectors)
+        return [ (id_i,new_feats[i]) 
+                    for i,id_i in enumerate(self.ids)]
+
     def outliners(self,get_id=True):
         clf = svm.OneClassSVM(nu=0.1, kernel="rbf", gamma=0.1)
         clf.fit(self.vectors)
@@ -56,7 +61,11 @@ def pca_purity(in_path):
     pca=PCA()
     pca.fit(all_vectors)
     print(pca.explained_variance_ratio_)
-
+    for name_i,purity_i in vector_dict.items():
+        pairs_i= purity_i.reduce(pca)
+        for id_j,vec_j in pairs_i:
+            print(f"{name_i}_{id_j}")
+            print(np.round(vec_j,4))
 def history_epoch(exp_path,
                   ens_type="separ_class_ens",
                   out_path=None):
