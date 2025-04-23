@@ -2,6 +2,7 @@ import numpy as np
 import os.path
 from sklearn import svm
 from sklearn.decomposition import PCA
+from sklearn import manifold
 import matplotlib.pyplot as plt
 import ens_depen,dataset,utils
 
@@ -59,17 +60,10 @@ def pca_purity(in_path,verbose=False):
     all_vectors=[]
     for purity_i in vector_dict.values():
         all_vectors+=purity_i.vectors.tolist()
-    pca=PCA()
+    pca=get_reduction("lle")
     pca.fit(all_vectors)
-    if(verbose):
-        print(pca.explained_variance_ratio_)
-        for name_i,purity_i in vector_dict.items():
-            pairs_i= purity_i.reduce(pca)
-            for id_j,vec_j in pairs_i:
-                print(f"{name_i}_{id_j}")
-                print(np.round(vec_j,4))
     plt.figure()
-    plt.title("PCA")
+    plt.title("lle")
     labels=['r','g','b','y']
     label_dict={}
     for i,(name_i,purity_i) in enumerate(vector_dict.items()):
@@ -86,6 +80,12 @@ def pca_purity(in_path,verbose=False):
     plt.ylim((-0.1,0.1))
     plt.show()
 
+def get_reduction(type):
+    if(type=='lle'):
+        return manifold.LocallyLinearEmbedding(n_neighbors=5,#n_neighbors, 
+                                          n_components=2,#n_components,
+                                          method='standard')
+    return PCA()
 def history_epoch(exp_path,
                   ens_type="separ_class_ens",
                   out_path=None):
@@ -161,7 +161,7 @@ def z_score(values):
     return values.tolist()
 
 if __name__ == '__main__':
-    pca_purity("new_eval/purity/vehicle/")
+    pca_purity("new_eval/purity/lymphography")
 #    detect_outliners("new_eval/purity")#"vehicle/class_ens")
 #    history_epoch("new_exp",
 #                  ens_type="class_ens",
