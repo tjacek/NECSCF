@@ -13,7 +13,7 @@ def show_loss(data_path,
     data_split=base.read_data_split(data_path=data_path,
 		                            split_path=split_path)
     loss_dict={'base':TrainAlg,
-#               'weight':WeightedLoss,
+               'weight':WeightedLoss,
                'custom':CustomLoss}
     history_dict={key_i:[] for key_i in loss_dict}
     for i,data_i in data_split.selection_iter(train=True):
@@ -70,9 +70,7 @@ class TrainAlg(object):
 
 class CustomLoss(TrainAlg):
     def prepare_model(self):
-        params={key_i:(1.0/value_i) 
-          for key_i,value_i in self.params['class_weights'].items()}
-#        params=self.params['class_weights']
+        params=self.params['class_weights']
         loss=deep.weighted_loss(specific=None,
                        class_dict=params)
         self.model.compile(loss=loss,
@@ -96,7 +94,6 @@ def get_model(data):
             'n_cats':data.n_cats(),
             'n_epochs':100,
             'class_weights':dataset.get_class_weights(data.y)}
-#    raise Exception(params)
     hyper_params=ens.default_hyperparams()
     input_layer = Input(shape=(params['dims']))
     nn=deep.nn_builder(params=params,
@@ -108,5 +105,13 @@ def get_model(data):
                 outputs=nn)
     return model,params
 
-show_loss(data_path="../uci/wall-following",
-	      split_path="single_exp/wall-following/splits")
+def check_f1_score(in_path):
+    result=dataset.read_result_group(in_path)
+    result=result.results[0]
+    result.report()
+    f1=result.get_metric("f1-score")
+    print(f"{f1:.4f}") 
+if __name__ == '__main__':
+    check_f1_score("new_exp/wine-quality-red/deep/results")
+#    show_loss(data_path="../uci/wall-following",
+#	      split_path="single_exp/wall-following/splits")
