@@ -113,15 +113,16 @@ def summary(exp_path,
     df=pd.DataFrame.from_records(lines,
                                   columns=["dataset","clf"]+metrics)
     
-    grouped=df.groupby(by='dataset')
-    def helper(df):
-        df=df.sort_values(by='acc')
-        print(df.round(4))
-        return df['dataset'].tolist()
-    out=grouped.apply(helper)
-
-#    with pd.option_context('display.max_rows', None, 'display.max_columns', None):  
-#        print(df.round(4))
+    if(sort):
+        grouped=df.groupby(by='dataset')
+        def helper(df):
+            df=df.sort_values(by=sort)
+            print(df.round(4))
+            return df['dataset'].tolist()
+        out=grouped.apply(helper)
+    else:
+        with pd.option_context('display.max_rows', None, 'display.max_columns', None):  
+            print(df.round(4))
     return df
 
 def basic_selector(dir_id):

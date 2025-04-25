@@ -87,8 +87,6 @@ class EnsembleFun(object):
                       selector=None):
         if(in_path is None):
             in_path=("in_path",0)
-#        if(out_path is None):
-#            out_path=("out_path",1)
         if(type(out_path)==str):
             out_path=(out_path,1)
         if(selector is None):

@@ -179,7 +179,8 @@ def df_eval(conf):
             s_conf['selector']=None
         pred.summary(exp_path=conf['exp_path'],
                      selector=s_conf['selector'],
-                     metrics=s_conf['metrics'])
+                     metrics=s_conf['metrics'],
+                     sort=s_conf['sort'])
     if('sig_pairs' in conf):
         s_conf=conf['sig_pairs']
         for pair_i in s_conf['pairs']:
