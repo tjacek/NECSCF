@@ -54,30 +54,44 @@ def read_purity(in_path):
             vectors.append(vector_j)
     return PurityVectors(ids,np.array(vectors))#.sub_mean()
 
-def pca_purity(in_path,verbose=False):
+def pca_purity(in_path,
+               transform_type="pca"):
     vector_dict={path_i.split("/")[-1]:read_purity(path_i)
             for path_i in utils.top_files(in_path)}
     all_vectors=[]
     for purity_i in vector_dict.values():
         all_vectors+=purity_i.vectors.tolist()
-    pca=get_reduction("lle")
-    pca.fit(all_vectors)
+    reduction=get_reduction(transform_type)
+    reduction.fit(all_vectors)
+    series=[]
+    for _,purity_i in vector_dict.items():
+        pairs_i= purity_i.reduce(reduction)
+        series.append(pairs_i)
+    txt_plot(series,
+             labels=['r','g','b','y'],
+             title=transform_type)
+
+def txt_plot(series,
+             labels,
+             title):
     plt.figure()
-    plt.title("lle")
-    labels=['r','g','b','y']
-    label_dict={}
-    for i,(name_i,purity_i) in enumerate(vector_dict.items()):
-        pairs_i= purity_i.reduce(pca)
-        for id_j,vec_j in pairs_i:
-            plt.text(vec_j[0], 
-                     vec_j[1], 
+    plt.title(title)
+    all_points=[]
+    for i, series_i in enumerate(series):
+        for id_j,point_j in series_i:
+            plt.text(point_j[0], 
+                     point_j[1], 
                      id_j,
                      color=labels[i],
                      fontdict={'weight': 'bold', 'size': 9})
-        label_dict[name_i]=labels[i]
-    print(label_dict)
-    plt.xlim((-0.1,0.1))
-    plt.ylim((-0.1,0.1))
+            all_points.append(point_j)
+    all_points=np.array(all_points)
+    min_point=np.amin(all_points,axis=0)
+    max_point=np.amax(all_points,axis=0)
+
+#    raise Exception(min_point)
+    plt.xlim((min_point[0],max_point[0]))
+    plt.ylim((min_point[1],max_point[1]))
     plt.show()
 
 def get_reduction(type):
@@ -85,7 +99,7 @@ def get_reduction(type):
         return manifold.LocallyLinearEmbedding(n_neighbors=5,#n_neighbors, 
                                           n_components=2,#n_components,
                                           method='standard')
-    return PCA()
+    return PCA(n_components=2)
 def history_epoch(exp_path,
                   ens_type="separ_class_ens",
                   out_path=None):
@@ -161,7 +175,7 @@ def z_score(values):
     return values.tolist()
 
 if __name__ == '__main__':
-    pca_purity("new_eval/purity/lymphography")
+    pca_purity("new_eval/purity/satimage")
 #    detect_outliners("new_eval/purity")#"vehicle/class_ens")
 #    history_epoch("new_exp",
 #                  ens_type="class_ens",
