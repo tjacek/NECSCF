@@ -54,7 +54,9 @@ def read_purity(in_path):
             vectors.append(vector_j)
     return PurityVectors(ids,np.array(vectors))#.sub_mean()
 
+@utils.DirFun({'in_path':0,'out_path':1})
 def pca_purity(in_path,
+               out_path=None,
                transform_type="pca"):
     vector_dict={path_i.split("/")[-1]:read_purity(path_i)
             for path_i in utils.top_files(in_path)}
@@ -69,11 +71,13 @@ def pca_purity(in_path,
         series.append(pairs_i)
     txt_plot(series,
              labels=['r','g','b','y'],
-             title=transform_type)
+             title=transform_type,
+             out_path=out_path)
 
 def txt_plot(series,
              labels,
-             title):
+             title,
+             out_path):
     plt.figure()
     plt.title(title)
     all_points=[]
@@ -88,18 +92,20 @@ def txt_plot(series,
     all_points=np.array(all_points)
     min_point=np.amin(all_points,axis=0)
     max_point=np.amax(all_points,axis=0)
-
-#    raise Exception(min_point)
     plt.xlim((min_point[0],max_point[0]))
     plt.ylim((min_point[1],max_point[1]))
-    plt.show()
+    if(out_path):
+        plt.savefig(out_path)
+    else:
+        plt.show()
 
 def get_reduction(type):
     if(type=='lle'):
-        return manifold.LocallyLinearEmbedding(n_neighbors=5,#n_neighbors, 
-                                          n_components=2,#n_components,
+        return manifold.LocallyLinearEmbedding(n_neighbors=5,
+                                          n_components=2,
                                           method='standard')
     return PCA(n_components=2)
+
 def history_epoch(exp_path,
                   ens_type="separ_class_ens",
                   out_path=None):
@@ -175,7 +181,7 @@ def z_score(values):
     return values.tolist()
 
 if __name__ == '__main__':
-    pca_purity("new_eval/purity/satimage")
+    pca_purity("new_eval/purity","plots")
 #    detect_outliners("new_eval/purity")#"vehicle/class_ens")
 #    history_epoch("new_exp",
 #                  ens_type="class_ens",
