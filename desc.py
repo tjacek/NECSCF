@@ -21,6 +21,9 @@ class PurityVectors(object):
         return [ (id_i,new_feats[i]) 
                     for i,id_i in enumerate(self.ids)]
 
+    def cats(self):
+        return [ int(id_i.split("_")[1]) for id_i in self.ids]
+
     def outliners(self,get_id=True):
         clf = svm.OneClassSVM(nu=0.1, kernel="rbf", gamma=0.1)
         clf.fit(self.vectors)
@@ -65,14 +68,36 @@ def pca_purity(in_path,
         all_vectors+=purity_i.vectors.tolist()
     reduction=get_reduction(transform_type)
     reduction.fit(all_vectors)
+    series=cat_series(vector_dict,reduction)
+    txt_plot(series,
+             labels=make_color_map(series),
+             title=transform_type,
+             out_path=out_path)
+
+def cat_series(vector_dict,reduction):
+    y=list(vector_dict.values())[0].cats()
+    n_cats=max(y)+1
+    series=[[] for _ in range(n_cats)]
+    for _,purity_i in vector_dict.items():
+        pairs_i= purity_i.reduce(reduction)
+        for j,pair_j in enumerate(pairs_i):
+            series[y[j]].append(pair_j)
+    return series
+
+def alg_series(vector_dict,reduction):
     series=[]
     for _,purity_i in vector_dict.items():
         pairs_i= purity_i.reduce(reduction)
         series.append(pairs_i)
-    txt_plot(series,
-             labels=['r','g','b','y'],
-             title=transform_type,
-             out_path=out_path)
+    return series
+
+def make_color_map(series):
+    n_cats=len(series)
+    cat2col= np.arange(n_cats)
+    np.random.shuffle(cat2col)
+    def color_helper(i):
+        return plt.cm.tab20(cat2col[int(i)])
+    return color_helper
 
 def txt_plot(series,
              labels,
@@ -86,7 +111,7 @@ def txt_plot(series,
             plt.text(point_j[0], 
                      point_j[1], 
                      id_j,
-                     color=labels[i],
+                     color=labels(i),
                      fontdict={'weight': 'bold', 'size': 9})
             all_points.append(point_j)
     all_points=np.array(all_points)
