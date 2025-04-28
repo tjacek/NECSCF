@@ -6,6 +6,34 @@ from sklearn import manifold
 import matplotlib.pyplot as plt
 import ens_depen,dataset,utils
 
+class NNDesc(object):
+    def __init__(self,ids,
+                      desc,
+                      targets,
+                      name_dict):
+        self.ids=ids
+        self.desc=desc
+        self.targets=targets
+        self.name_dict=name_dict
+
+def read_nn(in_path):
+    name_dict,desc,ids={},[],[]
+    targets={key_i:[] for key_i in ["ens","cat","iter"]}
+    for i,path_i in enumerate(utils.top_files(in_path)):
+        ens_i=path_i.split("/")[-1]
+        name_dict[ens_i]=i
+        for j,path_j in enumerate(utils.top_files(path_i)):
+            dict_j=utils.read_json(path_j)
+            for cat_k,hist_k in dict_j.items():
+                id_k=f"{i}_{j}_{cat_k}"
+                ids.append(id_k)
+                vector_k=np.array(hist_k).flatten()
+                desc.append(vector_k)
+                targets['ens'].append(i)
+                targets['iter'].append(j)
+                targets['cat'].append(cat_k)
+    return NNDesc(ids,desc,targets,name_dict)
+
 class PurityVectors(object):
     def __init__(self,ids,vectors):
         self.ids=ids
@@ -206,7 +234,8 @@ def z_score(values):
     return values.tolist()
 
 if __name__ == '__main__':
-    pca_purity("new_eval/purity","plots")
+    read_nn("new_eval/purity/cmc")
+#    pca_purity("new_eval/purity","plots")
 #    detect_outliners("new_eval/purity")#"vehicle/class_ens")
 #    history_epoch("new_exp",
 #                  ens_type="class_ens",
