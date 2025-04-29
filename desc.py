@@ -16,6 +16,19 @@ class NNDesc(object):
         self.targets=targets
         self.name_dict=name_dict
 
+    def get_pairs(self,target_id:str):
+        y=self.targets[target_id]
+        n_cats=max(y)+1
+        pairs=[[] for _ in range(n_cats)]
+        for i,y_i in enumerate(y):
+            pairs_i=(self.ids[i], self.desc[i])
+            pairs[y_i].append(pairs_i)
+        return pairs
+
+    def transform(self,alg):
+        alg.fit(self.desc)
+        self.desc=alg.transform(self.desc)
+
 def read_nn(in_path):
     name_dict,desc,ids={},[],[]
     targets={key_i:[] for key_i in ["ens","cat","iter"]}
@@ -34,36 +47,36 @@ def read_nn(in_path):
                 targets['cat'].append(cat_k)
     return NNDesc(ids,desc,targets,name_dict)
 
-class PurityVectors(object):
-    def __init__(self,ids,vectors):
-        self.ids=ids
-        self.vectors=vectors
+#class PurityVectors(object):
+#    def __init__(self,ids,vectors):
+#        self.ids=ids
+#        self.vectors=vectors
     
-    def sub_mean(self):
-        mean=np.mean(self.vectors,axis=0)
-        self.vectors-=mean
-        return self
+#    def sub_mean(self):
+#        mean=np.mean(self.vectors,axis=0)
+#        self.vectors-=mean
+#        return self
 
-    def reduce(self,alg):
-        new_feats=alg.transform(self.vectors)
-        return [ (id_i,new_feats[i]) 
-                    for i,id_i in enumerate(self.ids)]
+#    def reduce(self,alg):
+#        new_feats=alg.transform(self.vectors)
+#        return [ (id_i,new_feats[i]) 
+#                    for i,id_i in enumerate(self.ids)]
 
-    def cats(self):
-        return [ int(id_i.split("_")[1]) for id_i in self.ids]
+#    def cats(self):
+#        return [ int(id_i.split("_")[1]) for id_i in self.ids]
 
-    def outliners(self,get_id=True):
-        clf = svm.OneClassSVM(nu=0.1, kernel="rbf", gamma=0.1)
-        clf.fit(self.vectors)
-        y_pred = clf.predict(self.vectors)
-        n_outliners=len( y_pred[y_pred==(-1)])
-        if(get_id):
-            out_ids=[]
-            for i,pred_i in enumerate(y_pred):
-                if(pred_i==(-1)):
-                    out_ids.append(self.ids[i])
-            return n_outliners,out_ids
-        return n_outliners
+#    def outliners(self,get_id=True):
+#        clf = svm.OneClassSVM(nu=0.1, kernel="rbf", gamma=0.1)
+#        clf.fit(self.vectors)
+#        y_pred = clf.predict(self.vectors)
+#        n_outliners=len( y_pred[y_pred==(-1)])
+#        if(get_id):
+#            out_ids=[]
+#            for i,pred_i in enumerate(y_pred):
+#                if(pred_i==(-1)):
+#                    out_ids.append(self.ids[i])
+#            return n_outliners,out_ids
+#        return n_outliners
         
 def detect_outliners(in_path):
     @utils.EnsembleFun(selector=lambda ens_id:True)
@@ -74,16 +87,29 @@ def detect_outliners(in_path):
         n_out=purity_i.outliners()
         print((data_i,ens_i,n_out)) 
 
-def read_purity(in_path):
-    ids,vectors=[],[]
-    for i,path_i in enumerate(utils.top_files(in_path)):
-        dict_i=utils.read_json(path_i)
-        for cat_j,hist_j in dict_i.items():
-            id_ij=f"{i}_{cat_j}"
-            vector_j=np.array(hist_j).flatten()
-            ids.append(id_ij)
-            vectors.append(vector_j)
-    return PurityVectors(ids,np.array(vectors))#.sub_mean()
+#def read_purity(in_path):
+#    ids,vectors=[],[]
+#    for i,path_i in enumerate(utils.top_files(in_path)):
+#        dict_i=utils.read_json(path_i)
+#        for cat_j,hist_j in dict_i.items():
+#            id_ij=f"{i}_{cat_j}"
+#            vector_j=np.array(hist_j).flatten()
+#            ids.append(id_ij)
+#            vectors.append(vector_j)
+#    return PurityVectors(ids,np.array(vectors))#.sub_mean()
+
+@utils.DirFun({'in_path':0,'out_path':1})
+def nn_desc_plot(in_path,
+                 out_path=None,
+                 transform_type="pca",
+                 target_id='ens'):
+    nn_desc=read_nn(in_path)
+    reduction=get_reduction(transform_type)
+    nn_desc.transform(reduction)
+    series=nn_desc.get_pairs(target_id)
+    txt_plot(series,
+             title=transform_type,
+             out_path=out_path)
 
 @utils.DirFun({'in_path':0,'out_path':1})
 def pca_purity(in_path,
@@ -128,9 +154,11 @@ def make_color_map(series):
     return color_helper
 
 def txt_plot(series,
-             labels,
-             title,
-             out_path):
+             labels=None,
+             title="",
+             out_path=None):
+    if(labels is None):
+        labels=make_color_map(series)
     plt.figure()
     plt.title(title)
     all_points=[]
@@ -234,8 +262,8 @@ def z_score(values):
     return values.tolist()
 
 if __name__ == '__main__':
-    read_nn("new_eval/purity/cmc")
-#    pca_purity("new_eval/purity","plots")
+#    read_nn("new_eval/purity/cmc")
+    nn_desc_plot("new_eval/purity","plots")
 #    detect_outliners("new_eval/purity")#"vehicle/class_ens")
 #    history_epoch("new_exp",
 #                  ens_type="class_ens",
