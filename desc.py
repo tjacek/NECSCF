@@ -29,12 +29,16 @@ class NNDesc(object):
         alg.fit(self.desc)
         self.desc=alg.transform(self.desc)
 
+    def as_data(self,target_id="ens"):
+        return dataset.Dataset(X=self.desc,
+                               y=self.targets[target_id])
+
 def read_nn(in_path):
-    name_dict,desc,ids={},[],[]
+    name_dict,desc,ids=[],[],[]
     targets={key_i:[] for key_i in ["ens","cat","iter"]}
     for i,path_i in enumerate(utils.top_files(in_path)):
         ens_i=path_i.split("/")[-1]
-        name_dict[ens_i]=i
+        name_dict.append(ens_i)
         for j,path_j in enumerate(utils.top_files(path_i)):
             dict_j=utils.read_json(path_j)
             for cat_k,hist_k in dict_j.items():
@@ -45,13 +49,19 @@ def read_nn(in_path):
                 targets['ens'].append(i)
                 targets['iter'].append(j)
                 targets['cat'].append(cat_k)
+    y_separ,y_weights=[],[]
+    for i in targets['ens']:
+        y_separ.append(int('separ' in  name_dict[i]))
+        y_weights.append(int('purity' in  name_dict[i]))
+    targets['separ']=y_separ
+    targets['weights']=y_weights
     return NNDesc(ids,desc,targets,name_dict)
 
 @utils.DirFun({'in_path':0,'out_path':1})
 def nn_desc_plot(in_path,
                  out_path=None,
                  transform_type="pca",
-                 target_id='outliners'):
+                 target_id='separ'):
     nn_desc=read_nn(in_path)
     if(target_id=="outliners"):
         clf = svm.OneClassSVM(nu=0.1, kernel="rbf", gamma=0.1)
@@ -102,6 +112,9 @@ def txt_plot(series,
 
 def make_color_map(series):
     n_cats=len(series)
+    if(n_cats==2):
+        binary_colors=['r','b']
+        return lambda i:binary_colors[i]
     cat2col= np.arange(n_cats)
     np.random.shuffle(cat2col)
     def color_helper(i):
@@ -184,7 +197,7 @@ def z_score(values):
 
 if __name__ == '__main__':
 #    read_nn("new_eval/purity/cmc")
-    nn_desc_plot("new_eval/purity","outliner")
+    nn_desc_plot("new_eval/purity","separ")
 #    detect_outliners("new_eval/purity")#"vehicle/class_ens")
 #    history_epoch("new_exp",
 #                  ens_type="class_ens",
