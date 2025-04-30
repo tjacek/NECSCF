@@ -47,63 +47,18 @@ def read_nn(in_path):
                 targets['cat'].append(cat_k)
     return NNDesc(ids,desc,targets,name_dict)
 
-#class PurityVectors(object):
-#    def __init__(self,ids,vectors):
-#        self.ids=ids
-#        self.vectors=vectors
-    
-#    def sub_mean(self):
-#        mean=np.mean(self.vectors,axis=0)
-#        self.vectors-=mean
-#        return self
-
-#    def reduce(self,alg):
-#        new_feats=alg.transform(self.vectors)
-#        return [ (id_i,new_feats[i]) 
-#                    for i,id_i in enumerate(self.ids)]
-
-#    def cats(self):
-#        return [ int(id_i.split("_")[1]) for id_i in self.ids]
-
-#    def outliners(self,get_id=True):
-#        clf = svm.OneClassSVM(nu=0.1, kernel="rbf", gamma=0.1)
-#        clf.fit(self.vectors)
-#        y_pred = clf.predict(self.vectors)
-#        n_outliners=len( y_pred[y_pred==(-1)])
-#        if(get_id):
-#            out_ids=[]
-#            for i,pred_i in enumerate(y_pred):
-#                if(pred_i==(-1)):
-#                    out_ids.append(self.ids[i])
-#            return n_outliners,out_ids
-#        return n_outliners
-        
-def detect_outliners(in_path):
-    @utils.EnsembleFun(selector=lambda ens_id:True)
-    def helper(in_path):
-        return read_purity(in_path)
-    output=helper(in_path)
-    for data_i,ens_i,purity_i in output:
-        n_out=purity_i.outliners()
-        print((data_i,ens_i,n_out)) 
-
-#def read_purity(in_path):
-#    ids,vectors=[],[]
-#    for i,path_i in enumerate(utils.top_files(in_path)):
-#        dict_i=utils.read_json(path_i)
-#        for cat_j,hist_j in dict_i.items():
-#            id_ij=f"{i}_{cat_j}"
-#            vector_j=np.array(hist_j).flatten()
-#            ids.append(id_ij)
-#            vectors.append(vector_j)
-#    return PurityVectors(ids,np.array(vectors))#.sub_mean()
-
 @utils.DirFun({'in_path':0,'out_path':1})
 def nn_desc_plot(in_path,
                  out_path=None,
                  transform_type="pca",
-                 target_id='ens'):
+                 target_id='outliners'):
     nn_desc=read_nn(in_path)
+    if(target_id=="outliners"):
+        clf = svm.OneClassSVM(nu=0.1, kernel="rbf", gamma=0.1)
+        clf.fit(nn_desc.desc)
+        y = clf.predict(nn_desc.desc)
+        y[y==(-1)]=0
+        nn_desc.targets[target_id]=y
     reduction=get_reduction(transform_type)
     nn_desc.transform(reduction)
     series=nn_desc.get_pairs(target_id)
@@ -111,47 +66,12 @@ def nn_desc_plot(in_path,
              title=transform_type,
              out_path=out_path)
 
-@utils.DirFun({'in_path':0,'out_path':1})
-def pca_purity(in_path,
-               out_path=None,
-               transform_type="pca"):
-    vector_dict={path_i.split("/")[-1]:read_purity(path_i)
-            for path_i in utils.top_files(in_path)}
-    all_vectors=[]
-    for purity_i in vector_dict.values():
-        all_vectors+=purity_i.vectors.tolist()
-    reduction=get_reduction(transform_type)
-    reduction.fit(all_vectors)
-    series=cat_series(vector_dict,reduction)
-    txt_plot(series,
-             labels=make_color_map(series),
-             title=transform_type,
-             out_path=out_path)
-
-def cat_series(vector_dict,reduction):
-    y=list(vector_dict.values())[0].cats()
-    n_cats=max(y)+1
-    series=[[] for _ in range(n_cats)]
-    for _,purity_i in vector_dict.items():
-        pairs_i= purity_i.reduce(reduction)
-        for j,pair_j in enumerate(pairs_i):
-            series[y[j]].append(pair_j)
-    return series
-
-def alg_series(vector_dict,reduction):
-    series=[]
-    for _,purity_i in vector_dict.items():
-        pairs_i= purity_i.reduce(reduction)
-        series.append(pairs_i)
-    return series
-
-def make_color_map(series):
-    n_cats=len(series)
-    cat2col= np.arange(n_cats)
-    np.random.shuffle(cat2col)
-    def color_helper(i):
-        return plt.cm.tab20(cat2col[int(i)])
-    return color_helper
+def get_reduction(type):
+    if(type=='lle'):
+        return manifold.LocallyLinearEmbedding(n_neighbors=5,
+                                          n_components=2,
+                                          method='standard')
+    return PCA(n_components=2)
 
 def txt_plot(series,
              labels=None,
@@ -180,12 +100,13 @@ def txt_plot(series,
     else:
         plt.show()
 
-def get_reduction(type):
-    if(type=='lle'):
-        return manifold.LocallyLinearEmbedding(n_neighbors=5,
-                                          n_components=2,
-                                          method='standard')
-    return PCA(n_components=2)
+def make_color_map(series):
+    n_cats=len(series)
+    cat2col= np.arange(n_cats)
+    np.random.shuffle(cat2col)
+    def color_helper(i):
+        return plt.cm.tab20(cat2col[int(i)])
+    return color_helper
 
 def history_epoch(exp_path,
                   ens_type="separ_class_ens",
@@ -263,7 +184,7 @@ def z_score(values):
 
 if __name__ == '__main__':
 #    read_nn("new_eval/purity/cmc")
-    nn_desc_plot("new_eval/purity","plots")
+    nn_desc_plot("new_eval/purity","outliner")
 #    detect_outliners("new_eval/purity")#"vehicle/class_ens")
 #    history_epoch("new_exp",
 #                  ens_type="class_ens",
