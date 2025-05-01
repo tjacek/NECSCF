@@ -57,7 +57,7 @@ def read_nn(in_path):
     targets['weights']=y_weights
     return NNDesc(ids,np.array(desc),targets,name_dict)
 
-def nn_desc_eval(in_path,target_id="separ"):
+def nn_desc_eval(in_path,target_id="cat"):
     @utils.DirFun({'in_path':0})
     def helper(in_path):
         nn_desc_i=read_nn(in_path)
@@ -65,14 +65,15 @@ def nn_desc_eval(in_path,target_id="separ"):
         protocol=base.UnaggrSplit(n_splits=5,n_repeats=1)
         results=[]
         for split_j in protocol.get_split(data_i):
-            clf_j=base.get_clf("LR")
+            clf_j=base.get_clf("RF")
             result_j,_=split_j.eval(data_i,clf_j)
             results.append(result_j)
         results=dataset.ResultGroup(results)
-        return np.mean(results.get_metric("acc"))
+        return np.mean(results.get_metric("acc")),(100/data_i.n_cats())
     output=helper(in_path)
-    for key_i,value_i in output.items():
-        print(f"{key_i.split('/')[-1]};{value_i:.4f}")
+    for key_i,(acc_i,base_i) in output.items():
+        id_i=key_i.split('/')[-1]
+        print(f"{id_i}:{acc_i:.4f}:{base_i:.4f}")
 
 @utils.DirFun({'in_path':0,'out_path':1})
 def nn_desc_plot(in_path,
