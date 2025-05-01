@@ -4,7 +4,7 @@ from sklearn import svm
 from sklearn.decomposition import PCA
 from sklearn import manifold
 import matplotlib.pyplot as plt
-import ens_depen,dataset,utils
+import base,ens_depen,dataset,utils
 
 class NNDesc(object):
     def __init__(self,ids,
@@ -31,7 +31,7 @@ class NNDesc(object):
 
     def as_data(self,target_id="ens"):
         return dataset.Dataset(X=self.desc,
-                               y=self.targets[target_id])
+                               y=np.array(self.targets[target_id]))
 
 def read_nn(in_path):
     name_dict,desc,ids=[],[],[]
@@ -55,7 +55,24 @@ def read_nn(in_path):
         y_weights.append(int('purity' in  name_dict[i]))
     targets['separ']=y_separ
     targets['weights']=y_weights
-    return NNDesc(ids,desc,targets,name_dict)
+    return NNDesc(ids,np.array(desc),targets,name_dict)
+
+def nn_desc_eval(in_path,target_id="separ"):
+    @utils.DirFun({'in_path':0})
+    def helper(in_path):
+        nn_desc_i=read_nn(in_path)
+        data_i=nn_desc_i.as_data(target_id)
+        protocol=base.UnaggrSplit(n_splits=5,n_repeats=1)
+        results=[]
+        for split_j in protocol.get_split(data_i):
+            clf_j=base.get_clf("LR")
+            result_j,_=split_j.eval(data_i,clf_j)
+            results.append(result_j)
+        results=dataset.ResultGroup(results)
+        return np.mean(results.get_metric("acc"))
+    output=helper(in_path)
+    for key_i,value_i in output.items():
+        print(f"{key_i.split('/')[-1]};{value_i:.4f}")
 
 @utils.DirFun({'in_path':0,'out_path':1})
 def nn_desc_plot(in_path,
@@ -197,8 +214,7 @@ def z_score(values):
 
 if __name__ == '__main__':
 #    read_nn("new_eval/purity/cmc")
-    nn_desc_plot("new_eval/purity","separ")
-#    detect_outliners("new_eval/purity")#"vehicle/class_ens")
+    nn_desc_eval("new_eval/purity")#,"separ")
 #    history_epoch("new_exp",
 #                  ens_type="class_ens",
 #                  out_path="new_eval/n_epochs/class_ens")
