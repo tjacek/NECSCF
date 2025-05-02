@@ -71,7 +71,8 @@ def read_nn(in_path):
 def nn_desc_eval(in_path,
                  target_id="cat",
                  clf_type="RF",
-                 select="separ_purity_ens"):
+                 select="class_ens",
+                 binary=True):
     @utils.DirFun({'in_path':0})
     def helper(in_path):
         nn_desc_i=read_nn(in_path)
@@ -79,13 +80,33 @@ def nn_desc_eval(in_path,
         protocol=base.UnaggrSplit(n_splits=5,n_repeats=1)
         data_split=base.DataSplits(data= data_i,
                                    splits=list(protocol.get_split(data_i)))
-        results=data_split.basic_eval(clf_type)
-        random=(100/data_i.n_cats())
-        return np.mean(results.get_metric("acc")),random
+        if(binary):
+            n_cats=data_i.n_cats()
+            balance=[]
+            for j in range(n_cats):
+                y_j=np.zeros(data_i.y.shape)
+                y_j[data_i.y==j]=1
+                data_j=dataset.Dataset(X=data_i.X,
+                                       y=y_j)
+                data_split.data=data_j
+                results=data_split.basic_eval(clf_type)
+                balance.append(np.mean(results.get_metric("f1-binary")))
+            return balance
+        else:
+            results=data_split.basic_eval(clf_type)
+            random=(100/data_i.n_cats())
+            return np.mean(results.get_metric("acc")),random
     output=helper(in_path)
-    for key_i,(acc_i,base_i) in output.items():
+    for key_i,value_i in output.items():
         id_i=key_i.split('/')[-1]
-        print(f"{id_i}:{acc_i:.4f}:{base_i:.4f}")
+        if(binary):
+            line_i=[f"{id_i}"]
+            for value_j in value_i:
+                line_i.append(f"{value_j:.4f}")
+            print(",".join(line_i))
+        else:
+            acc_i,base_i=value_i
+            print(f"{id_i}:{acc_i:.4f}:{base_i:.4f}")
 
 @utils.DirFun({'in_path':0,'out_path':1})
 def nn_desc_plot(in_path,
