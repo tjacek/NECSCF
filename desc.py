@@ -29,9 +29,18 @@ class NNDesc(object):
         alg.fit(self.desc)
         self.desc=alg.transform(self.desc)
 
-    def as_data(self,target_id="ens"):
-        return dataset.Dataset(X=self.desc,
-                               y=np.array(self.targets[target_id]))
+    def as_data(self,target_id="ens",
+                select=None):
+        X,y=self.desc,self.targets[target_id]
+        if(not (select is None)):
+            index=(self.targets["ens"]==self.ens_id(select))
+            X,y=X[index],y[index]
+        return dataset.Dataset(X=X,y=y)
+
+    def ens_id(self,ens_type):
+        for i,ens_i in enumerate(self.name_dict):
+            if(ens_i==ens_type):
+                return i
 
 def read_nn(in_path):
     name_dict,desc,ids=[],[],[]
@@ -48,26 +57,29 @@ def read_nn(in_path):
                 desc.append(vector_k)
                 targets['ens'].append(i)
                 targets['iter'].append(j)
-                targets['cat'].append(cat_k)
+                targets['cat'].append(int(cat_k))
     y_separ,y_weights=[],[]
     for i in targets['ens']:
         y_separ.append(int('separ' in  name_dict[i]))
         y_weights.append(int('purity' in  name_dict[i]))
     targets['separ']=y_separ
     targets['weights']=y_weights
+    targets={key_i:np.array(target_i) 
+        for key_i,target_i in targets.items()}
     return NNDesc(ids,np.array(desc),targets,name_dict)
 
 def nn_desc_eval(in_path,
                  target_id="cat",
-                 clf_type="RF"):
+                 clf_type="RF",
+                 select="separ_purity_ens"):
     @utils.DirFun({'in_path':0})
     def helper(in_path):
         nn_desc_i=read_nn(in_path)
-        data_i=nn_desc_i.as_data(target_id)
+        data_i=nn_desc_i.as_data(target_id,select)
         protocol=base.UnaggrSplit(n_splits=5,n_repeats=1)
         data_split=base.DataSplits(data= data_i,
                                    splits=list(protocol.get_split(data_i)))
-        results=data_split.base_eval(clf_type)
+        results=data_split.basic_eval(clf_type)
         random=(100/data_i.n_cats())
         return np.mean(results.get_metric("acc")),random
     output=helper(in_path)

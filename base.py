@@ -47,7 +47,7 @@ class DataSplits(object):
                 index=split_i.test_index
             yield  i,self.data.selection(index)
 
-    def base_eval(self,clf_type):
+    def basic_eval(self,clf_type):
         results=[]
         for split_j in self.splits:
             clf_j=get_clf(clf_type)
