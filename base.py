@@ -47,6 +47,14 @@ class DataSplits(object):
                 index=split_i.test_index
             yield  i,self.data.selection(index)
 
+    def base_eval(self,clf_type):
+        results=[]
+        for split_j in self.splits:
+            clf_j=get_clf(clf_type)
+            result_j,_=split_j.eval(self.data,clf_j)
+            results.append(result_j)
+        return dataset.ResultGroup(results)
+
 class UnaggrSplit(object):
     def __init__(self,n_splits,n_repeats):
         self.n_splits=n_splits

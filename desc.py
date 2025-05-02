@@ -57,19 +57,19 @@ def read_nn(in_path):
     targets['weights']=y_weights
     return NNDesc(ids,np.array(desc),targets,name_dict)
 
-def nn_desc_eval(in_path,target_id="cat"):
+def nn_desc_eval(in_path,
+                 target_id="cat",
+                 clf_type="RF"):
     @utils.DirFun({'in_path':0})
     def helper(in_path):
         nn_desc_i=read_nn(in_path)
         data_i=nn_desc_i.as_data(target_id)
         protocol=base.UnaggrSplit(n_splits=5,n_repeats=1)
-        results=[]
-        for split_j in protocol.get_split(data_i):
-            clf_j=base.get_clf("RF")
-            result_j,_=split_j.eval(data_i,clf_j)
-            results.append(result_j)
-        results=dataset.ResultGroup(results)
-        return np.mean(results.get_metric("acc")),(100/data_i.n_cats())
+        data_split=base.DataSplits(data= data_i,
+                                   splits=list(protocol.get_split(data_i)))
+        results=data_split.base_eval(clf_type)
+        random=(100/data_i.n_cats())
+        return np.mean(results.get_metric("acc")),random
     output=helper(in_path)
     for key_i,(acc_i,base_i) in output.items():
         id_i=key_i.split('/')[-1]
@@ -78,8 +78,8 @@ def nn_desc_eval(in_path,target_id="cat"):
 @utils.DirFun({'in_path':0,'out_path':1})
 def nn_desc_plot(in_path,
                  out_path=None,
-                 transform_type="pca",
-                 target_id='separ'):
+                 transform_type="lle",
+                 target_id='iter'):
     nn_desc=read_nn(in_path)
     if(target_id=="outliners"):
         clf = svm.OneClassSVM(nu=0.1, kernel="rbf", gamma=0.1)
@@ -214,8 +214,8 @@ def z_score(values):
     return values.tolist()
 
 if __name__ == '__main__':
-#    read_nn("new_eval/purity/cmc")
-    nn_desc_eval("new_eval/purity")#,"separ")
+#    nn_desc_plot("new_eval/purity","separ")
+    nn_desc_eval("new_eval/purity")
 #    history_epoch("new_exp",
 #                  ens_type="class_ens",
 #                  out_path="new_eval/n_epochs/class_ens")
