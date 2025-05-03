@@ -74,6 +74,9 @@ class StaticSubsets(object):
         values=[np.mean(value_i) for value_i in values]
         return np.array(values)
 
+    def indv(self,metric_type="acc"):
+        return [self([i],metric_type) for i in range(self.n_clfs())]
+
 def read_static_subsets(in_path):
     raw=utils.read_json(in_path)
     metric_types,raw_subsets=raw['metric_types'],raw['subsets']

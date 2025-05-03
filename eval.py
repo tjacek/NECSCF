@@ -186,7 +186,9 @@ def subset_plot(conf):
         full_i=values[-1]
         values/=full_i
         values=np.round(values, 4)
-        print(values)
+#        print(values)
+        indv_i=subsets_i.indv()
+        print(f"{np.mean(indv_i):.4f}:{np.std(indv_i):.4f}")
 
 def df_eval(conf):
     if('summary' in conf):
