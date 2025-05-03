@@ -146,17 +146,27 @@ def compute_shapley(in_path,
     return output_dict
 
 def shapley_stats(in_path,
-                  clf_type="separ_purity_ens"):
+                  clf_type="separ_purity_ens",
+                  indiv=True):
     output_dict=compute_shapley(in_path,
                                 clf_type=clf_type,
                                 metric_type="acc")
     lines=[]
-    for data_i,value_i in output_dict.items():
-        lines.append([data_i,np.amax(value_i),np.mean(value_i),np.std(value_i)])
-    df=pd.DataFrame.from_records(lines,
+    if(indiv):
+        for data_i,value_i in output_dict.items():
+            for j,shapley_j in enumerate(value_i):
+                lines.append([data_i,j,shapley_j])
+        df=pd.DataFrame.from_records(lines,
+                                  columns=["data","cat","shapley"])
+        df=df.sort_values(by="shapley")
+    else:
+        for data_i,value_i in output_dict.items():
+            lines.append([data_i,np.amax(value_i),np.mean(value_i),np.std(value_i)])
+        df=pd.DataFrame.from_records(lines,
                                   columns=["data","max","mean","std"])
-    df=df.sort_values(by="max")
-    print(df.round(4))
+        df=df.sort_values(by="max")
+    with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+        print(df.round(4))
 
 if __name__ == '__main__':
 #    gen_subsets("new_exp",
