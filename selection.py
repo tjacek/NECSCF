@@ -64,7 +64,7 @@ class StaticSubsets(object):
                 margin.append(in_value-out_value)
         return np.mean(margin)
 
-def read_static_subsets(in_path,out_path=None):
+def read_static_subsets(in_path):
     raw=utils.read_json(in_path)
     metric_types,raw_subsets=raw['metric_types'],raw['subsets']
     metric_types={ type_i:i 
@@ -145,6 +145,20 @@ def compute_shapley(in_path,
         print(output_dict)
     return output_dict
 
+def shapley_stats(in_path,
+                  clf_type="separ_purity_ens"):
+    output_dict=compute_shapley(in_path,
+                                clf_type=clf_type,
+                                metric_type="acc")
+    lines=[]
+    for data_i,value_i in output_dict.items():
+        lines.append([data_i,np.amax(value_i),np.mean(value_i),np.std(value_i)])
+    df=pd.DataFrame.from_records(lines,
+                                  columns=["data","max","mean","std"])
+    df=df.sort_values(by="max")
+    print(df.round(4))
+
 if __name__ == '__main__':
-    gen_subsets("new_exp",
-                "new_eval/subsets")
+#    gen_subsets("new_exp",
+#                "new_eval/subsets")
+    shapley_stats("new_eval/subsets")   
