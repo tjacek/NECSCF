@@ -18,6 +18,8 @@ def eval_exp(conf):
         desc_plot(conf)
     if(conf['type']=="plot_xy"):
         xy_plot(conf)
+    if(conf['type']=="subsets"):
+        subset_plot(conf)
     if(conf['type']=='df'):
         df_eval(conf)
 
@@ -172,6 +174,20 @@ def selection_plot(conf):
                 clf_x=conf['ord_value']['name'],
                 clf_y=conf['metric'])
 
+def subset_plot(conf):
+    @utils.EnsembleFun(selector=conf["clf_type"])
+    def helper(in_path):
+        return selection.read_static_subsets(in_path)
+    output= helper(conf["subset_path"])
+    output_dict={key_i:value_i for key_i,_,value_i in output}
+    for data_i,subsets_i in output_dict.items():
+        print(data_i)
+        values=subsets_i.mean_values()
+        full_i=values[-1]
+        values/=full_i
+        values=np.round(values, 4)
+        print(values)
+
 def df_eval(conf):
     if('summary' in conf):
         s_conf=conf['summary']
@@ -275,4 +291,4 @@ if __name__ == '__main__':
 #    eval_exp("new_eval/conf/desc.js")
 #    sig_summary("new_exp")
 #    find_best("new_exp")
-    eval_exp("new_eval/conf/df.js")
+    eval_exp("new_eval/conf/subset.js")

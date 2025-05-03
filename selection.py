@@ -64,6 +64,16 @@ class StaticSubsets(object):
                 margin.append(in_value-out_value)
         return np.mean(margin)
 
+    def mean_values(self,metric_type="acc"):
+        metic_index=self.metric_types[metric_type]
+        values=[[] for _ in range(self.n_clfs())]
+        for id_i,tuple_i in self.subset_dict.items():
+            size_i=len(tuple_i)-1
+            metric_i=self.value_dict[id_i][metic_index]
+            values[size_i].append(metric_i)
+        values=[np.mean(value_i) for value_i in values]
+        return np.array(values)
+
 def read_static_subsets(in_path):
     raw=utils.read_json(in_path)
     metric_types,raw_subsets=raw['metric_types'],raw['subsets']
