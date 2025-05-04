@@ -98,6 +98,14 @@ def get_id(subset):
     id_j.sort()
     return str(id_j)
 
+def subset_plot(subset_path,ens_type="class_ens"):
+    @utils.EnsembleFun(selector=ens_type)
+    def helper(in_path):
+        return read_static_subsets(in_path)
+    output_dict=helper(subset_path)
+    return {data_i:(ens_i,subset_i) 
+            for data_i,ens_i,subset_i in output_dict}
+
 def best_df(in_path,glob=True):
     read=utils.EnsembleFun()(read_static_subsets)
     lines=[]

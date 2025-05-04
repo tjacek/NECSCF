@@ -175,20 +175,20 @@ def selection_plot(conf):
                 clf_y=conf['metric'])
 
 def subset_plot(conf):
-    @utils.EnsembleFun(selector=conf["clf_type"])
-    def helper(in_path):
-        return selection.read_static_subsets(in_path)
-    output= helper(conf["subset_path"])
-    output_dict={key_i:value_i for key_i,_,value_i in output}
-    for data_i,subsets_i in output_dict.items():
-        print(data_i)
-        values=subsets_i.mean_values()
-        full_i=values[-1]
-        values/=full_i
-        values=np.round(values, 4)
-#        print(values)
-        indv_i=subsets_i.indv()
-        print(f"{np.mean(indv_i):.4f}:{np.std(indv_i):.4f}")
+    subsets=[selection.subset_plot(conf["subset_path"],
+                                   ens_type=ens_type_i)
+                for ens_type_i in conf["ens_types"]]
+    for name_i in subsets[0].keys():
+        for subset_j in subsets:
+            ens_j,subset_j=subset_j[name_i]
+            values_j=subset_j.mean_values(conf["metric"])
+            full_i=values_j[-1]
+            values_j/=full_i
+            values_j=np.round(values_j, 4)
+            print(f"{name_i},{ens_j}")
+            print(values_j)
+#    indv_i=subsets_i.indv()
+#    print(f"{np.mean(indv_i):.4f}:{np.std(indv_i):.4f}")
 
 def df_eval(conf):
     if('summary' in conf):
