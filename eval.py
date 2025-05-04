@@ -183,11 +183,15 @@ def subset_plot(conf):
         for subset_j in subsets:
             ens_j,subset_j=subset_j[data_i]
             values_j=subset_j.mean_values(conf["metric"])
-            full_i=values_j[-1]
+            if(conf["mlp"]):
+                full_i=conf["mlp"][data_i]
+                values_j*=100
+            else:
+                full_i=values_j[-1]
             values_j/=full_i
             values_j=np.round(values_j, 4)
             value_dict[data_i].append((ens_j,values_j))
-    
+    print(value_dict.keys())
     for data_i,pairs_i in value_dict.items():
         n_clf=pairs_i[0][1].shape[0]
         x_i=np.arange(n_clf)
