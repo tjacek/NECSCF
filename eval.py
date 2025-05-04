@@ -178,15 +178,28 @@ def subset_plot(conf):
     subsets=[selection.subset_plot(conf["subset_path"],
                                    ens_type=ens_type_i)
                 for ens_type_i in conf["ens_types"]]
-    for name_i in subsets[0].keys():
+    value_dict={data_i:[] for data_i in subsets[0].keys()}
+    for data_i in value_dict.keys():
         for subset_j in subsets:
-            ens_j,subset_j=subset_j[name_i]
+            ens_j,subset_j=subset_j[data_i]
             values_j=subset_j.mean_values(conf["metric"])
             full_i=values_j[-1]
             values_j/=full_i
             values_j=np.round(values_j, 4)
-            print(f"{name_i},{ens_j}")
-            print(values_j)
+            value_dict[data_i].append((ens_j,values_j))
+    
+    for data_i,pairs_i in value_dict.items():
+        n_clf=pairs_i[0][1].shape[0]
+        x_i=np.arange(n_clf)
+        for ens_j,values_j in pairs_i:
+            plt.plot(x_i, values_j, label = ens_j)
+        plt.title(data_i)
+        plt.legend()
+        plt.show()
+        plt.clf()
+
+#print(f"{name_i},{ens_j}")
+#print(values_j)
 #    indv_i=subsets_i.indv()
 #    print(f"{np.mean(indv_i):.4f}:{np.std(indv_i):.4f}")
 
