@@ -70,14 +70,14 @@ def read_nn(in_path):
 
 def nn_desc_eval(in_path,
                  target_id="cat",
-                 clf_type="RF",
+                 clf_type="SVM",
                  select="class_ens",
-                 binary=True):
+                 binary=False):
     @utils.DirFun({'in_path':0})
     def helper(in_path):
         nn_desc_i=read_nn(in_path)
         data_i=nn_desc_i.as_data(target_id,select)
-        protocol=base.UnaggrSplit(n_splits=5,n_repeats=1)
+        protocol=base.UnaggrSplit(n_splits=3,n_repeats=1)
         data_split=base.DataSplits(data= data_i,
                                    splits=list(protocol.get_split(data_i)))
         if(binary):

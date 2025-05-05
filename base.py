@@ -2,6 +2,7 @@ import numpy as np
 from sklearn.model_selection import RepeatedStratifiedKFold
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
+from sklearn import svm
 from tqdm import tqdm
 import dataset,utils
 
@@ -109,6 +110,8 @@ def get_clf(clf_type):
         return RandomForestClassifier(class_weight="balanced")#_subsample")
     if(clf_type=="LR"):
         return LogisticRegression(solver='liblinear')
+    if(clf_type=="SVM"):
+        return svm.SVC(kernel='rbf')
     raise Exception(f"Unknow clf type:{clf_type}")
 
 def get_splits(data_path,
