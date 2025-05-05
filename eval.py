@@ -231,23 +231,7 @@ def df_eval(conf):
                     main_clf=s_conf["main_clf"],
                     clf_types=s_conf['clf_types'],
                     metrics=s_conf['metrics'])
-
-class DFView(object):
-    def __init__(self,df):
-        self.df=df.round(4)
-    
-    def to_latex(self):
-        cols=self.df.columns.tolist()
-        for index, row in self.df.iterrows():
-            dict_i=row.to_dict()
-            line_i=" & ".join([str(dict_i[col_j]) for col_j in cols])
-            line_i=f"\\hline {line_i} \\\\"
-            print(line_i)
-
-    def print(self):
-        with pd.option_context('display.max_rows', None, 'display.max_columns', None):  
-            print(self.df)
-
+        
 def sig_summary(exp_path,
                 main_clf="RF",
                 clf_types=None,
@@ -307,7 +291,6 @@ def find_best(in_path,nn_only=False):
     print(df_balance)
 
 if __name__ == '__main__':
-#    eval_exp("new_eval/conf/desc.js")
 #    sig_summary("new_exp")
 #    find_best("new_exp")
     eval_exp("new_eval/conf/subset.js")

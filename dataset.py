@@ -175,7 +175,10 @@ def dispatch_metric(metric_type):
         return balanced_accuracy_score
     if(metric_type=="f1-score"):
         return lambda y_pred,y_true:f1_score(y_pred,y_true,
-                                        average='weighted')
+                                             average='weighted')
+    if(metric_type=="f1-binary"):
+        return lambda y_pred,y_true:f1_score(y_pred,y_true,
+                                             average='binary')        
     raise Exception(f"Unknow metric type{ens_type}")
 
 class WeightDict(dict):
@@ -194,6 +197,22 @@ class WeightDict(dict):
     def size_dict(self):
         d={ i:(1.0/w_i) for i,w_i in self.items()}
         return  WeightDict(d).norm()
+
+class DFView(object):
+    def __init__(self,df):
+        self.df=df.round(4)
+    
+    def to_latex(self):
+        cols=self.df.columns.tolist()
+        for index, row in self.df.iterrows():
+            dict_i=row.to_dict()
+            line_i=" & ".join([str(dict_i[col_j]) for col_j in cols])
+            line_i=f"\\hline {line_i} \\\\"
+            print(line_i)
+
+    def print(self):
+        with pd.option_context('display.max_rows', None, 'display.max_columns', None):  
+            print(self.df)
 
 def read_result(in_path:str):
     if(type(in_path)==Result):
@@ -244,6 +263,14 @@ def get_class_weights(y):
             params[i]=0
     return params.norm()
 
+def make_df(helper,iterable,cols):
+    lines=[]
+    for arg_i in iterable:
+        lines.append(helper(arg_i))
+    df=pd.DataFrame.from_records(lines,
+                                columns=cols)
+    return DFView(df)
+    
 if __name__ == '__main__':
     data=read_csv("../uci/lymphography")
     for i in range(data.n_cats()):

@@ -70,9 +70,10 @@ def read_nn(in_path):
 
 def nn_desc_eval(in_path,
                  target_id="cat",
-                 clf_type="SVM",
-                 select="class_ens",
-                 binary=False):
+                 clf_type="RF",
+                 select="separ_class_ens",
+                 binary=False,
+                 latex=True):
     @utils.DirFun({'in_path':0})
     def helper(in_path):
         nn_desc_i=read_nn(in_path)
@@ -97,16 +98,40 @@ def nn_desc_eval(in_path,
             random=(100/data_i.n_cats())
             return np.mean(results.get_metric("acc")),random
     output=helper(in_path)
-    for key_i,value_i in output.items():
-        id_i=key_i.split('/')[-1]
-        if(binary):
-            line_i=[f"{id_i}"]
-            for value_j in value_i:
-                line_i.append(f"{value_j:.4f}")
-            print(",".join(line_i))
-        else:
-            acc_i,base_i=value_i
-            print(f"{id_i}:{acc_i:.4f}:{base_i:.4f}")
+    if(binary):
+        def helper(pair_i):
+            key_i,value_i=pair_i
+            id_i=key_i.split('/')[-1]
+            return [id_i]+value_i
+        cols=["-"]
+    else:
+        def helper(pair_i):
+            key_i,(acc_i,base_i)=pair_i
+            id_i=key_i.split('/')[-1]
+            return [id_i,np.round(base_i,2),100*np.round(acc_i,4)]
+        cols=["id","base","acc"]
+    df=dataset.make_df(helper=helper,
+                       iterable=output.items(),
+                       cols=cols)
+    if(latex):
+        print(df.to_latex())
+    else:
+        df.print()
+#    lines=[]
+#    for key_i,value_i in output.items():
+#        id_i=key_i.split('/')[-1]
+#        if(binary):
+#            line_i=[f"{id_i}"]
+#            for value_j in value_i:
+#                line_i.append(f"{value_j:.4f}")
+#            lines.append(line_i)
+#            print(",".join(line_i))
+#        else:
+#            acc_i,base_i=value_i
+#            lines.append([id_i,acc_i,base_i])
+#    sig_df=pd.DataFrame.from_records(lines,
+#                                         columns=["dataset"]+clf_types)
+#            print(f"{id_i}:{acc_i:.4f}:{base_i:.4f}")
 
 @utils.DirFun({'in_path':0,'out_path':1})
 def nn_desc_plot(in_path,
