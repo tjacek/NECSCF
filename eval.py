@@ -183,7 +183,7 @@ def subset_plot(conf):
         for subset_j in subsets:
             ens_j,subset_j=subset_j[data_i]
             values_j=subset_j.mean_values(conf["metric"])
-            if(conf["mlp"]):
+            if(conf["mlp_norm"]):
                 full_i=conf["mlp"][data_i]
                 values_j*=100
             else:
@@ -191,17 +191,33 @@ def subset_plot(conf):
             values_j/=full_i
             values_j=np.round(values_j, 4)
             value_dict[data_i].append((ens_j,values_j))
-    print(value_dict.keys())
-    for data_i,pairs_i in value_dict.items():
-        n_clf=pairs_i[0][1].shape[0]
-        x_i=np.arange(n_clf)
-        for ens_j,values_j in pairs_i:
-            plt.plot(x_i, values_j, label = ens_j)
-        plt.title(data_i)
-        plt.legend()
-        plt.show()
-        plt.clf()
 
+    if(conf["plot"]):
+        for data_i,pairs_i in value_dict.items():
+            n_clf=pairs_i[0][1].shape[0]
+            x_i=np.arange(n_clf)
+            for ens_j,values_j in pairs_i:
+                plt.plot(x_i, values_j, label = ens_j)
+            plt.title(data_i)
+            plt.legend()
+            plt.show()
+            plt.clf()
+    else:
+        def iterator():
+            for data_i, ens_i in value_dict.items():
+                for ens_j in ens_i:
+                    yield data_i,ens_j
+        def helper(arg_i):
+            data_i,value_i=arg_i
+            ens_i,arr_i=value_i
+            arr_i*=100
+            return [data_i,ens_i]+arr_i.tolist()
+        df=dataset.make_df(helper=helper,
+                           iterable=iterator(),
+                           cols=['data'],
+                           offset="-")
+#        df.print()
+        print(df.to_latex())
 #print(f"{name_i},{ens_j}")
 #print(values_j)
 #    indv_i=subsets_i.indv()
@@ -231,7 +247,7 @@ def df_eval(conf):
                     main_clf=s_conf["main_clf"],
                     clf_types=s_conf['clf_types'],
                     metrics=s_conf['metrics'])
-        
+
 def sig_summary(exp_path,
                 main_clf="RF",
                 clf_types=None,

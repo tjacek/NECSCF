@@ -202,15 +202,23 @@ class DFView(object):
     def __init__(self,df):
         self.df=df.round(4)
     
-    def to_latex(self):
-        cols=self.df.columns.tolist()
-        for index, row in self.df.iterrows():
+    def to_latex(self,dec=2):
+        def format(value_i):
+            if(type(value_i)==str):
+                return value_i
+            else:
+                return str(np.round(value_i,dec))
+
+        df=self.df.round(dec)
+        cols=df.columns.tolist()
+        for index, row in df.iterrows():
             dict_i=row.to_dict()
-            line_i=" & ".join([str(dict_i[col_j]) for col_j in cols])
+            line_i=" & ".join([format(dict_i[col_j]) 
+                            for col_j in cols])
             line_i=f"\\hline {line_i} \\\\"
             print(line_i)
 
-    def print(self):
+    def print(self,dec=4):
         with pd.option_context('display.max_rows', None, 'display.max_columns', None):  
             print(self.df)
 
@@ -263,14 +271,23 @@ def get_class_weights(y):
             params[i]=0
     return params.norm()
 
-def make_df(helper,iterable,cols):
+def make_df(helper,
+            iterable,
+            cols,
+            offset=None):
     lines=[]
     for arg_i in iterable:
         lines.append(helper(arg_i))
+    if(offset):
+        line_len=max([len(line_i) for line_i in lines])
+        for line_i in lines:
+            while(len(line_i)<line_len):
+                line_i.append(offset)
+        cols+=[str(i)for i in range(line_len-1)]
     df=pd.DataFrame.from_records(lines,
                                 columns=cols)
     return DFView(df)
-    
+
 if __name__ == '__main__':
     data=read_csv("../uci/lymphography")
     for i in range(data.n_cats()):
