@@ -2,7 +2,7 @@ import numpy as np
 import keras
 import tensorflow as tf
 from sklearn.neighbors import BallTree
-import deep
+import dataset,deep
 
 class PurityLoss(object):
     def __init__(self,multi=True):

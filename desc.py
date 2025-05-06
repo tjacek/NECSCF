@@ -69,9 +69,9 @@ def read_nn(in_path):
     return NNDesc(ids,np.array(desc),targets,name_dict)
 
 def nn_desc_eval(in_path,
-                 target_id="cat",
+                 target_id="weights",
                  clf_type="RF",
-                 select="class_ens",
+                 select=None,
                  binary=False,
                  latex=False):
     @utils.DirFun({'in_path':0})
@@ -258,8 +258,8 @@ def z_score(values):
     return values.tolist()
 
 if __name__ == '__main__':
-#    nn_desc_plot("new_eval/purity","separ")
-    nn_desc_eval("new_eval/purity")
+#    nn_desc_eval("new_eval/purity")
+    knn_purity("../uci",k=10)
 #    history_epoch("new_exp",
 #                  ens_type="class_ens",
 #                  out_path="new_eval/n_epochs/class_ens")
