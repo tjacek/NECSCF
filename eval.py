@@ -214,9 +214,11 @@ def subset_plot(conf):
             return [data_i,ens_i]+arr_i.tolist()
         df=dataset.make_df(helper=helper,
                            iterable=iterator(),
-                           cols=['data'],
+                           cols=['data','ens'],
                            offset="-")
-#        df.print()
+        df.clean("ens")
+        cols=df.df.columns[:8]
+        df.df=df.df[cols]
         print(df.to_latex())
 #print(f"{name_i},{ens_j}")
 #print(values_j)

@@ -202,6 +202,9 @@ class DFView(object):
     def __init__(self,df):
         self.df=df.round(4)
     
+    def clean(self,col):
+        self.df[col]=self.df[col].apply(lambda x:x.replace("_","\\_"))
+
     def to_latex(self,dec=2):
         def format(value_i):
             if(type(value_i)==str):
@@ -283,7 +286,7 @@ def make_df(helper,
         for line_i in lines:
             while(len(line_i)<line_len):
                 line_i.append(offset)
-        cols+=[str(i)for i in range(line_len-1)]
+        cols+=[str(i)for i in range(line_len-len(cols))]
     df=pd.DataFrame.from_records(lines,
                                 columns=cols)
     return DFView(df)
