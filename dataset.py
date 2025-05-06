@@ -205,14 +205,16 @@ class DFView(object):
     def clean(self,col):
         self.df[col]=self.df[col].apply(lambda x:x.replace("_","\\_"))
 
-    def to_latex(self,dec=2):
+    def to_latex(self,dec=2, no_empty=None):
+        if(no_empty):
+            indexes=self.df[str(no_empty)]!='-'
+            self.df=self.df[indexes]
+        df=self.df.round(dec)
         def format(value_i):
             if(type(value_i)==str):
                 return value_i
             else:
                 return str(np.round(value_i,dec))
-
-        df=self.df.round(dec)
         cols=df.columns.tolist()
         for index, row in df.iterrows():
             dict_i=row.to_dict()

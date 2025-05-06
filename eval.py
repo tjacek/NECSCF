@@ -217,9 +217,8 @@ def subset_plot(conf):
                            cols=['data','ens'],
                            offset="-")
         df.clean("ens")
-        cols=df.df.columns[:8]
-        df.df=df.df[cols]
-        print(df.to_latex())
+
+        print(df.to_latex(no_empty=6))
 #print(f"{name_i},{ens_j}")
 #print(values_j)
 #    indv_i=subsets_i.indv()
