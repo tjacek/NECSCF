@@ -191,7 +191,17 @@ def subset_plot(conf):
             values_j/=full_i
             values_j=np.round(values_j, 4)
             value_dict[data_i].append((ens_j,values_j))
-
+    if(conf["var"]):
+        def helper(pair_i):
+            data_i,ens_variants_i=pair_i
+            line_i=[data_i]
+            for _,value_j in ens_variants_i:
+                line_i.append(np.std(value_j))
+            return line_i
+        df=dataset.make_df(helper=helper,
+                           iterable=value_dict.items(),
+                           cols=['data']+conf["ens_types"])
+        df.print()
     if(conf["plot"]):
         for data_i,pairs_i in value_dict.items():
             n_clf=pairs_i[0][1].shape[0]
@@ -217,8 +227,7 @@ def subset_plot(conf):
                            cols=['data','ens'],
                            offset="-")
         df.clean("ens")
-
-        print(df.to_latex(no_empty=6))
+        df.print()
 #print(f"{name_i},{ens_j}")
 #print(values_j)
 #    indv_i=subsets_i.indv()
