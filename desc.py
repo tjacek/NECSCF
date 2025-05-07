@@ -4,6 +4,7 @@ from sklearn import svm
 from sklearn.decomposition import PCA
 from sklearn import manifold
 import matplotlib.pyplot as plt
+import pandas as pd
 import base,ens_depen,dataset,utils
 
 class NNDesc(object):
@@ -69,7 +70,7 @@ def read_nn(in_path):
     return NNDesc(ids,np.array(desc),targets,name_dict)
 
 def nn_desc_eval(in_path,
-                 target_id="weights",
+                 target_id="iter",
                  clf_type="RF",
                  select=None,
                  binary=False,
@@ -183,6 +184,29 @@ def make_color_map(series):
         return plt.cm.tab20(cat2col[int(i)])
     return color_helper
 
+def knn_purity(in_path,k=10):
+    helper=utils.DirFun({"in_path":0})(ens_depen.purity_hist)
+    output_dict=helper(in_path,k)
+    for name_i,value_i in output_dict.items():
+        value_i=np.round(value_i,4)
+        print(name_i)
+        print(value_i)
+
+class LabeledDataset(object):
+    def __init__(self,X,y,labels):
+        self.X=X
+        self.y=y
+        self.labels=labels
+
+def hybrid_method(in_path):    
+    df=pd.read_csv(in_path)
+    labels=df['dataset'].tolist()
+    target=df['target']
+    df=df.drop('dataset', axis=1)
+    df=df.drop('target', axis=1)
+    X=df.to_numpy()
+    return LabeledDataset(X,y,labels)
+
 def history_epoch(exp_path,
                   ens_type="separ_class_ens",
                   out_path=None):
@@ -209,14 +233,6 @@ def history_epoch(exp_path,
     if(out_path):
         utils.save_json(output_dict,out_path)
     print(output_dict)
-
-def knn_purity(in_path,k=10):
-    helper=utils.DirFun({"in_path":0})(ens_depen.purity_hist)
-    output_dict=helper(in_path,k)
-    for name_i,value_i in output_dict.items():
-        value_i=np.round(value_i,4)
-        print(name_i)
-        print(value_i)
 
 def history_acc(exp_path,out_path=None):
     @utils.DirFun({"in_path":0})
@@ -259,7 +275,8 @@ def z_score(values):
 
 if __name__ == '__main__':
 #    nn_desc_eval("new_eval/purity")
-    knn_purity("../uci",k=10)
+#    knn_purity("../uci",k=10)
+    hybrid_method("new_eval/static.csv")
 #    history_epoch("new_exp",
 #                  ens_type="class_ens",
 #                  out_path="new_eval/n_epochs/class_ens")
