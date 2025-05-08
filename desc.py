@@ -5,6 +5,7 @@ from sklearn.decomposition import PCA
 from sklearn import manifold
 import matplotlib.pyplot as plt
 import pandas as pd
+from sklearn.tree import DecisionTreeClassifier
 import base,ens_depen,dataset,utils
 
 class NNDesc(object):
@@ -198,14 +199,50 @@ class LabeledDataset(object):
         self.y=y
         self.labels=labels
 
-def hybrid_method(in_path):    
+    def __len__(self):
+        return len(self.y)
+
+    def one_out(self,i):
+        X_out=np.delete(self.X,i,axis=0)
+        y_out=np.delete(self.y,i)
+        return X_out,y_out
+
+    def get_example(self,i):
+        return np.expand_dims(self.X[i],0)
+
+def read_labeled(in_path):
     df=pd.read_csv(in_path)
     labels=df['dataset'].tolist()
-    target=df['target']
+    target=df['target'].tolist()
     df=df.drop('dataset', axis=1)
     df=df.drop('target', axis=1)
-    X=df.to_numpy()
-    return LabeledDataset(X,y,labels)
+    return LabeledDataset(X=df.to_numpy(),
+                          y=target,
+                          labels=labels)    
+
+def hybrid_method(in_path):    
+    data=read_labeled(in_path)
+    y_pred=[]
+    for i in range(len(data)):
+        clf_i = DecisionTreeClassifier(criterion="entropy",
+                                 max_depth=None)
+        X_i,y_i=data.one_out(i)
+        clf_i.fit(X_i,y_i)
+        X_test=data.get_example(i)
+        
+        y_pred.append(clf_i.predict(X_test)[0])
+    hybrid=["RF","RF","separ_purity_ens"]
+    def helper(pair_i):
+        i,label_i=pair_i
+        pred_i=y_pred[i]
+        return [label_i,data.y[i],pred_i,hybrid[pred_i]]   
+    df=dataset.make_df(helper=helper,
+                       iterable=enumerate(data.labels),
+                       cols=['data','target','pred','hybrid'])
+    df.print()
+#    for i,label_i in enumerate(data.labels):
+#        pred_i=y_pred[i]
+#        print(f"{label_i},{pred_i},{hybrid[pred_i]}")
 
 def history_epoch(exp_path,
                   ens_type="separ_class_ens",
