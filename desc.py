@@ -239,10 +239,8 @@ def hybrid_method(in_path):
     df=dataset.make_df(helper=helper,
                        iterable=enumerate(data.labels),
                        cols=['data','target','pred','hybrid'])
-    df.print()
-#    for i,label_i in enumerate(data.labels):
-#        pred_i=y_pred[i]
-#        print(f"{label_i},{pred_i},{hybrid[pred_i]}")
+    df.clean("hybrid")
+    print(df.to_latex())
 
 def history_epoch(exp_path,
                   ens_type="separ_class_ens",

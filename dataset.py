@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-#from sklearn.decomposition import PCA
 from sklearn import preprocessing
 from sklearn.metrics import accuracy_score,f1_score,balanced_accuracy_score
 from sklearn.metrics import classification_report
@@ -216,16 +215,25 @@ class DFView(object):
             else:
                 return str(np.round(value_i,dec))
         cols=df.columns.tolist()
+        header="|".join(['r' for _ in cols])
+        lines=["\\begin{tabular}{|{"+header+"}|}",latex_line(cols)]
         for index, row in df.iterrows():
             dict_i=row.to_dict()
-            line_i=" & ".join([format(dict_i[col_j]) 
-                            for col_j in cols])
-            line_i=f"\\hline {line_i} \\\\"
-            print(line_i)
+            line_i=latex_line([format(dict_i[col_j]) 
+                                for col_j in cols])
+            lines.append(line_i)
+        lines.append("\\hline\n")
+        text="\n".join(lines)
+        text="\\begin{table}[ht]\n"+ text +"\\end{tabular}\n\\end{table}"
+        print(text)
 
     def print(self,dec=4):
         with pd.option_context('display.max_rows', None, 'display.max_columns', None):  
             print(self.df)
+
+def latex_line(raw_list):
+    line_i=" & ".join(raw_list)
+    return f"\\hline {line_i} \\\\"
 
 def read_result(in_path:str):
     if(type(in_path)==Result):
