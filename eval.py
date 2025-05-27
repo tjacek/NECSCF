@@ -252,6 +252,14 @@ def eval_summary(exp_path,conf):
         df.group(conf['sort'])
     else:
         df.print()
+    def helper(name):
+        if(name=='deep'):
+            return "MLP"
+        else:
+            return name    
+    df.df['clf']=df.df['clf'].apply(helper)
+    data_dict= df.as_dict()
+    print(data_dict)
     return df
 
 if __name__ == '__main__':

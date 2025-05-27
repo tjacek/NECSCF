@@ -237,7 +237,16 @@ class DFView(object):
             df=self.df.sort_values(by=sort)
             print(df.round(4))
             return df['dataset'].tolist()
-        return grouped.apply(helper)    
+        return grouped.apply(helper)
+
+    def as_dict(self):
+        grouped=self.df.groupby(by='dataset') 
+        def helper(df_i):
+            clf_i=df_i['clf'].tolist()
+            acc_i=df_i['acc'].tolist()
+            dict_i= dict(list(zip(clf_i,acc_i)))
+            return dict_i
+        return grouped.apply(helper).to_dict()
 
 def latex_line(raw_list):
     line_i=" & ".join(raw_list)
