@@ -231,6 +231,14 @@ class DFView(object):
         with pd.option_context('display.max_rows', None, 'display.max_columns', None):  
             print(self.df)
 
+    def group(self,sort):
+        grouped=self.df.groupby(by='dataset')
+        def helper(df):
+            df=self.df.sort_values(by=sort)
+            print(df.round(4))
+            return df['dataset'].tolist()
+        return grouped.apply(helper)    
+
 def latex_line(raw_list):
     line_i=" & ".join(raw_list)
     return f"\\hline {line_i} \\\\"

@@ -163,20 +163,13 @@ def subset_plot(conf):
                            offset="-")
         df.clean("ens")
         df.print()
-#print(f"{name_i},{ens_j}")
-#print(values_j)
-#    indv_i=subsets_i.indv()
-#    print(f"{np.mean(indv_i):.4f}:{np.std(indv_i):.4f}")
 
 def df_eval(conf):
     if('summary' in conf):
         s_conf=conf['summary']
         if(not 'selector' in s_conf):
             s_conf['selector']=None
-        pred.summary(exp_path=conf['exp_path'],
-                     selector=s_conf['selector'],
-                     metrics=s_conf['metrics'],
-                     sort=s_conf['sort'])
+        eval_summary(conf['exp_path'],s_conf)
     if('sig_pairs' in conf):
         s_conf=conf['sig_pairs']
         for pair_i in s_conf['pairs']:
@@ -250,6 +243,16 @@ def find_best(in_path,nn_only=False):
     id_balance=df_group=df.groupby('data')['balance'].idxmax()
     df_balance=df.loc[id_balance,]
     print(df_balance)
+
+def eval_summary(exp_path,conf):
+    df=pred.summary(exp_path=exp_path, #conf['exp_path'],
+                     selector=conf['selector'],
+                     metrics=conf['metrics'])
+    if(conf['sort']):
+        df.group(conf['sort'])
+    else:
+        df.print()
+    return df
 
 if __name__ == '__main__':
 #    sig_summary("new_exp")
