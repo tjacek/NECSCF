@@ -262,26 +262,7 @@ def eval_summary(exp_path,conf):
     data=list(data_dict.keys())[:7]
     clf_types=df.df['clf'].unique()
     step=len(clf_types)
-    fig, ax = plt.subplots()
-    colors=['r','b','g','y','k','m']
-    for i,data_i in enumerate(data):
-        dict_i=data_dict[data_i]
-        for j,clf_j in enumerate(clf_types):
-            value_j=dict_i[clf_j]
-            plt.bar(i*step+j,value_j, 0.4, 
-                label = clf_types[j], 
-                color= colors[j]) 
-    handles, labels = ax.get_legend_handles_labels()
-    handle_list, label_list = [], []
-    for handle, label in zip(handles, labels):
-        if label not in label_list:
-            handle_list.append(handle)
-            label_list.append(label)
-    plt.legend(handle_list, label_list)
-    plt.xticks([i*step for i,_ in enumerate(data)], data,rotation='vertical')
-    plt.xlabel('Accuracy') 
-    plt.ylabel('Dataset') 
-    plt.show()
+    plot.bar_plot(data_dict,data,clf_types,step)
     return df
 
 if __name__ == '__main__':
