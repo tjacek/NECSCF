@@ -1,3 +1,4 @@
+import numpy as np
 import matplotlib.pyplot as plt
 import scipy.stats
 
@@ -73,10 +74,12 @@ def bar_plot(data_dict,
     fig, ax = plt.subplots()
     if(colors is None):
         colors=['r','b','g','y','k','m']
+    all_values=[]
     for i,data_i in enumerate(data):
         dict_i=data_dict[data_i]
         for j,clf_j in enumerate(clf_types):
             value_j=dict_i[clf_j]
+            all_values.append(value_j)
             plt.bar(i*step+j,value_j, 0.4, 
                 label = clf_types[j], 
                 color= colors[j]) 
@@ -87,6 +90,7 @@ def bar_plot(data_dict,
             handle_list.append(handle)
             label_list.append(label)
     plt.legend(handle_list, label_list)
+    plt.ylim(np.amin(all_values),1.0)
     plt.xticks([i*step for i,_ in enumerate(data)], data,rotation='vertical')
     plt.xlabel('Accuracy') 
     plt.ylabel('Dataset') 
