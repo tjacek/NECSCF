@@ -20,6 +20,8 @@ def eval_exp(conf):
         xy_plot(conf)
     if(conf['type']=="subsets"):
         subset_plot(conf)
+    if(conf["type"]=="bar"):
+        bar_plot(conf)
     if(conf['type']=='df'):
         df_eval(conf)
 
@@ -265,7 +267,13 @@ def eval_summary(exp_path,conf):
     plot.bar_plot(data_dict,data,clf_types,step)
     return df
 
+def bar_plot(conf):
+    df=pred.summary(exp_path=conf['exp_path'],
+                    selector=conf['selector'],
+                    metrics=[conf['metrics']])
+    print(df)
+
 if __name__ == '__main__':
 #    sig_summary("new_exp")
 #    find_best("new_exp")
-    eval_exp("new_eval/conf/df.js")
+    eval_exp("new_eval/conf/bar.js")
