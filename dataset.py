@@ -247,6 +247,14 @@ class DFView(object):
             dict_i= dict(list(zip(clf_i,acc_i)))
             return dict_i
         return grouped.apply(helper).to_dict()
+    
+    def rename(self,col="clf",old="deep",new="MLP"):
+        def helper(name):
+            if(name==old):
+                return new
+            else:
+                return name    
+        self.df[col]=self.df[col].apply(helper)
 
 def latex_line(raw_list):
     line_i=" & ".join(raw_list)

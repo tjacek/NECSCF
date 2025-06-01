@@ -271,7 +271,13 @@ def bar_plot(conf):
     df=pred.summary(exp_path=conf['exp_path'],
                     selector=conf['selector'],
                     metrics=[conf['metrics']])
-    print(df)
+    df.rename(col="clf",old="deep",new="MLP")
+    df.print()
+    data_dict= df.as_dict()
+    data=conf['data']
+    clf_types=df.df['clf'].unique()
+    step=len(clf_types)
+    plot.bar_plot(data_dict,data,clf_types,step)
 
 if __name__ == '__main__':
 #    sig_summary("new_exp")
