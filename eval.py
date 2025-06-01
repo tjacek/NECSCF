@@ -255,10 +255,12 @@ def find_best(in_path,nn_only=False):
 def bar_plot(conf):
     df=pred.summary(exp_path=conf['exp_path'],
                     selector=conf['selector'],
-                    metrics=[conf['metrics']])
+                    metrics=[conf['metrics']],
+                    std=conf['std'])
     df.rename(col="clf",old="deep",new="MLP")
     df.print()
-    data_dict= df.as_dict()
+    data_dict= df.as_dict(x_col='clf',y_col='acc')
+    raise Exception(data_dict)
     data=conf['data']
     clf_types=df.df['clf'].unique()
     step=len(clf_types)

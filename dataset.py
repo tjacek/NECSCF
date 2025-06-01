@@ -239,11 +239,11 @@ class DFView(object):
             return df['dataset'].tolist()
         return grouped.apply(helper)
 
-    def as_dict(self):
+    def as_dict(self,x_col='clf',y_col='acc'):
         grouped=self.df.groupby(by='dataset') 
         def helper(df_i):
-            clf_i=df_i['clf'].tolist()
-            acc_i=df_i['acc'].tolist()
+            clf_i=df_i[x_col].tolist()
+            acc_i=df_i[y_col].tolist()
             dict_i= dict(list(zip(clf_i,acc_i)))
             return dict_i
         return grouped.apply(helper).to_dict()

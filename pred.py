@@ -84,7 +84,8 @@ def get_result(path_i):
 def summary(exp_path,
             selector=None,
             metrics=None,
-            sort=False):
+            sort=False,
+            std=False):
     if(selector is None):
         selector=basic_selector
     if(type(selector)==list):
@@ -109,21 +110,16 @@ def summary(exp_path,
             for metric_k in metrics:
                 value_j= result_j.get_metric(metric_k)
                 line_j.append(np.mean(value_j))
+                if(std):
+                    line_j.append(np.std(value_j))
             lines.append(line_j)
-    df=pd.DataFrame.from_records(lines,
-                                  columns=["dataset","clf"]+metrics)
-    
-    if(sort):
-        grouped=df.groupby(by='dataset')
-        def helper(df):
-            df=df.sort_values(by=sort)
-            print(df.round(4))
-            return df['dataset'].tolist()
-        out=grouped.apply(helper)
-    else:
-        with pd.option_context('display.max_rows', None, 'display.max_columns', None):  
-            print(df.round(4))
-    return df
+    columns=["dataset","clf"]
+    for metric_i in metrics:
+        columns.append(metric_i)
+        if(std):
+            columns.append(f"{metric_i}_std")
+    df=pd.DataFrame.from_records(lines,columns=columns)
+    return dataset.DFView(df)
 
 def basic_selector(dir_id):
     return  not "splits" in dir_id
@@ -134,6 +130,8 @@ class EnsSelector(object):
 
     def __call__(self,dir_id):
         if(not basic_selector(dir_id)):
+            return False
+        if("NECSCF" in dir_id):
             return False
         for word_i in self.words:
             if(word_i in dir_id):
