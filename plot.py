@@ -90,8 +90,15 @@ def bar_plot(data_dict,
             handle_list.append(handle)
             label_list.append(label)
     plt.legend(handle_list, label_list)
-    plt.ylim(np.amin(all_values),1.0)
+    plt.ylim(*bar_limit(all_values))
     plt.xticks([i*step for i,_ in enumerate(data)], data,rotation='vertical')
-    plt.xlabel('Accuracy') 
-    plt.ylabel('Dataset') 
+#    plt.xlabel('Accuracy') 
+    plt.ylabel('Accuracy') 
     plt.show()
+
+def bar_limit(all_values):
+    y_min=0.95*np.amin(all_values)
+    y_max=1.1*np.amax(all_values)
+    if(y_max>1.0):
+        return y_min,1.0
+    return y_min,y_max

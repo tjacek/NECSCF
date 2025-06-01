@@ -171,7 +171,13 @@ def df_eval(conf):
         s_conf=conf['summary']
         if(not 'selector' in s_conf):
             s_conf['selector']=None
-        eval_summary(conf['exp_path'],s_conf)
+        df=pred.summary(exp_path=conf['exp_path'],
+                        selector=s_conf['selector'],
+                        metrics=s_conf['metrics'])
+        if(s_conf['sort']):
+            df.group(s_conf['sort'])
+        else:
+            df.print()
     if('sig_pairs' in conf):
         s_conf=conf['sig_pairs']
         for pair_i in s_conf['pairs']:
@@ -245,27 +251,6 @@ def find_best(in_path,nn_only=False):
     id_balance=df_group=df.groupby('data')['balance'].idxmax()
     df_balance=df.loc[id_balance,]
     print(df_balance)
-
-def eval_summary(exp_path,conf):
-    df=pred.summary(exp_path=exp_path, #conf['exp_path'],
-                     selector=conf['selector'],
-                     metrics=conf['metrics'])
-    if(conf['sort']):
-        df.group(conf['sort'])
-    else:
-        df.print()
-    def helper(name):
-        if(name=='deep'):
-            return "MLP"
-        else:
-            return name    
-    df.df['clf']=df.df['clf'].apply(helper)
-    data_dict= df.as_dict()
-    data=list(data_dict.keys())[:7]
-    clf_types=df.df['clf'].unique()
-    step=len(clf_types)
-    plot.bar_plot(data_dict,data,clf_types,step)
-    return df
 
 def bar_plot(conf):
     df=pred.summary(exp_path=conf['exp_path'],
