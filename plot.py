@@ -102,3 +102,24 @@ def bar_limit(all_values):
     if(y_max>1.0):
         return y_min,1.0
     return y_min,y_max
+
+def box_plot(values:list,
+             names:list,
+             clf_types:list,
+             y_label='Accuracy'):
+    color_types=['blue','tomato','lime',
+               'skyblue','peachpuff', 'orange',]
+    colors=[clf_types[i  % len(color_types) ] 
+              for i,_ in enumerate(color_types)]
+    unique_clf=list(set(clf_types))
+    step=len(unique_clf)
+    fig, ax = plt.subplots()
+    bplot = ax.boxplot(values,patch_artist=True)
+    for i,patch_i in enumerate(bplot['boxes']):
+        color_i=color_types[i%len(color_types)]
+        patch_i.set_facecolor(color_i)
+    plt.ylabel(y_label)
+    offset=int(step/2)
+    xticks=[offset + (i*step) for i,_ in enumerate(names)]
+    plt.xticks(xticks, names,rotation='vertical')
+    plt.show()

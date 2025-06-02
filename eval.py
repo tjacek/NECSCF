@@ -275,7 +275,6 @@ def bar_plot(conf):
         plot.bar_plot(acc_dict,data,clf_types,step)
 
 def box_plot(conf):
-    print(conf)
     selector=pred.EnsSelector(words=conf['selector'],
                              necscf=conf['necscf'])
     @utils.EnsembleFun(in_path=('in_path',0),selector=selector)
@@ -284,7 +283,15 @@ def box_plot(conf):
         return result.get_metric(conf['metric'])
     output=helper(conf['exp_path'])
     output=utils.rename_output(output,{"deep":"MLP"})
-    print(output)
+    data=set(conf['data'])
+    values,clf_types=[],[]
+    for data_i,clf_i,value_i in output:
+        if( data_i in data):
+            values.append(value_i)
+            clf_types.append(clf_i)
+    plot.box_plot(values=values,
+                  names=list(data),
+                  clf_types=clf_types)
 
 if __name__ == '__main__':
 #    sig_summary("new_exp")
