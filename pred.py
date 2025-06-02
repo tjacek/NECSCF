@@ -125,14 +125,15 @@ def basic_selector(dir_id):
     return  not "splits" in dir_id
 
 class EnsSelector(object):
-    def __init__(self,words):
+    def __init__(self,words,necscf=False):
         self.words=words
+        self.necscf=necscf
 
     def __call__(self,dir_id):
         if(not basic_selector(dir_id)):
             return False
         if("NECSCF" in dir_id):
-            return False
+            return self.necscf
         for word_i in self.words:
             if(word_i in dir_id):
                 return True
