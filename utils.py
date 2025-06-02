@@ -162,6 +162,14 @@ class MultiDirFun(object):
                 p_i.join()
         return decor_fun
  
+def rename_output(output,rename_dict):
+    new_output=[]
+    for data_i,ens_i,value_i in output:
+        if(ens_i in rename_dict):
+            ens_i=rename_dict[ens_i]
+        new_output.append((data_i,ens_i,value_i))
+    return new_output
+
 def elapsed_time(fun):
     @wraps(fun)
     def helper(*args, **kwargs):

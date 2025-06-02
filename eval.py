@@ -22,6 +22,8 @@ def eval_exp(conf):
         subset_plot(conf)
     if(conf["type"]=="bar"):
         bar_plot(conf)
+    if(conf["type"]=="box"):
+        box_plot(conf)
     if(conf['type']=='df'):
         df_eval(conf)
 
@@ -259,14 +261,32 @@ def bar_plot(conf):
                     std=conf['std'])
     df.rename(col="clf",old="deep",new="MLP")
     df.print()
-    data_dict= df.as_dict(x_col='clf',y_col='acc')
-    raise Exception(data_dict)
+    acc_dict= df.as_dict(x_col='clf',y_col='acc')
     data=conf['data']
     clf_types=df.df['clf'].unique()
     step=len(clf_types)
-    plot.bar_plot(data_dict,data,clf_types,step)
+    if(conf['std']):
+        std_dict= df.as_dict(x_col='clf',y_col='acc_std')
+        plot.error_plot(data_dict=acc_dict,
+                        err_dict=std_dict,
+                        keys=data,
+                        clf_types=clf_types)
+    else:
+        plot.bar_plot(acc_dict,data,clf_types,step)
+
+def box_plot(conf):
+    print(conf)
+    selector=pred.EnsSelector(words=conf['selector'],
+                             necscf=conf['necscf'])
+    @utils.EnsembleFun(in_path=('in_path',0),selector=selector)
+    def helper(in_path):
+        _,result=pred.get_result(in_path)
+        return result.get_metric(conf['metric'])
+    output=helper(conf['exp_path'])
+    output=utils.rename_output(output,{"deep":"MLP"})
+    print(output)
 
 if __name__ == '__main__':
 #    sig_summary("new_exp")
 #    find_best("new_exp")
-    eval_exp("new_eval/conf/bar.js")
+    eval_exp("new_eval/conf/box.js")
