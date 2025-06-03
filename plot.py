@@ -72,8 +72,7 @@ def bar_plot(data_dict,
              step,
              colors=None):
     fig, ax = plt.subplots()
-    if(colors is None):
-        colors=['r','b','g','y','k','m']
+    color_map=SimpleColorMap(colors)        
     all_values=[]
     for i,data_i in enumerate(data):
         dict_i=data_dict[data_i]
@@ -82,17 +81,11 @@ def bar_plot(data_dict,
             all_values.append(value_j)
             plt.bar(i*step+j,value_j, 0.4, 
                 label = clf_types[j], 
-                color= colors[j]) 
-    handles, labels = ax.get_legend_handles_labels()
-    handle_list, label_list = [], []
-    for handle, label in zip(handles, labels):
-        if label not in label_list:
-            handle_list.append(handle)
-            label_list.append(label)
-    plt.legend(handle_list, label_list)
+                color= color_map(j))    
+    legend_handles = color_map.get_handlers()
+    plt.legend(legend_handles,clf_types)
     plt.ylim(*bar_limit(all_values))
     plt.xticks([i*step for i,_ in enumerate(data)], data,rotation='vertical')
-#    plt.xlabel('Accuracy') 
     plt.ylabel('Accuracy') 
     plt.show()
 
@@ -106,11 +99,9 @@ def bar_limit(all_values):
 def box_plot(values:list,
              names:list,
              clf_types:list,
-             y_label='Accuracy'):
-    color_types=['blue','tomato','lime',
-               'skyblue','peachpuff', 'orange',]
-    colors=[clf_types[i  % len(color_types) ] 
-              for i,_ in enumerate(color_types)]
+             y_label='Accuracy',
+             colors=None):
+    color_map=SimpleColorMap(colors)        
     unique_clf=list(set(clf_types))
     step=len(unique_clf)
     value_dict={clf_i:[] for clf_i in unique_clf}
@@ -122,11 +113,25 @@ def box_plot(values:list,
         box_i=ax.boxplot(value_dict[clf_i],
                          positions=positions_i,
                          patch_artist=True)
-        plt.setp(box_i['boxes'], color=color_types[i%len(color_types)])
-    legend_handles = [plt.Rectangle((0,0),1,1, color=color) for color in color_types]
+        plt.setp(box_i['boxes'], color=color_map(i))
+    legend_handles = color_map.get_handlers()
     plt.legend(legend_handles,unique_clf)
     plt.ylabel(y_label)
     offset=int(step/2)
     xticks=[offset + (i*step) for i,_ in enumerate(names)]
     plt.xticks(xticks, names,rotation='vertical')
     plt.show()
+
+class SimpleColorMap(object):
+    def __init__(self,colors):
+        if(colors is None):
+            colors=['blue','tomato','lime',
+                    'skyblue','peachpuff', 'orange']
+        self.colors=colors
+
+    def __call__(self,i):
+        return self.colors[i % len(self.colors)]
+
+    def get_handlers(self):
+        return [plt.Rectangle((0,0),1,1, color=color_i) 
+                    for color_i in self.colors]

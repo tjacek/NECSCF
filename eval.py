@@ -257,22 +257,14 @@ def find_best(in_path,nn_only=False):
 def bar_plot(conf):
     df=pred.summary(exp_path=conf['exp_path'],
                     selector=conf['selector'],
-                    metrics=[conf['metrics']],
-                    std=conf['std'])
+                    metrics=[conf['metrics']])
     df.rename(col="clf",old="deep",new="MLP")
     df.print()
     acc_dict= df.as_dict(x_col='clf',y_col='acc')
     data=conf['data']
     clf_types=df.df['clf'].unique()
     step=len(clf_types)
-    if(conf['std']):
-        std_dict= df.as_dict(x_col='clf',y_col='acc_std')
-        plot.error_plot(data_dict=acc_dict,
-                        err_dict=std_dict,
-                        keys=data,
-                        clf_types=clf_types)
-    else:
-        plot.bar_plot(acc_dict,data,clf_types,step)
+    plot.bar_plot(acc_dict,data,clf_types,step)
 
 def box_plot(conf):
     selector=pred.EnsSelector(words=conf['selector'],
@@ -296,4 +288,4 @@ def box_plot(conf):
 if __name__ == '__main__':
 #    sig_summary("new_exp")
 #    find_best("new_exp")
-    eval_exp("new_eval/conf/box.js")
+    eval_exp("new_eval/conf/bar.js")
