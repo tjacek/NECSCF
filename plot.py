@@ -113,11 +113,18 @@ def box_plot(values:list,
               for i,_ in enumerate(color_types)]
     unique_clf=list(set(clf_types))
     step=len(unique_clf)
+    value_dict={clf_i:[] for clf_i in unique_clf}
+    for i,clf_i in enumerate(clf_types):
+        value_dict[clf_i].append(values[i])
     fig, ax = plt.subplots()
-    bplot = ax.boxplot(values,patch_artist=True)
-    for i,patch_i in enumerate(bplot['boxes']):
-        color_i=color_types[i%len(color_types)]
-        patch_i.set_facecolor(color_i)
+    for i,clf_i in enumerate(unique_clf):
+        positions_i=[j*step+i for j,_ in enumerate(names)]
+        box_i=ax.boxplot(value_dict[clf_i],
+                         positions=positions_i,
+                         patch_artist=True)
+        plt.setp(box_i['boxes'], color=color_types[i%len(color_types)])
+    legend_handles = [plt.Rectangle((0,0),1,1, color=color) for color in color_types]
+    plt.legend(legend_handles,unique_clf)
     plt.ylabel(y_label)
     offset=int(step/2)
     xticks=[offset + (i*step) for i,_ in enumerate(names)]
