@@ -84,42 +84,30 @@ def get_result(path_i):
 def summary(exp_path,
             selector=None,
             metrics=None,
-            sort=False,
-            std=False):
+            sort=False):
+#            std=False):
     if(selector is None):
         selector=basic_selector
     if(type(selector)==list):
         selector=EnsSelector(selector)
     if(metrics is None):
         metrics=['acc','balance']
-    @utils.DirFun({"in_path":0})
+    @utils.EnsembleFun(in_path=('in_path',0),selector=selector)
     def helper(in_path):
-        output_dict=[]
-        for path_i in utils.top_files(in_path):
-            dir_id=path_i.split('/')[-1]
-            if(selector(dir_id)):
-                clf_type,result=get_result(path_i)
-                output_dict.append((clf_type,result))
-        return output_dict
+        _,result=get_result(in_path)
+        return result
     output_dict=helper(exp_path)
-    result_dict=utils.to_id_dir(output_dict,index=-1)
-    lines=[]
-    for name_i,output_i in result_dict.items():
-        for clf_j,result_j in output_i:
-            line_j=[name_i,clf_j]
-            for metric_k in metrics:
-                value_j= result_j.get_metric(metric_k)
-                line_j.append(np.mean(value_j))
-                if(std):
-                    line_j.append(np.std(value_j))
-            lines.append(line_j)
-    columns=["dataset","clf"]
-    for metric_i in metrics:
-        columns.append(metric_i)
-        if(std):
-            columns.append(f"{metric_i}_std")
-    df=pd.DataFrame.from_records(lines,columns=columns)
-    return dataset.DFView(df)
+    def make_line(tuple_i):
+        data_i,clf_i,result_i=tuple_i
+        line_i=[data_i,clf_i]
+        for metric_j in metrics:
+            value_j= result_i.get_metric(metric_j)
+            line_i.append(np.mean(value_j))
+        return line_i
+    df=dataset.make_df(helper=make_line,
+                       iterable=output_dict,
+                       cols=["dataset","clf"]+metrics)
+    return df
 
 def basic_selector(dir_id):
     return  not "splits" in dir_id

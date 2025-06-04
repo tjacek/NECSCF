@@ -312,10 +312,15 @@ def get_class_weights(y):
 def make_df(helper,
             iterable,
             cols,
-            offset=None):
+            offset=None,
+            multi=False):
     lines=[]
-    for arg_i in iterable:
-        lines.append(helper(arg_i))
+    if(multi):
+        for arg_i in iterable:
+            lines+=helper(arg_i)
+    else:
+        for arg_i in iterable:
+            lines.append(helper(arg_i))
     if(offset):
         line_len=max([len(line_i) for line_i in lines])
         for line_i in lines:
