@@ -205,7 +205,23 @@ def sig_summary(exp_path,
                    'separ_class_ens','separ_purity_ens']
     if(metrics is None):
         metrics=['acc','balance']
+    
+    def helper(metric_i):
+        sig_matrix,data=[],None
+        fun=lambda x: np.sign(x['diff'])*int(x['sig'])
+        for j,clf_j in  enumerate(clf_types):
+            df_ij=pred.stat_test(exp_path=exp_path,
+                                 clf_x=main_clf,
+                                 clf_y=clf_j,
+                                 metric_type=metric_i)
+            df_ij['sig_total']=df_ij.apply(fun, axis=1 )
+            sig_matrix.append(df_ij['sig_total'].tolist())
+            if(data is None):
+                data=df_ij['data'].tolist()
+        raise Exception(sig_matrix,data)        
+
     for metric_i in metrics:
+        helper(metric_i)
         hist_i,data=None,None
         for j,clf_j in  enumerate(clf_types):
             df_ij=pred.stat_test(exp_path=exp_path,
@@ -288,4 +304,4 @@ def box_plot(conf):
 if __name__ == '__main__':
 #    sig_summary("new_exp")
 #    find_best("new_exp")
-    eval_exp("new_eval/conf/bar.js")
+    eval_exp("new_eval/conf/df.js")
