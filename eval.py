@@ -205,7 +205,6 @@ def sig_summary(exp_path,
                    'separ_class_ens','separ_purity_ens']
     if(metrics is None):
         metrics=['acc','balance']
-    
     def helper(metric_i):
         sig_matrix,data=[],None
         fun=lambda x: np.sign(x['diff'])*int(x['sig'])
@@ -218,31 +217,16 @@ def sig_summary(exp_path,
             sig_matrix.append(df_ij['sig_total'].tolist())
             if(data is None):
                 data=df_ij['data'].tolist()
-        raise Exception(sig_matrix,data)        
-
+        return np.array(sig_matrix),data        
     for metric_i in metrics:
-        helper(metric_i)
-        hist_i,data=None,None
-        for j,clf_j in  enumerate(clf_types):
-            df_ij=pred.stat_test(exp_path=exp_path,
-                                 clf_x=main_clf,
-                                 clf_y=clf_j,
-                                 metric_type=metric_i)
-            sig_dict_ij=sig_dict(df_ij,verbose=False)
-            if(hist_i is None):
-                data=df_ij['data']
-                hist_i=np.zeros((len(data),len(clf_types)))
-                data={data_k:k  for k,data_k in enumerate(data)}
-            for k,key_k in enumerate(["worse","no_sig",'better']):
-                for data_t in sig_dict_ij[key_k]: 
-                    hist_i[data[data_t]][j]=k-1
-        lines=[]
-        for data_k,k in data.items():
-            lines.append([data_k] +hist_i[k].tolist())
-        sig_df=pd.DataFrame.from_records(lines,
-                                         columns=["dataset"]+clf_types)
-        sig_df=DFView(sig_df)
-        sig_df.print()#.to_latex())
+        sig_matrix_i,data_i=helper(metric_i)
+        def fun_i(tuple_j):
+            j,data_j=tuple_j
+            return [data_j]+sig_matrix_i[:,j].tolist()
+        df_i=dataset.make_df(helper=fun_i,
+                             iterable=enumerate(data_i),
+                             cols=['data']+clf_types)
+        df_i.print()
 
 def sig_dict(df,verbose=True):
     if(type(df)==str):
