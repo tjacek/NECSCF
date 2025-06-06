@@ -194,17 +194,21 @@ def df_eval(conf):
         sig_summary(exp_path=conf['exp_path'],
                     main_clf=s_conf["main_clf"],
                     clf_types=s_conf['clf_types'],
-                    metrics=s_conf['metrics'])
+                    metrics=s_conf['metrics'],
+                    show=s_conf['plot'])
 
 def sig_summary(exp_path,
                 main_clf="RF",
                 clf_types=None,
-                metrics=None):
+                metrics=None,
+                show=False):
     if(clf_types is None):
         clf_types=['deep','class_ens','purity_ens',
                    'separ_class_ens','separ_purity_ens']
     if(metrics is None):
         metrics=['acc','balance']
+    clf_types=[ type_i for type_i in clf_types
+                    if(type_i!=main_clf)]
     def helper(metric_i):
         sig_matrix,data=[],None
         fun=lambda x: np.sign(x['diff'])*int(x['sig'])
@@ -227,20 +231,24 @@ def sig_summary(exp_path,
                              iterable=enumerate(data_i),
                              cols=['data']+clf_types)
         df_i.print()
+        if(show):
+            plot.heatmap(matrix=sig_matrix_i,
+                         x_labels=data_i,
+                         y_labels=clf_types)
 
-def sig_dict(df,verbose=True):
-    if(type(df)==str):
-        df=pred.stat_test(exp_path=df,
-                          clf_x="RF",
-                          clf_y="class_ens",
-                          metric_type="acc")
-    if(verbose):
-        print(df)    
-    sig_dict={'no_sig':df['data'][df['sig']==False].tolist()}
-    sig_df=df[df["sig"]==True]
-    sig_dict['better']=sig_df['data'][ sig_df['diff']<0].tolist()
-    sig_dict['worse']=sig_df['data'][ sig_df['diff']>0].tolist()
-    return sig_dict
+#def sig_dict(df,verbose=True):
+#    if(type(df)==str):
+#        df=pred.stat_test(exp_path=df,
+#                          clf_x="RF",
+#                          clf_y="class_ens",
+#                          metric_type="acc")
+#    if(verbose):
+#        print(df)    
+#    sig_dict={'no_sig':df['data'][df['sig']==False].tolist()}
+#    sig_df=df[df["sig"]==True]
+#    sig_dict['better']=sig_df['data'][ sig_df['diff']<0].tolist()
+#    sig_dict['worse']=sig_df['data'][ sig_df['diff']>0].tolist()
+#    return sig_dict
 
 def find_best(in_path,nn_only=False):
     df=pred.summary(exp_path="new_exp")

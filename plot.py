@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sn
 import scipy.stats
 
 def scatter_plot(points,
@@ -135,3 +136,13 @@ class SimpleColorMap(object):
     def get_handlers(self):
         return [plt.Rectangle((0,0),1,1, color=color_i) 
                     for color_i in self.colors]
+
+def heatmap(matrix,x_labels,y_labels):
+    ax=sn.heatmap(matrix,
+                       cmap="YlGnBu",
+                       annot=True,
+                       annot_kws={"size": 12}, 
+                       fmt='g')
+    ax.set_xticklabels(x_labels)
+    ax.set_yticklabels(y_labels)
+    plt.show()
