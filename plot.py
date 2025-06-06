@@ -137,12 +137,15 @@ class SimpleColorMap(object):
         return [plt.Rectangle((0,0),1,1, color=color_i) 
                     for color_i in self.colors]
 
-def heatmap(matrix,x_labels,y_labels):
+def heatmap(matrix,
+            x_labels,
+            y_labels,
+            title="Statistical significance (RF)"):
     ax=sn.heatmap(matrix,
-                       cmap="YlGnBu",
-                       annot=True,
-                       annot_kws={"size": 12}, 
-                       fmt='g')
-    ax.set_xticklabels(x_labels)
-    ax.set_yticklabels(y_labels)
+                  cmap="RdBu_r",
+                  linewidth=0.5,
+                  cbar=False)
+    ax.set_xticklabels(x_labels,rotation = 90)
+    ax.set_yticklabels(y_labels,rotation = 0)
+    ax.set_title(title)
     plt.show()

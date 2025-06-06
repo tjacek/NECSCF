@@ -232,9 +232,10 @@ def sig_summary(exp_path,
                              cols=['data']+clf_types)
         df_i.print()
         if(show):
-            plot.heatmap(matrix=sig_matrix_i,
-                         x_labels=data_i,
-                         y_labels=clf_types)
+            plot.heatmap(matrix=sig_matrix_i.T,
+                         x_labels=clf_types,
+                         y_labels=data_i,
+                         title=f"Statistical significance ({main_clf})")
 
 #def sig_dict(df,verbose=True):
 #    if(type(df)==str):
