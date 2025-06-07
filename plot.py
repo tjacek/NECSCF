@@ -149,3 +149,29 @@ def heatmap(matrix,
     ax.set_yticklabels(y_labels,rotation = 0)
     ax.set_title(title)
     plt.show()
+
+def subset_plot(value_dict,step=1):
+    ens_types=[ ens_j
+                 for ens_j,_ in list(value_dict.values())[0]]
+    data_step={data_i:(i*len(ens_types)*step) 
+          for i,data_i in enumerate(value_dict) }
+    ens_step={ens_i:(i*step) for i,ens_i in enumerate(ens_types)}
+    plt.figure()
+    min_value,max_value=np.inf,-np.inf
+    for data_i,dict_i in value_dict.items():
+        for ens_j,value_j in dict_i:
+            x_j=data_step[data_i] + ens_step[ens_j]
+            min_value= min(min_value,np.min(value_j))
+            max_value= max(max_value,np.max(value_j))
+
+            print(min_value)
+            for k,value_k in enumerate(value_j):
+                plt.text(x=x_j, 
+                         y=value_k, 
+                         s=k,
+#                         color=labels[i],
+
+                         fontdict={'weight': 'bold', 'size': 9})
+    plt.xlim((0,len(data_step)*len(ens_types)*step+3))
+    plt.ylim((min_value,max_value))
+    plt.show()
