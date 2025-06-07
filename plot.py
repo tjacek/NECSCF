@@ -166,12 +166,12 @@ def subset_plot(value_dict,step=1):
 
             print(min_value)
             for k,value_k in enumerate(value_j):
-                plt.text(x=x_j, 
-                         y=value_k, 
+                plt.text(x=value_k, 
+                         y=x_j, 
                          s=k,
 #                         color=labels[i],
 
                          fontdict={'weight': 'bold', 'size': 9})
-    plt.xlim((0,len(data_step)*len(ens_types)*step+3))
-    plt.ylim((min_value,max_value))
+    plt.ylim((0,len(data_step)*len(ens_types)*step+3))
+    plt.xlim((min_value,max_value))
     plt.show()
