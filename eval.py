@@ -142,16 +142,7 @@ def subset_plot(conf):
                            cols=['data']+conf["ens_types"])
         df.print()
     if(conf["plot"]):
-        plot.subset_plot(value_dict)
-#        for data_i,pairs_i in value_dict.items():
-#            n_clf=pairs_i[0][1].shape[0]
-#            x_i=np.arange(n_clf)
-#            for ens_j,values_j in pairs_i:
-#                plt.plot(x_i, values_j, label = ens_j)
-#            plt.title(data_i)
-#            plt.legend()
-#            plt.show()
-#            plt.clf()
+        plot.subset_plot(value_dict,conf['data'],colors=['b','g','r','y'])
     else:
         def iterator():
             for data_i, ens_i in value_dict.items():
