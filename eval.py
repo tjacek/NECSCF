@@ -225,6 +225,7 @@ def sig_summary(exp_path,
                              cols=['data']+clf_types)
         df_i.print()
         if(show):
+            clf_types=utils.rename(clf_types,old="deep",new='MLP')
             plot.heatmap(matrix=sig_matrix_i.T,
                          x_labels=clf_types,
                          y_labels=data_i,
@@ -282,15 +283,9 @@ def box_plot(conf):
     for data_i,clf_i,value_i in output:
         if( data_i in data):
             value_dict[data_i][clf_i]=value_i
-    def helper(clf_i):
-        if(clf_i=="deep"):
-            return "MLP"
-        return clf_i
-    clf_types=[ helper(clf_i) for clf_i in conf['selector']]
+    clf_types=utils.rename(conf['selector'],old="deep",new='MLP')
     plot.box_plot(value_dict=value_dict,
                   clf_types=clf_types)
 
 if __name__ == '__main__':
-#    sig_summary("new_exp")
-#    find_best("new_exp")
     eval_exp("new_eval/conf/box.js")

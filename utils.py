@@ -225,3 +225,10 @@ def powerset(iterable):
     xs = list(iterable)
     return chain.from_iterable(combinations(xs,n) for n in range(len(xs)+1)
                                                       if(n>0))
+
+def rename(types,old="deep",new='MLP'):
+    def helper(type_i):
+        if(type_i==old):
+            return new
+        return type_i
+    return [helper(type_i) for type_i in types]
