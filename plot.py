@@ -116,11 +116,13 @@ def box_plot(values:list,
                          patch_artist=True)
         plt.setp(box_i['boxes'], color=color_map(i))
     legend_handles = color_map.get_handlers()
-    plt.legend(legend_handles,unique_clf)
+    ax.legend(legend_handles,unique_clf)
     plt.ylabel(y_label)
+#    plt.figure(figsize=(7, 3), tight_layout=True)
     offset=int(step/2)
     xticks=[offset + (i*step) for i,_ in enumerate(names)]
     plt.xticks(xticks, names,rotation='vertical')
+    plt.tight_layout()
     plt.show()
 
 class SimpleColorMap(object):
