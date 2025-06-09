@@ -97,34 +97,30 @@ def bar_limit(all_values):
         return y_min,1.0
     return y_min,y_max
 
-def box_plot(values:list,
-             names:list,
+def box_plot(value_dict,
              clf_types:list,
              y_label='Accuracy',
              colors=None):
     color_map=SimpleColorMap(colors)        
-    unique_clf=list(set(clf_types))
-    unique_clf.sort()
-    step=len(unique_clf)
-    value_dict={clf_i:[] for clf_i in unique_clf}
-    for i,clf_i in enumerate(clf_types):
-        value_dict[clf_i].append(values[i])
+    datasets=list(value_dict.keys())
+    datasets.sort()
+    clf_types.sort()
+    step=len(clf_types)
     fig, ax = plt.subplots()
-    for i,clf_i in enumerate(unique_clf):
-        positions_i=[j*step+i for j,_ in enumerate(names)]
-        box_i=ax.boxplot(value_dict[clf_i],
+    for i,clf_i in enumerate(clf_types):
+        values_i=[value_dict[data_j][clf_i] for data_j in datasets]
+        positions_i=[j*step+i for j,_ in enumerate(datasets)]
+        box_i=ax.boxplot(values_i,
                          positions=positions_i,
                          patch_artist=True)
-#        for median in box_i['medians']:
-#            median.set_color('black')
         plt.setp(box_i['medians'], color="black")
         plt.setp(box_i['boxes'], color=color_map(i))
     legend_handles = color_map.get_handlers()
-    ax.legend(legend_handles,unique_clf)
+    ax.legend(legend_handles,clf_types)
     plt.ylabel(y_label)
     offset=int(step/2)
-    xticks=[offset + (i*step) for i,_ in enumerate(names)]
-    plt.xticks(xticks, names,rotation='vertical')
+    xticks=[offset + (i*step) for i,_ in enumerate(datasets)]
+    plt.xticks(xticks, datasets,rotation='vertical')
     plt.tight_layout()
     plt.show()
 

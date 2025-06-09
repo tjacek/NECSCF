@@ -4,6 +4,7 @@ from tqdm import tqdm
 import pandas as pd
 import matplotlib.pyplot as plt
 import scipy.stats
+from collections import defaultdict
 from selection import compute_shapley
 import dataset,pred,plot,selection,utils
 
@@ -276,14 +277,17 @@ def box_plot(conf):
         return result.get_metric(conf['metric'])
     output=helper(conf['exp_path'])
     output=utils.rename_output(output,{"deep":"MLP"})
+    value_dict=defaultdict(lambda :{})
     data=set(conf['data'])
-    values,clf_types=[],[]
     for data_i,clf_i,value_i in output:
         if( data_i in data):
-            values.append(value_i)
-            clf_types.append(clf_i)
-    plot.box_plot(values=values,
-                  names=list(data),
+            value_dict[data_i][clf_i]=value_i
+    def helper(clf_i):
+        if(clf_i=="deep"):
+            return "MLP"
+        return clf_i
+    clf_types=[ helper(clf_i) for clf_i in conf['selector']]
+    plot.box_plot(value_dict=value_dict,
                   clf_types=clf_types)
 
 if __name__ == '__main__':
