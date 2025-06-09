@@ -104,6 +104,7 @@ def box_plot(values:list,
              colors=None):
     color_map=SimpleColorMap(colors)        
     unique_clf=list(set(clf_types))
+    unique_clf.sort()
     step=len(unique_clf)
     value_dict={clf_i:[] for clf_i in unique_clf}
     for i,clf_i in enumerate(clf_types):
@@ -114,11 +115,13 @@ def box_plot(values:list,
         box_i=ax.boxplot(value_dict[clf_i],
                          positions=positions_i,
                          patch_artist=True)
+#        for median in box_i['medians']:
+#            median.set_color('black')
+        plt.setp(box_i['medians'], color="black")
         plt.setp(box_i['boxes'], color=color_map(i))
     legend_handles = color_map.get_handlers()
     ax.legend(legend_handles,unique_clf)
     plt.ylabel(y_label)
-#    plt.figure(figsize=(7, 3), tight_layout=True)
     offset=int(step/2)
     xticks=[offset + (i*step) for i,_ in enumerate(names)]
     plt.xticks(xticks, names,rotation='vertical')
@@ -128,8 +131,8 @@ def box_plot(values:list,
 class SimpleColorMap(object):
     def __init__(self,colors):
         if(colors is None):
-            colors=['blue','tomato','lime',
-                    'skyblue','peachpuff', 'orange']
+            colors=['lime','red','blue',#'tomato'
+                    'orange','skyblue','peachpuff', ]
         self.colors=colors
 
     def __call__(self,i):
@@ -140,6 +143,7 @@ class SimpleColorMap(object):
                     for color_i in self.colors]
     
     def get_color_dict(self,keys):
+        keys.sort()
         return {key_i:self.colors[i] 
                     for i,key_i in enumerate(keys)}
 

@@ -289,4 +289,4 @@ def box_plot(conf):
 if __name__ == '__main__':
 #    sig_summary("new_exp")
 #    find_best("new_exp")
-    eval_exp("new_eval/conf/subset.js")
+    eval_exp("new_eval/conf/box.js")
