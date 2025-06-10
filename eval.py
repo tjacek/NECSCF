@@ -223,7 +223,8 @@ def sig_summary(exp_path,
         df_i=dataset.make_df(helper=fun_i,
                              iterable=enumerate(data_i),
                              cols=['data']+clf_types)
-        df_i.print()
+#        df_i.print()
+        df_i.to_csv()
         if(show):
             clf_types=utils.rename(clf_types,old="deep",new='MLP')
             plot.heatmap(matrix=sig_matrix_i.T,
@@ -288,4 +289,4 @@ def box_plot(conf):
                   clf_types=clf_types)
 
 if __name__ == '__main__':
-    eval_exp("new_eval/conf/box.js")
+    eval_exp("new_eval/conf/df.js")

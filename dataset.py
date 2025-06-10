@@ -256,6 +256,13 @@ class DFView(object):
                 return name    
         self.df[col]=self.df[col].apply(helper)
 
+    def to_csv(self):
+        text=",".join(self.df.columns)
+        for index, row in self.df.iterrows():
+            line_i=",".join([str(c_i) for c_i in row.to_list()])
+            text+="\n"+line_i
+        return text
+
 def latex_line(raw_list):
     line_i=" & ".join(raw_list)
     return f"\\hline {line_i} \\\\"
