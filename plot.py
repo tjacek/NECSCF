@@ -151,9 +151,11 @@ def heatmap(matrix,
                   cmap="RdBu_r",
                   linewidth=0.5,
                   cbar=False)
+    y_labels.sort()
     ax.set_xticklabels(x_labels,rotation = 90)
     ax.set_yticklabels(y_labels,rotation = 0)
     ax.set_title(title)
+    plt.tight_layout()
     plt.show()
 
 def subset_plot(value_dict,data,step=1,colors=None):
