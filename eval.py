@@ -278,4 +278,11 @@ def box_plot(conf):
                   clf_types=clf_types)
 
 if __name__ == '__main__':
-    eval_exp("new_eval/conf/subset.js")
+    conf=utils.read_json("new_eval/conf/box.js")
+    if(type(conf['data'])==list):
+        for data_i in conf['data']:
+            conf_i= conf.copy()
+            conf_i['data']=data_i
+            eval_exp(conf_i)
+    else:
+        eval_exp(conf)
