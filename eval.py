@@ -142,25 +142,27 @@ def subset_plot(conf):
                            iterable=value_dict.items(),
                            cols=['data']+conf["ens_types"])
         df.print()
-    if(conf["plot"]):
-        plot.subset_plot(value_dict,conf['data'],colors=['b','g','r','y'])
-    else:
-        def iterator():
+    def iterator():
             for data_i, ens_i in value_dict.items():
                 for ens_j in ens_i:
                     yield data_i,ens_j
-        def helper(arg_i):
-            data_i,value_i=arg_i
-            ens_i,arr_i=value_i
-            arr_i*=100
-            return [data_i,ens_i]+arr_i.tolist()
-        df=dataset.make_df(helper=helper,
-                           iterable=iterator(),
-                           cols=['data','ens'],
-                           offset="-")
-        df.clean("ens")
-        df.print()
-
+    def helper(arg_i):
+        data_i,value_i=arg_i
+        ens_i,arr_i=value_i
+        arr_i*=100
+        return [data_i,ens_i]+arr_i.tolist()
+    df=dataset.make_df(helper=helper,
+                       iterable=iterator(),
+                       cols=['data','ens'],
+                       offset="-")
+    df.clean("ens")
+    print(df.to_csv())
+    if(conf["plot"]):
+        title = "(MLP)" if conf["mlp_norm"] else "(full ensemble)"
+        plot.subset_plot(value_dict=value_dict,
+                         data=conf['data'],
+                         colors=['b','g','r','y'],
+                         title=f"Clf selection {title}")
 def df_eval(conf):
     if('summary' in conf):
         s_conf=conf['summary']
@@ -233,20 +235,6 @@ def sig_summary(exp_path,
                          y_labels=data_i,
                          title=f"Statistical significance ({main_clf})")
 
-#def sig_dict(df,verbose=True):
-#    if(type(df)==str):
-#        df=pred.stat_test(exp_path=df,
-#                          clf_x="RF",
-#                          clf_y="class_ens",
-#                          metric_type="acc")
-#    if(verbose):
-#        print(df)    
-#    sig_dict={'no_sig':df['data'][df['sig']==False].tolist()}
-#    sig_df=df[df["sig"]==True]
-#    sig_dict['better']=sig_df['data'][ sig_df['diff']<0].tolist()
-#    sig_dict['worse']=sig_df['data'][ sig_df['diff']>0].tolist()
-#    return sig_dict
-
 def find_best(in_path,nn_only=False):
     df=pred.summary(exp_path="new_exp")
     if(nn_only):
@@ -290,4 +278,4 @@ def box_plot(conf):
                   clf_types=clf_types)
 
 if __name__ == '__main__':
-    eval_exp("new_eval/conf/df.js")
+    eval_exp("new_eval/conf/subset.js")

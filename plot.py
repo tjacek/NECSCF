@@ -158,7 +158,10 @@ def heatmap(matrix,
     plt.tight_layout()
     plt.show()
 
-def subset_plot(value_dict,data,step=1,colors=None):
+def subset_plot(value_dict,
+                data,step=1,
+                colors=None,
+                title="Clf selection"):
     value_dict={key_i:value_dict[key_i] for key_i in data}
     ens_types=[ ens_j
                  for ens_j,_ in list(value_dict.values())[0]]
@@ -169,7 +172,10 @@ def subset_plot(value_dict,data,step=1,colors=None):
     color_dict=color_map.get_color_dict(ens_types)
     plt.figure()
     min_value,max_value=np.inf,-np.inf
-    for data_i,dict_i in value_dict.items():
+    keys= list(value_dict.keys())
+    keys.sort()
+    for key_i in keys:
+        data_i,dict_i=key_i,value_dict[key_i]
         for ens_j,value_j in dict_i:
             x_j=data_step[data_i] + ens_step[ens_j]
             min_value= min(min_value,np.min(value_j))
@@ -188,6 +194,7 @@ def subset_plot(value_dict,data,step=1,colors=None):
     plt.xticks(xticks,data,rotation='vertical')
     legend_handles = color_map.get_handlers()
     plt.legend(legend_handles,ens_types)
-    plt.title("Clf selection")
+    plt.title(title)
     plt.ylabel('Accuracy') 
+    plt.tight_layout()
     plt.show()
