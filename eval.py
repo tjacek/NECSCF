@@ -8,6 +8,20 @@ from collections import defaultdict
 from selection import compute_shapley
 import dataset,pred,plot,selection,utils
 
+class ConfDict(dict):
+    def list_arg(self,arg='data'):
+        return type(conf[arg][0])!=str
+
+    def iter(self,arg='data'):
+        for data_i in self[arg]:
+            conf_i= self.copy()
+            conf_i[arg]=data_i
+            yield conf_i
+
+def read_conf(in_path):
+    conf=utils.read_json(in_path)
+    return ConfDict(conf)
+
 def eval_exp(conf):
     if(type(conf)==str):
         conf=utils.read_json(conf)
@@ -235,17 +249,17 @@ def sig_summary(exp_path,
                          y_labels=data_i,
                          title=f"Statistical significance ({main_clf})")
 
-def find_best(in_path,nn_only=False):
-    df=pred.summary(exp_path="new_exp")
-    if(nn_only):
-        df=df[df['clf']!='RF']
-    dataset=df['data'].unique()
-    id_acc=df_group=df.groupby('data')['acc'].idxmax()
-    df_acc=df.loc[id_acc,]
-    print(df_acc)
-    id_balance=df_group=df.groupby('data')['balance'].idxmax()
-    df_balance=df.loc[id_balance,]
-    print(df_balance)
+#def find_best(in_path,nn_only=False):
+#    df=pred.summary(exp_path="new_exp")
+#    if(nn_only):
+#        df=df[df['clf']!='RF']
+#    dataset=df['data'].unique()
+#    id_acc=df_group=df.groupby('data')['acc'].idxmax()
+#    df_acc=df.loc[id_acc,]
+#    print(df_acc)
+#    id_balance=df_group=df.groupby('data')['balance'].idxmax()
+#    df_balance=df.loc[id_balance,]
+#    print(df_balance)
 
 def bar_plot(conf):
     df=pred.summary(exp_path=conf['exp_path'],
@@ -278,11 +292,9 @@ def box_plot(conf):
                   clf_types=clf_types)
 
 if __name__ == '__main__':
-    conf=utils.read_json("new_eval/conf/box.js")
-    if(type(conf['data'])==list):
-        for data_i in conf['data']:
-            conf_i= conf.copy()
-            conf_i['data']=data_i
+    conf=read_conf("new_eval/conf/box.js")
+    if(conf.list_arg('data')):
+        for conf_i in conf.iter('data'):
             eval_exp(conf_i)
     else:
         eval_exp(conf)
