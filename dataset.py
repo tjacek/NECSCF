@@ -178,7 +178,7 @@ def dispatch_metric(metric_type):
     if(metric_type=="f1-binary"):
         return lambda y_pred,y_true:f1_score(y_pred,y_true,
                                              average='binary')        
-    raise Exception(f"Unknow metric type{ens_type}")
+    raise Exception(f"Unknow metric type:{metric_type}")
 
 class WeightDict(dict):
     def __init__(self, arg=[]):

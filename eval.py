@@ -10,6 +10,8 @@ import dataset,pred,plot,selection,utils
 
 class ConfDict(dict):
     def list_arg(self,arg='data'):
+        if(not arg in self):
+            return False
         return type(conf[arg][0])!=str
 
     def iter(self,arg='data'):
@@ -17,6 +19,14 @@ class ConfDict(dict):
             conf_i= self.copy()
             conf_i[arg]=data_i
             yield conf_i
+
+    def product(self,x,y):
+        for x_i in self[x]:
+            for y_i in self[y]:
+                yield x_i,y_i
+
+    def get_dict(self,arg):
+        return ConfDict(self[arg])
 
 def read_conf(in_path):
     conf=utils.read_json(in_path)
@@ -199,23 +209,23 @@ def df_eval(conf):
                               metric_type=s_conf['metric'])
             print(df.round(4))
     if('sig_summary' in conf):
-        s_conf=conf['sig_summary']
-        sig_summary(exp_path=conf['exp_path'],
-                    main_clf=s_conf["main_clf"],
-                    clf_types=s_conf['clf_types'],
-                    metrics=s_conf['metrics'],
-                    show=s_conf['plot'])
+        s_conf=conf.get_dict('sig_summary')
+        for main_i,metric_i in s_conf.product("main_clf","metrics"):
+            print(main_i,metric_i)
+            sig_summary(exp_path=conf['exp_path'],
+                        main_clf=main_i,#s_conf["main_clf"],
+                        clf_types=s_conf['clf_types'],
+                        metric=[metric_i],#s_conf['metrics'],
+                        show=s_conf['plot'])
 
 def sig_summary(exp_path,
                 main_clf="RF",
                 clf_types=None,
-                metrics=None,
+                metric=None,
                 show=False):
     if(clf_types is None):
         clf_types=['deep','class_ens','purity_ens',
                    'separ_class_ens','separ_purity_ens']
-    if(metrics is None):
-        metrics=['acc','balance']
     clf_types=[ type_i for type_i in clf_types
                     if(type_i!=main_clf)]
     def helper(metric_i):
@@ -231,7 +241,7 @@ def sig_summary(exp_path,
             if(data is None):
                 data=df_ij['data'].tolist()
         return np.array(sig_matrix),data        
-    for metric_i in metrics:
+    for metric_i in metric:
         sig_matrix_i,data_i=helper(metric_i)
         def fun_i(tuple_j):
             j,data_j=tuple_j
@@ -292,7 +302,7 @@ def box_plot(conf):
                   clf_types=clf_types)
 
 if __name__ == '__main__':
-    conf=read_conf("new_eval/conf/box.js")
+    conf=read_conf("new_eval/conf/df.js")
     if(conf.list_arg('data')):
         for conf_i in conf.iter('data'):
             eval_exp(conf_i)
