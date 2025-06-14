@@ -157,6 +157,7 @@ def heatmap(matrix,
     ax.set_title(title)
     plt.tight_layout()
     plt.show()
+    return ax.get_figure()
 
 def subset_plot(value_dict,
                 data,step=1,

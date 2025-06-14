@@ -120,12 +120,12 @@ def sig_summary(exp_path,
     if(show):
         clf_types=utils.rename(clf_types,old="deep",new='MLP')
         main_clf=utils.rename([main_clf],old="deep",new='MLP')[0]
-        plot.heatmap(matrix=sig_matrix.T,
+        fig=plot.heatmap(matrix=sig_matrix.T,
                      x_labels=clf_types,
                      y_labels=data,
                      title=f"Statistical significance ({main_clf}/{metric})")
-    if(out_path):
-        plt.savefig(out_path)
+        if(out_path):
+            fig.savefig(out_path)
 
 def shapley_plot(conf):
     if(type(conf)==str):
