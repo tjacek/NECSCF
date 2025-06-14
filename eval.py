@@ -52,6 +52,81 @@ def eval_exp(conf):
     if(conf['type']=='df'):
         df_eval(conf)
 
+def df_eval(conf):
+    if('summary' in conf):
+        s_conf=conf['summary']
+        if(not 'selector' in s_conf):
+            s_conf['selector']=None
+        df=pred.summary(exp_path=conf['exp_path'],
+                        selector=s_conf['selector'],
+                        metrics=s_conf['metrics'])
+        if(s_conf['sort']):
+            df.group(s_conf['sort'])
+        else:
+            df.print()
+    if('sig_pairs' in conf):
+        s_conf=conf['sig_pairs']
+        for pair_i in s_conf['pairs']:
+            clf_x,clf_y=pair_i.split(",")
+            df=pred.stat_test(conf['exp_path'],
+                              clf_x,
+                              clf_y,
+                              metric_type=s_conf['metric'])
+            print(df.round(4))
+    if('sig_summary' in conf):
+        s_conf=conf.get_dict('sig_summary')
+        if(s_conf['output']):
+            utils.make_dir(s_conf['output'])
+        for i,(main_i,metric_i) in enumerate(s_conf.product("main_clf","metrics")):
+            print(main_i,metric_i)
+            if(s_conf['output']):
+                out_i=f"{s_conf['output']}/{i}"
+            else:
+                out_i=None
+            sig_summary(exp_path=conf['exp_path'],
+                        main_clf=main_i,
+                        clf_types=s_conf['clf_types'],
+                        metric=metric_i,
+                        show=s_conf['plot'],
+                        out_path=out_i)
+
+def sig_summary(exp_path,
+                main_clf="RF",
+                clf_types=None,
+                metric=None,
+                show=False,
+                out_path=None):
+    clf_types=[ type_i for type_i in clf_types
+                    if(type_i!=main_clf)]
+    sig_matrix,data=[],None
+    fun=lambda x: np.sign(x['diff'])*int(x['sig'])
+    for i,clf_i in  enumerate(clf_types):
+        df_i=pred.stat_test(exp_path=exp_path,
+                             clf_x=main_clf,
+                             clf_y=clf_i,
+                             metric_type=metric)
+        df_i['sig_total']=df_i.apply(fun, axis=1 )
+        sig_matrix.append(df_i['sig_total'].tolist())
+        if(data is None):
+            data=df_i['data'].tolist()
+    sig_matrix= np.array(sig_matrix) 
+    def fun(tuple_i):
+        i,data_i=tuple_i
+        return [data]+sig_matrix[:,i].tolist()
+    df=dataset.make_df(helper=fun,
+                       iterable=enumerate(data),
+                       cols=['data']+clf_types)
+    print(df.to_csv())
+    if(show):
+        clf_types=utils.rename(clf_types,old="deep",new='MLP')
+        main_clf=utils.rename([main_clf],old="deep",new='MLP')[0]
+        plot.heatmap(matrix=sig_matrix.T,
+                     x_labels=clf_types,
+                     y_labels=data,
+                     title=f"Statistical significance ({main_clf}/{metric})")
+    if(out_path):
+        plt.savefig(out_path)
+
 def shapley_plot(conf):
     if(type(conf)==str):
         conf=utils.read_json(conf)
@@ -187,70 +262,6 @@ def subset_plot(conf):
                          data=conf['data'],
                          colors=['b','g','r','y'],
                          title=f"Clf selection {title}")
-def df_eval(conf):
-    if('summary' in conf):
-        s_conf=conf['summary']
-        if(not 'selector' in s_conf):
-            s_conf['selector']=None
-        df=pred.summary(exp_path=conf['exp_path'],
-                        selector=s_conf['selector'],
-                        metrics=s_conf['metrics'])
-        if(s_conf['sort']):
-            df.group(s_conf['sort'])
-        else:
-            df.print()
-    if('sig_pairs' in conf):
-        s_conf=conf['sig_pairs']
-        for pair_i in s_conf['pairs']:
-            clf_x,clf_y=pair_i.split(",")
-            df=pred.stat_test(conf['exp_path'],
-                              clf_x,
-                              clf_y,
-                              metric_type=s_conf['metric'])
-            print(df.round(4))
-    if('sig_summary' in conf):
-        s_conf=conf.get_dict('sig_summary')
-        for main_i,metric_i in s_conf.product("main_clf","metrics"):
-            print(main_i,metric_i)
-            sig_summary(exp_path=conf['exp_path'],
-                        main_clf=main_i,#s_conf["main_clf"],
-                        clf_types=s_conf['clf_types'],
-                        metric=metric_i,#s_conf['metrics'],
-                        show=s_conf['plot'])
-
-def sig_summary(exp_path,
-                main_clf="RF",
-                clf_types=None,
-                metric=None,
-                show=False):
-    clf_types=[ type_i for type_i in clf_types
-                    if(type_i!=main_clf)]
-    sig_matrix,data=[],None
-    fun=lambda x: np.sign(x['diff'])*int(x['sig'])
-    for i,clf_i in  enumerate(clf_types):
-        df_i=pred.stat_test(exp_path=exp_path,
-                             clf_x=main_clf,
-                             clf_y=clf_i,
-                             metric_type=metric)
-        df_i['sig_total']=df_i.apply(fun, axis=1 )
-        sig_matrix.append(df_i['sig_total'].tolist())
-        if(data is None):
-            data=df_i['data'].tolist()
-    sig_matrix= np.array(sig_matrix) 
-    def fun(tuple_i):
-        i,data_i=tuple_i
-        return [data]+sig_matrix[:,i].tolist()
-    df=dataset.make_df(helper=fun,
-                       iterable=enumerate(data),
-                       cols=['data']+clf_types)
-    print(df.to_csv())
-    if(show):
-        clf_types=utils.rename(clf_types,old="deep",new='MLP')
-        main_clf=utils.rename([main_clf],old="deep",new='MLP')[0]
-        plot.heatmap(matrix=sig_matrix.T,
-                     x_labels=clf_types,
-                     y_labels=data,
-                     title=f"Statistical significance ({main_clf}/{metric})")
 
 #def find_best(in_path,nn_only=False):
 #    df=pred.summary(exp_path="new_exp")
