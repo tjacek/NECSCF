@@ -215,7 +215,7 @@ def df_eval(conf):
             sig_summary(exp_path=conf['exp_path'],
                         main_clf=main_i,#s_conf["main_clf"],
                         clf_types=s_conf['clf_types'],
-                        metric=[metric_i],#s_conf['metrics'],
+                        metric=metric_i,#s_conf['metrics'],
                         show=s_conf['plot'])
 
 def sig_summary(exp_path,
@@ -223,41 +223,34 @@ def sig_summary(exp_path,
                 clf_types=None,
                 metric=None,
                 show=False):
-    if(clf_types is None):
-        clf_types=['deep','class_ens','purity_ens',
-                   'separ_class_ens','separ_purity_ens']
     clf_types=[ type_i for type_i in clf_types
                     if(type_i!=main_clf)]
-    def helper(metric_i):
-        sig_matrix,data=[],None
-        fun=lambda x: np.sign(x['diff'])*int(x['sig'])
-        for j,clf_j in  enumerate(clf_types):
-            df_ij=pred.stat_test(exp_path=exp_path,
-                                 clf_x=main_clf,
-                                 clf_y=clf_j,
-                                 metric_type=metric_i)
-            df_ij['sig_total']=df_ij.apply(fun, axis=1 )
-            sig_matrix.append(df_ij['sig_total'].tolist())
-            if(data is None):
-                data=df_ij['data'].tolist()
-        return np.array(sig_matrix),data        
-    for metric_i in metric:
-        sig_matrix_i,data_i=helper(metric_i)
-        def fun_i(tuple_j):
-            j,data_j=tuple_j
-            return [data_j]+sig_matrix_i[:,j].tolist()
-        df_i=dataset.make_df(helper=fun_i,
-                             iterable=enumerate(data_i),
-                             cols=['data']+clf_types)
-#        df_i.print()
-        print(df_i.to_csv())
-        if(show):
-            clf_types=utils.rename(clf_types,old="deep",new='MLP')
-            main_clf=utils.rename([main_clf],old="deep",new='MLP')[0]
-            plot.heatmap(matrix=sig_matrix_i.T,
-                         x_labels=clf_types,
-                         y_labels=data_i,
-                         title=f"Statistical significance ({main_clf})")
+    sig_matrix,data=[],None
+    fun=lambda x: np.sign(x['diff'])*int(x['sig'])
+    for i,clf_i in  enumerate(clf_types):
+        df_i=pred.stat_test(exp_path=exp_path,
+                             clf_x=main_clf,
+                             clf_y=clf_i,
+                             metric_type=metric)
+        df_i['sig_total']=df_i.apply(fun, axis=1 )
+        sig_matrix.append(df_i['sig_total'].tolist())
+        if(data is None):
+            data=df_i['data'].tolist()
+    sig_matrix= np.array(sig_matrix) 
+    def fun(tuple_i):
+        i,data_i=tuple_i
+        return [data]+sig_matrix[:,i].tolist()
+    df=dataset.make_df(helper=fun,
+                       iterable=enumerate(data),
+                       cols=['data']+clf_types)
+    print(df.to_csv())
+    if(show):
+        clf_types=utils.rename(clf_types,old="deep",new='MLP')
+        main_clf=utils.rename([main_clf],old="deep",new='MLP')[0]
+        plot.heatmap(matrix=sig_matrix.T,
+                     x_labels=clf_types,
+                     y_labels=data,
+                     title=f"Statistical significance ({main_clf}/{metric})")
 
 #def find_best(in_path,nn_only=False):
 #    df=pred.summary(exp_path="new_exp")

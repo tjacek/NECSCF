@@ -75,6 +75,8 @@ class Result(object):
     def get_metric(self,metric_type):
         if(type(metric_type)==str):
             metric=dispatch_metric(metric_type)
+        else:
+            raise Exception(f"Arg metric_type should be str is {type(metric_type)}")
         return metric(self.y_pred,self.y_true)
 
     def report(self):
