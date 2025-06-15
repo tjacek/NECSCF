@@ -293,7 +293,14 @@ def box_plot(conf):
     @utils.EnsembleFun(in_path=('in_path',0),selector=selector)
     def helper(in_path):
         _,result=pred.get_result(in_path)
-        return result.get_metric(conf['metric'])
+        metric_value=result.get_metric(conf['metric'])
+        if(conf["aggr"]):
+            n_splits=conf["aggr"]
+            n_iters=int(len(metric_value)/n_splits)
+            index=[n_splits*i for i in range(n_iters)]
+            return [np.mean(metric_value[i:(i+1)])  
+                                for i in index]
+        return metric_value 
     output=helper(conf['exp_path'])
     output=utils.rename_output(output,{"deep":"MLP"})
     value_dict=defaultdict(lambda :{})
@@ -306,7 +313,7 @@ def box_plot(conf):
                   clf_types=clf_types)
 
 if __name__ == '__main__':
-    conf=read_conf("new_eval/conf/df.js")
+    conf=read_conf("new_eval/conf/box.js")
     if(conf.list_arg('data')):
         for conf_i in conf.iter('data'):
             eval_exp(conf_i)
