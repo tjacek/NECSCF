@@ -12,13 +12,13 @@ class ConfDict(dict):
     def list_arg(self,arg='data'):
         if(not arg in self):
             return False
-        return type(conf[arg][0])!=str
+        return type(self[arg][0])!=str
 
     def iter(self,arg='data'):
         for data_i in self[arg]:
             conf_i= self.copy()
             conf_i[arg]=data_i
-            yield conf_i
+            yield ConfDict(conf_i)
 
     def product(self,x,y):
         for x_i in self[x]:
@@ -28,29 +28,56 @@ class ConfDict(dict):
     def get_dict(self,arg):
         return ConfDict(self[arg])
 
+class FunOuput(object):
+    def __init__(self,data_type,data,name):
+        self.data_type=data_type
+        self.data=data
+        self.name=name
+    
+    def save(self,out_path):
+        self.data.savefig(out_path)
+
 def read_conf(in_path):
     conf=utils.read_json(in_path)
     return ConfDict(conf)
 
 def eval_exp(conf):
     if(type(conf)==str):
-        conf=utils.read_json(conf)
-    if(conf['type']=="scatter"):
-        shapley_plot(conf)
-    if(conf['type']=='selection'):
-        selection_plot(conf)
-    if(conf['type']=="desc"):
-        desc_plot(conf)
-    if(conf['type']=="plot_xy"):
-        xy_plot(conf)
-    if(conf['type']=="subsets"):
-        subset_plot(conf)
-    if(conf["type"]=="bar"):
-        bar_plot(conf)
-    if(conf["type"]=="box"):
-        box_plot(conf)
-    if(conf['type']=='df'):
-        df_eval(conf)
+        conf=read_conf(conf)
+    fun=FUN_DICT[conf['type']]
+    if(conf.list_arg('data')):
+        outputs=[]
+        for conf_i in conf.iter('data'):
+            outputs+= eval_exp(conf_i)
+        return outputs
+    return [fun(conf)]
+#    if(type(conf)==str):
+#        conf=utils.read_json(conf)
+#    if(conf['type']=="scatter"):
+#        shapley_plot(conf)
+#    if(conf['type']=='selection'):
+#        selection_plot(conf)
+#    if(conf['type']=="desc"):
+#        desc_plot(conf)
+#    if(conf['type']=="plot_xy"):
+#        xy_plot(conf)
+#    if(conf['type']=="subsets"):
+#        subset_plot(conf)
+#    if(conf["type"]=="bar"):
+#        bar_plot(conf)
+#    if(conf["type"]=="box"):
+#        box_plot(conf)
+#    if(conf['type']=='df'):
+#        df_eval(conf)
+
+def meta_eval(conf):
+    for conf_i,out_i in conf["box"]:
+        utils.make_dir(out_i)
+        fun_out=eval_exp(conf_i)
+        for j,fun_j in enumerate(fun_out):
+            fun_j.save(f"{out_i}/box{j}.png")
+        print(fun_out)
+    raise Exception(conf)
 
 def df_eval(conf):
     if('summary' in conf):
@@ -125,7 +152,7 @@ def sig_summary(exp_path,
                      y_labels=data,
                      title=f"Statistical significance ({main_clf}/{metric})")
         if(out_path):
-            fig.savefig(out_path)
+            fig.savefig(out_shapley_plotpath)
 
 def shapley_plot(conf):
     if(type(conf)==str):
@@ -309,13 +336,19 @@ def box_plot(conf):
         if( data_i in data):
             value_dict[data_i][clf_i]=value_i
     clf_types=utils.rename(conf['selector'],old="deep",new='MLP')
-    plot.box_plot(value_dict=value_dict,
-                  clf_types=clf_types)
+    fig=plot.box_plot(value_dict=value_dict,
+                      clf_types=clf_types)
+    return FunOuput("fig",fig,name="box")
+
+FUN_DICT={"meta":meta_eval,"selection":selection_plot,
+          "desc":desc_plot,"subsets":subset_plot,"bar":bar_plot,
+          "box":box_plot,"df":df_eval,"scatter":shapley_plot}
 
 if __name__ == '__main__':
-    conf=read_conf("new_eval/conf/box.js")
-    if(conf.list_arg('data')):
-        for conf_i in conf.iter('data'):
-            eval_exp(conf_i)
-    else:
-        eval_exp(conf)
+    eval_exp("conf/meta.js")
+#    conf=read_conf("new_eval/conf/box.js")
+#    if(conf.list_arg('data')):
+#        for conf_i in conf.iter('data'):
+#            eval_exp(conf_i)
+#    else:
+#        eval_exp(conf)
