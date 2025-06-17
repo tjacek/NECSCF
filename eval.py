@@ -29,7 +29,7 @@ class ConfDict(dict):
         return ConfDict(self[arg])
 
 class FunOuput(object):
-    def __init__(self,data_type,data,name):
+    def __init__(self,data_type,data,name=None):
         self.data_type=data_type
         self.data=data
         self.name=name
@@ -71,13 +71,12 @@ def eval_exp(conf):
 #        df_eval(conf)
 
 def meta_eval(conf):
-    for conf_i,out_i in conf["box"]:
+    for fun_id_i,(conf_i,out_i,name_i) in conf["fun_used"]:
+#        raise Exception(params_i)
         utils.make_dir(out_i)
         fun_out=eval_exp(conf_i)
         for j,fun_j in enumerate(fun_out):
-            fun_j.save(f"{out_i}/box{j}.png")
-        print(fun_out)
-    raise Exception(conf)
+            fun_j.save(f"{out_i}/{name_i}{j}.png")
 
 def df_eval(conf):
     if('summary' in conf):
@@ -104,18 +103,21 @@ def df_eval(conf):
         s_conf=conf.get_dict('sig_summary')
         if(s_conf['output']):
             utils.make_dir(s_conf['output'])
+        outputs=[]
         for i,(main_i,metric_i) in enumerate(s_conf.product("main_clf","metrics")):
             print(main_i,metric_i)
             if(s_conf['output']):
                 out_i=f"{s_conf['output']}/{i}"
             else:
                 out_i=None
-            sig_summary(exp_path=conf['exp_path'],
-                        main_clf=main_i,
-                        clf_types=s_conf['clf_types'],
-                        metric=metric_i,
-                        show=s_conf['plot'],
-                        out_path=out_i)
+            out_i=sig_summary(exp_path=conf['exp_path'],
+                               main_clf=main_i,
+                               clf_types=s_conf['clf_types'],
+                               metric=metric_i,
+                               show=s_conf['plot'],
+                               out_path=out_i)
+            outputs.append(out_i)
+        return outputs
 
 def sig_summary(exp_path,
                 main_clf="RF",
