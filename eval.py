@@ -50,6 +50,8 @@ def eval_exp(conf):
         for conf_i in conf.iter('data'):
             outputs+= eval_exp(conf_i)
         return outputs
+    if(conf['type']=="df"):
+        return fun(conf)
     return [fun(conf)]
 #    if(type(conf)==str):
 #        conf=utils.read_json(conf)
@@ -72,8 +74,9 @@ def eval_exp(conf):
 
 def meta_eval(conf):
     for fun_id_i,(conf_i,out_i,name_i) in conf["fun_used"]:
-#        raise Exception(params_i)
         utils.make_dir(out_i)
+        conf_i=read_conf(conf_i)
+
         fun_out=eval_exp(conf_i)
         for j,fun_j in enumerate(fun_out):
             fun_j.save(f"{out_i}/{name_i}{j}.png")
@@ -145,16 +148,16 @@ def sig_summary(exp_path,
     df=dataset.make_df(helper=fun,
                        iterable=enumerate(data),
                        cols=['data']+clf_types)
-    print(df.to_csv())
-    if(show):
-        clf_types=utils.rename(clf_types,old="deep",new='MLP')
-        main_clf=utils.rename([main_clf],old="deep",new='MLP')[0]
-        fig=plot.heatmap(matrix=sig_matrix.T,
+#    print(df.to_csv())
+#    if(show):
+    clf_types=utils.rename(clf_types,old="deep",new='MLP')
+    main_clf=utils.rename([main_clf],old="deep",new='MLP')[0]
+    fig=plot.heatmap(matrix=sig_matrix.T,
                      x_labels=clf_types,
                      y_labels=data,
                      title=f"Statistical significance ({main_clf}/{metric})")
-        if(out_path):
-            fig.savefig(out_shapley_plotpath)
+    fun= FunOuput("fig",fig)
+    return fun
 
 def shapley_plot(conf):
     if(type(conf)==str):
@@ -339,7 +342,8 @@ def box_plot(conf):
             value_dict[data_i][clf_i]=value_i
     clf_types=utils.rename(conf['selector'],old="deep",new='MLP')
     fig=plot.box_plot(value_dict=value_dict,
-                      clf_types=clf_types)
+                      clf_types=clf_types,
+                      show=conf['show'])
     return FunOuput("fig",fig,name="box")
 
 FUN_DICT={"meta":meta_eval,"selection":selection_plot,
