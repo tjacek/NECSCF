@@ -3,6 +3,25 @@ import matplotlib.pyplot as plt
 import seaborn as sn
 import scipy.stats
 
+class SimpleColorMap(object):
+    def __init__(self,colors):
+        if(colors is None):
+            colors=['lime','red','blue',#'tomato'
+                    'orange','skyblue','peachpuff', ]
+        self.colors=colors
+
+    def __call__(self,i):
+        return self.colors[i % len(self.colors)]
+
+    def get_handlers(self):
+        return [plt.Rectangle((0,0),1,1, color=color_i) 
+                    for color_i in self.colors]
+    
+    def get_color_dict(self,keys):
+        keys.sort()
+        return {key_i:self.colors[i] 
+                    for i,key_i in enumerate(keys)}
+
 def scatter_plot(points,
                  title,
                  clf_x, 
@@ -100,7 +119,8 @@ def bar_limit(all_values):
 def box_plot(value_dict,
              clf_types:list,
              y_label='Accuracy',
-             colors=None):
+             colors=None,
+             show=True):
     color_map=SimpleColorMap(colors)        
     datasets=list(value_dict.keys())
     datasets.sort()
@@ -119,29 +139,17 @@ def box_plot(value_dict,
     ax.legend(legend_handles,clf_types)
     plt.ylabel(y_label)
     offset=int(step/2)
-    xticks=[offset + (i*step) for i,_ in enumerate(datasets)]
+    xticks=[ (i*step) 
+             for i,_ in enumerate(datasets)]
+    plt.xticks(xticks, minor=True)
+    xticks=[offset+i for i in xticks]
     plt.xticks(xticks, datasets,rotation='vertical')
-    plt.tight_layout()
-    plt.show()
-
-class SimpleColorMap(object):
-    def __init__(self,colors):
-        if(colors is None):
-            colors=['lime','red','blue',#'tomato'
-                    'orange','skyblue','peachpuff', ]
-        self.colors=colors
-
-    def __call__(self,i):
-        return self.colors[i % len(self.colors)]
-
-    def get_handlers(self):
-        return [plt.Rectangle((0,0),1,1, color=color_i) 
-                    for color_i in self.colors]
     
-    def get_color_dict(self,keys):
-        keys.sort()
-        return {key_i:self.colors[i] 
-                    for i,key_i in enumerate(keys)}
+    plt.grid(which='minor')##axis = 'y')
+    plt.tight_layout()
+    if(show):
+        plt.show()
+    return ax.get_figure()
 
 def heatmap(matrix,
             x_labels,

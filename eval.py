@@ -29,10 +29,9 @@ class ConfDict(dict):
         return ConfDict(self[arg])
 
 class FunOuput(object):
-    def __init__(self,data_type,data,name=None):
+    def __init__(self,data_type,data):
         self.data_type=data_type
         self.data=data
-        self.name=name
     
     def save(self,out_path):
         self.data.savefig(out_path)
@@ -41,9 +40,10 @@ def read_conf(in_path):
     conf=utils.read_json(in_path)
     return ConfDict(conf)
 
-def eval_exp(conf):
+def eval_exp(conf,show=False):
     if(type(conf)==str):
         conf=read_conf(conf)
+    conf["show"]=show
     fun=FUN_DICT[conf['type']]
     if(conf.list_arg('data')):
         outputs=[]
@@ -344,7 +344,7 @@ def box_plot(conf):
     fig=plot.box_plot(value_dict=value_dict,
                       clf_types=clf_types,
                       show=conf['show'])
-    return FunOuput("fig",fig,name="box")
+    return FunOuput("fig",fig)
 
 FUN_DICT={"meta":meta_eval,"selection":selection_plot,
           "desc":desc_plot,"subsets":subset_plot,"bar":bar_plot,
