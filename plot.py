@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sn
 import scipy.stats
+import utils
 
 class SimpleColorMap(object):
     def __init__(self,colors):
@@ -67,10 +68,11 @@ def plot_series(series_dict,
         plt.ylim(plt_limts[1])
     plt.show()
 
-def xy_plot(conf):   
-    x=utils.read_json(conf["x_plot"])
-    y=utils.read_json(conf["y_plot"])
-    plt.figure()
+def text_plot(x,y,
+              title:str,
+              x_label:str,
+              y_label:str):   
+    fig=plt.figure()
     for key_i in x:
         x_i,y_i=x[key_i],y[key_i]
         plt.text(x_i, 
@@ -79,12 +81,13 @@ def xy_plot(conf):
                  fontdict={'weight': 'bold', 'size': 9})
     x_values=list(x.values())
     y_values=list(y.values())
-    plt.title(conf["title"])
-    plt.xlabel(conf['x_label'])
-    plt.ylabel(conf['y_label'])
-    plt.xlim((min(x_values),max(x_values)*1.25))
-    plt.ylim((min(y_values),max(y_values)*1.25))
-    plt.show()
+    plt.title(title)
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    plt.xlim((0.9*min(x_values),max(x_values)*1.3))
+    plt.ylim((0.9*min(y_values),max(y_values)*1.25))
+    plt.grid()
+    return fig
 
 def bar_plot(data_dict,
              data,
@@ -124,7 +127,7 @@ def box_plot(value_dict,
     color_map=SimpleColorMap(colors)        
     datasets=list(value_dict.keys())
     datasets.sort()
-    clf_types.sort()
+#    clf_types.sort()
     step=len(clf_types)
     fig, ax = plt.subplots()
     for i,clf_i in enumerate(clf_types):

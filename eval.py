@@ -159,6 +159,14 @@ def sig_summary(exp_path,
     fun= FunOuput("fig",fig)
     return fun
 
+def xy_plot(conf):
+    fig=plot.text_plot(x=utils.read_json(conf["x_plot"]),
+                       y=utils.read_json(conf["y_plot"]),
+                       title=conf["title"],
+                       x_label=conf['x_label'],
+                       y_label=conf['y_label'])
+    return  FunOuput("fig",fig)
+
 def shapley_plot(conf):
     if(type(conf)==str):
         conf=utils.read_json(conf)
@@ -348,13 +356,8 @@ def box_plot(conf):
 
 FUN_DICT={"meta":meta_eval,"selection":selection_plot,
           "desc":desc_plot,"subsets":subset_plot,"bar":bar_plot,
-          "box":box_plot,"df":df_eval,"scatter":shapley_plot}
+          "box":box_plot,"df":df_eval,"scatter":shapley_plot,
+          "xy_plot":xy_plot}
 
 if __name__ == '__main__':
     eval_exp("conf/meta.js")
-#    conf=read_conf("new_eval/conf/box.js")
-#    if(conf.list_arg('data')):
-#        for conf_i in conf.iter('data'):
-#            eval_exp(conf_i)
-#    else:
-#        eval_exp(conf)
