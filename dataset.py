@@ -170,9 +170,14 @@ class PartialGroup(object):
                     for i in range(n_clf)]
 
 def dispatch_metric(metric_type):
+    metric_type=metric_type.lower()
     if(metric_type=="acc"):
         return accuracy_score
+    if(metric_type=="accuracy"):
+        return accuracy_score
     if(metric_type=="balance"):
+        return balanced_accuracy_score
+    if(metric_type=="balanced accuracy"):
         return balanced_accuracy_score
     if(metric_type=="f1-score"):
         return lambda y_pred,y_true:f1_score(y_pred,y_true,

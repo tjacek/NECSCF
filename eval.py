@@ -148,8 +148,6 @@ def sig_summary(exp_path,
     df=dataset.make_df(helper=fun,
                        iterable=enumerate(data),
                        cols=['data']+clf_types)
-#    print(df.to_csv())
-#    if(show):
     clf_types=utils.rename(clf_types,old="deep",new='MLP')
     main_clf=utils.rename([main_clf],old="deep",new='MLP')[0]
     fig=plot.heatmap(matrix=sig_matrix.T,

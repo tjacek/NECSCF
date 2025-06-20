@@ -158,6 +158,7 @@ def heatmap(matrix,
             x_labels,
             y_labels,
             title="Statistical significance (RF)"):
+    plt.clf()
     ax=sn.heatmap(matrix,
                   cmap="RdBu_r",
                   linewidth=0.5,
