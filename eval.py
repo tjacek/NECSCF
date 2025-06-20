@@ -73,13 +73,17 @@ def eval_exp(conf,show=False):
 #        df_eval(conf)
 
 def meta_eval(conf):
-    for fun_id_i,(conf_i,out_i,name_i) in conf["fun_used"]:
+    for conf_i,out_i,name_i in conf["fun_used"]:
         utils.make_dir(out_i)
         conf_i=read_conf(conf_i)
 
         fun_out=eval_exp(conf_i)
+        names=name_i
+        if(type(names)!=list):
+            names=[names]
         for j,fun_j in enumerate(fun_out):
-            fun_j.save(f"{out_i}/{name_i}{j}.png")
+            name_j=name_i[j]
+            fun_j.save(f"{out_i}/{name_j}.png")
 
 def df_eval(conf):
     if('summary' in conf):
