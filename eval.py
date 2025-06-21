@@ -170,7 +170,7 @@ def xy_plot(conf):
                        title=conf["title"],
                        x_label=conf['x_label'],
                        y_label=conf['y_label'])
-    return  FunOuput("fig",fig)
+    return FunOuput("fig",fig)
 
 def shapley_plot(conf):
     if(type(conf)==str):
@@ -252,11 +252,12 @@ def desc_plot(conf):
     y_feat=desc_df[conf['y_feat']]
     plt_limts=((x_feat.min(),x_feat.max()+0.1),
                (y_feat.min(),y_feat.max()+0.1))
-    plot.plot_series(series_dict,
-                title=conf["title"],
-                x_label=conf['x_feat'],
-                y_label=conf['y_feat'],
-                plt_limts=plt_limts)
+    fig= plot.plot_series(series_dict,
+                    title=conf["title"],
+                    x_label=conf['x_feat'],
+                    y_label=conf['y_feat'],
+                    plt_limts=plt_limts)
+    return FunOuput("fig",fig)
 
 def subset_plot(conf):
     subsets=[selection.subset_plot(conf["subset_path"],

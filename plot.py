@@ -52,8 +52,9 @@ def plot_series(series_dict,
                 y_label='y',
                 plt_limts=None):
     labels=['r','g','b']
-    plt.figure()
+    fig=plt.figure()
     plt.title(title)
+    x_values,y_values=[],[]
     for i,(_,points_i) in enumerate(series_dict.items()):
         for name_j,point_j in points_i:
             plt.text(point_j[0], 
@@ -61,12 +62,16 @@ def plot_series(series_dict,
                     name_j,
                     color=labels[i],
                     fontdict={'weight': 'bold', 'size': 9})
+            x_values.append(point_j[0])
+            y_values.append(point_j[1])
     plt.xlabel(x_label)
     plt.ylabel(y_label)
-    if(plt_limts):
-        plt.xlim(plt_limts[0])
-        plt.ylim(plt_limts[1])
-    plt.show()
+    x_lim,y_lim=plot_lim(x_values,y_values)
+    plt.xlim(x_lim)
+    plt.ylim(y_lim)
+    plt.grid()
+#    plt.show()
+    return fig
 
 def text_plot(x,y,
               title:str,
@@ -84,10 +89,16 @@ def text_plot(x,y,
     plt.title(title)
     plt.xlabel(x_label)
     plt.ylabel(y_label)
-    plt.xlim((0.9*min(x_values),max(x_values)*1.3))
-    plt.ylim((0.9*min(y_values),max(y_values)*1.25))
+    x_lim,y_lim=plot_lim(x_values,y_values)
+    plt.xlim(x_lim)
+    plt.ylim(y_lim)
     plt.grid()
     return fig
+
+def plot_lim(x_values,y_values):
+    x_lim=(0.9*min(x_values),max(x_values)*1.3)
+    y_lim=(0.9*min(y_values),max(y_values)*1.25)
+    return x_lim,y_lim
 
 def bar_plot(data_dict,
              data,
@@ -109,8 +120,8 @@ def bar_plot(data_dict,
     plt.legend(legend_handles,clf_types)
     plt.ylim(*bar_limit(all_values))
     plt.xticks([i*step for i,_ in enumerate(data)], data,rotation='vertical')
-    plt.ylabel('Accuracy') 
-    plt.show()
+    plt.ylabel('Accuracy')
+#    plt.show()
 
 def bar_limit(all_values):
     y_min=0.95*np.amin(all_values)
@@ -166,7 +177,7 @@ def heatmap(matrix,
     y_labels.sort()
     ax.set_xticklabels(x_labels,rotation = 90)
     ax.set_yticklabels(y_labels,rotation = 0)
-    ax.set_title(title)
+    ax.set_title(title,fontsize=10)
     plt.tight_layout()
     plt.show()
     return ax.get_figure()
