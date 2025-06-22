@@ -155,27 +155,21 @@ def xy_plot(conf):
     return FunOuput("fig",fig)
 
 def shapley_plot(conf):
-    if(type(conf)==str):
-        conf=utils.read_json(conf)
     dict_x=get_series(conf["x"])
-    dict_y=get_series(conf["y"])
-    def helper(x,y,title):
-        fig=plot.corl_plot(x,y,
-                              title=title,
-                              clf_x=conf['x']['name'],
-                              clf_y=conf['y']['name'])
-        return FunOuput("fig",fig)
-    if(conf['plot']=='total'): 
+    def helper(y_i,title):
+        dict_y=get_series(y_i)
         x,y=[],[]
         for key_i in dict_x:
             x+=dict_x[key_i]
             y+=dict_y[key_i]
-        return [helper(x,y,conf["title"])]
-    else:
-        return [ helper( x=dict_x[key_i],
-                         y=dict_y[key_i],
-                         title=key_i)
-                  for key_i in dict_x]
+        fig=plot.corl_plot(x,
+                        y,
+                        title=title,
+                        clf_x=conf['x']['name'],
+                        clf_y=y_i['name'])
+        return FunOuput("fig",fig)
+    return [ helper(y_i,f"{conf['title']} {y_i['ens_type']}") 
+               for y_i in conf['y']]
 
 def get_series(conf):
     if(conf["type"]=="shapley"):
