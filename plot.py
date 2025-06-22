@@ -23,11 +23,11 @@ class SimpleColorMap(object):
         return {key_i:self.colors[i] 
                     for i,key_i in enumerate(keys)}
 
-def scatter_plot(points,
-                 title,
-                 clf_x, 
-                 clf_y,
-                 out_path=None):
+def corl_plot(x,y,
+              title,
+              clf_x, 
+              clf_y):
+    points=np.array(list(zip(x,y)))
     x,y=points[:,0], points[:,1]
     pearson=scipy.stats.pearsonr(x, y) 
     text=f"corelation:{pearson.correlation:.4f},pvalue:{pearson.pvalue:.4f}"
@@ -41,10 +41,12 @@ def scatter_plot(points,
                 xycoords='axes fraction',
                 ha='right',
                 va="center")
+    plt.grid()
     fig.tight_layout()
-    plt.show()
-    if(out_path):
-        fig.savefig(f'{out_path}.png')
+    return fig
+#    plt.show()
+#    if(out_path):
+#        fig.savefig(f'{out_path}.png')
 
 def plot_series(series_dict,
                 title="Scatter",

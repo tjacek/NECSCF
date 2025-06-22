@@ -50,27 +50,9 @@ def eval_exp(conf,show=False):
         for conf_i in conf.iter('data'):
             outputs+= eval_exp(conf_i)
         return outputs
-    if(conf['type']=="df"):
+    if(conf['type'] in MULTI_FUN):
         return fun(conf)
     return [fun(conf)]
-#    if(type(conf)==str):
-#        conf=utils.read_json(conf)
-#    if(conf['type']=="scatter"):
-#        shapley_plot(conf)
-#    if(conf['type']=='selection'):
-#        selection_plot(conf)
-#    if(conf['type']=="desc"):
-#        desc_plot(conf)
-#    if(conf['type']=="plot_xy"):
-#        xy_plot(conf)
-#    if(conf['type']=="subsets"):
-#        subset_plot(conf)
-#    if(conf["type"]=="bar"):
-#        bar_plot(conf)
-#    if(conf["type"]=="box"):
-#        box_plot(conf)
-#    if(conf['type']=='df'):
-#        df_eval(conf)
 
 def meta_eval(conf):
     if("taboo" in conf):
@@ -177,33 +159,32 @@ def shapley_plot(conf):
         conf=utils.read_json(conf)
     dict_x=get_series(conf["x"])
     dict_y=get_series(conf["y"])
-    if(conf['plot']=='total'):    
-        points=[]
+    def helper(x,y,title):
+        fig=plot.corl_plot(x,y,
+                              title=title,
+                              clf_x=conf['x']['name'],
+                              clf_y=conf['y']['name'])
+        return FunOuput("fig",fig)
+    if(conf['plot']=='total'): 
+        x,y=[],[]
         for key_i in dict_x:
-            points_x,points_y=dict_x[key_i],dict_y[key_i]
-            points+=list(zip(points_x,points_y))
-        points=np.array(points)
-        scatter_plot(points=points,
-                     title=conf['title'],
-                     clf_x=conf['x']['name'],
-                     clf_y=conf['y']['name'])
+            x+=dict_x[key_i]
+            y+=dict_y[key_i]
+        return [helper(x,y,conf["title"])]
     else:
-        for key_i in dict_x: 
-            points_x,points_y=dict_x[key_i],dict_y[key_i]
-            points_i=np.array(list(zip(points_x,points_y)))
-            plot.scatter_plot(points=points_i,
-                         title=key_i,
-                         clf_x=conf['x']['name'],
-                         clf_y=conf['y']['name'])
+        return [ helper( x=dict_x[key_i],
+                         y=dict_y[key_i],
+                         title=key_i)
+                  for key_i in dict_x]
 
-def get_series(param_dict):
-    if(param_dict["type"]=="shapley"):
-        return compute_shapley(in_path=param_dict['subset_path'],
-                               clf_type=param_dict['ens_type'],
-                               metric_type=param_dict['metric'],
+def get_series(conf):
+    if(conf["type"]=="shapley"):
+        return compute_shapley(in_path=conf['subset_path'],
+                               clf_type=conf['ens_type'],
+                               metric_type=conf['metric'],
                                verbose=False)
-    if(param_dict["type"]=="cls_desc"):
-        return utils.read_json(param_dict["desc_path"])
+    if(conf["type"]=="cls_desc"):
+        return utils.read_json(conf["desc_path"])
 
 def read_desc(desc_path):
     if(type(desc_path)==list):
@@ -362,8 +343,10 @@ def box_plot(conf):
 
 FUN_DICT={"meta":meta_eval,"selection":selection_plot,
           "desc":desc_plot,"subsets":subset_plot,"bar":bar_plot,
-          "box":box_plot,"df":df_eval,"scatter":shapley_plot,
+          "box":box_plot,"df":df_eval,"shapley":shapley_plot,
           "xy_plot":xy_plot}
+
+MULTI_FUN=set(["df","shapley"])
 
 if __name__ == '__main__':
     eval_exp("conf/meta.js")
