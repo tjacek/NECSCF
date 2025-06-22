@@ -234,7 +234,7 @@ def desc_plot(conf):
                     plt_limts=plt_limts)
     return FunOuput("fig",fig)
 
-def subset_plot(conf):
+def subsets_plot(conf):
     subsets=[selection.subset_plot(conf["subset_path"],
                                    ens_type=ens_type_i)
                 for ens_type_i in conf["ens_types"]]
@@ -276,25 +276,22 @@ def subset_plot(conf):
                        cols=['data','ens'],
                        offset="-")
     df.clean("ens")
-    print(df.to_csv())
-    if(conf["plot"]):
-        title = "(MLP)" if conf["mlp_norm"] else "(full ensemble)"
-        plot.subset_plot(value_dict=value_dict,
-                         data=conf['data'],
-                         colors=['b','g','r','y'],
-                         title=f"Clf selection {title}")
+#    print(df.to_csv())
+#    if(conf["plot"]):
+    ens_dict={ens_i:{} for ens_i in conf["ens_types"]}
+    for data_i,list_i in value_dict.items():
+        for ens_j,value_j in list_i:
+            ens_dict[ens_j][data_i]=value_j        
+    output=[]
+    for ens_i,dict_i in ens_dict.items():     
+        title = "MLP" if conf["mlp_norm"] else "full ensemble"
+        fig_i=plot.time_series(dict_i,
+                                title=f"{ens_i}/{title}",
+                                x_label='n_clfs',
+                                y_label='Accuracy')
+        output.append(FunOuput("fig",fig_i))
+    return output
 
-#def find_best(in_path,nn_only=False):
-#    df=pred.summary(exp_path="new_exp")
-#    if(nn_only):
-#        df=df[df['clf']!='RF']
-#    dataset=df['data'].unique()
-#    id_acc=df_group=df.groupby('data')['acc'].idxmax()
-#    df_acc=df.loc[id_acc,]
-#    print(df_acc)
-#    id_balance=df_group=df.groupby('data')['balance'].idxmax()
-#    df_balance=df.loc[id_balance,]
-#    print(df_balance)
 
 def bar_plot(conf):
     df=pred.summary(exp_path=conf['exp_path'],
@@ -336,11 +333,11 @@ def box_plot(conf):
     return FunOuput("fig",fig)
 
 FUN_DICT={"meta":meta_eval,"selection":selection_plot,
-          "desc":desc_plot,"subsets":subset_plot,"bar":bar_plot,
+          "desc":desc_plot,"subsets":subsets_plot,"bar":bar_plot,
           "box":box_plot,"df":df_eval,"shapley":shapley_plot,
           "xy_plot":xy_plot}
 
-MULTI_FUN=set(["df","shapley"])
+MULTI_FUN=set(["df","shapley","subsets"])
 
 if __name__ == '__main__':
     eval_exp("conf/meta.js")

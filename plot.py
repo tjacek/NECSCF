@@ -140,7 +140,6 @@ def box_plot(value_dict,
     color_map=SimpleColorMap(colors)        
     datasets=list(value_dict.keys())
     datasets.sort()
-#    clf_types.sort()
     step=len(clf_types)
     fig, ax = plt.subplots()
     for i,clf_i in enumerate(clf_types):
@@ -224,3 +223,28 @@ def subset_plot(value_dict,
     plt.ylabel('Accuracy') 
     plt.tight_layout()
     plt.show()
+
+
+def time_series(data_dict,
+                title="Time series",
+                x_label='x',
+                y_label='y'):
+#    plt.clf()
+    fig, ax = plt.subplots()
+    colors=['b','g','r','c','m','y','k',
+            'lime','skyblue','gray','orange',
+            'gold','purple','pink']
+    for i,(data_i,y_i) in enumerate(data_dict.items()):
+        n_clfs=y_i.shape[0]
+        x_i=np.arange(n_clfs)+1
+        ax.plot(x_i, y_i, 
+                 label = data_i,
+                 color=colors[i % len(colors)])
+    plt.title(title)
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    plt.legend()
+    plt.grid()
+    plt.tight_layout()
+#    plt.show()
+    return ax.get_figure()
