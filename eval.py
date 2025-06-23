@@ -40,9 +40,8 @@ class FunOuput(object):
         if(self.is_fig()):
             self.data.savefig(out_path)
         else:
-            self.data.df.to_csv(out_path, sep='\t', 
-                                encoding='utf-8', 
-                                index=False, header=True)
+            with open(out_path, "w") as f:
+                f.write(self.data.to_csv())
 
 def save_outputs(fun_outputs,names,out_path):
     fig_index,df_index=0,0
@@ -70,9 +69,6 @@ def eval_exp(conf,show=False):
         for conf_i in conf.iter('data'):
             outputs+= eval_exp(conf_i)
         return outputs
-#    if(conf['type'] in MULTI_FUN):
-#        return fun(conf)
-#    return [fun(conf)]
     return fun(conf)
 
 def meta_eval(conf):
@@ -88,9 +84,6 @@ def meta_eval(conf):
         if(type(name_i)!=list):
             name_i=[name_i]
         save_outputs(fun_out,name_i,out_i)
-#        for j,fun_j in enumerate(fun_out):
-#            name_j=name_i[j]
-#            fun_j.save(f"{out_i}/{name_j}.png")
 
 def df_eval(conf):
     if('summary' in conf):
@@ -155,7 +148,7 @@ def sig_summary(exp_path,
     sig_matrix= np.array(sig_matrix) 
     def fun(tuple_i):
         i,data_i=tuple_i
-        return [data]+sig_matrix[:,i].tolist()
+        return [data_i]+sig_matrix[:,i].tolist()
     df=dataset.make_df(helper=fun,
                        iterable=enumerate(data),
                        cols=['data']+clf_types)
@@ -349,11 +342,25 @@ def box_plot(conf):
     for data_i,clf_i,value_i in output:
         if( data_i in data):
             value_dict[data_i][clf_i]=value_i
+    def df_helper(tuple_i):
+        data_i,dict_i=tuple_i
+        lines=[]
+        for clf_j,value_j in dict_i.items():
+            line_j=[data_i,clf_i,np.mean(value_j),np.std(value_j)]
+            lines.append(line_j)
+        return lines
+    df=dataset.make_df(helper=df_helper,
+                       iterable=value_dict.items(),
+                       cols=["clf","ens","acc","std"],
+                       offset=None,
+                       multi=True)
+    outputs=[FunOuput("df",df)]
     clf_types=utils.rename(conf['selector'],old="deep",new='MLP')
     fig=plot.box_plot(value_dict=value_dict,
                       clf_types=clf_types,
                       show=conf['show'])
-    return FunOuput("fig",fig)
+    outputs.append(FunOuput("fig",fig))
+    return outputs
 
 FUN_DICT={"meta":meta_eval,"selection":selection_plot,
           "desc":desc_plot,"subsets":subsets_plot,"bar":bar_plot,
