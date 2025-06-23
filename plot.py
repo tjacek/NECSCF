@@ -180,7 +180,7 @@ def heatmap(matrix,
     ax.set_yticklabels(y_labels,rotation = 0)
     ax.set_title(title,fontsize=10)
     plt.tight_layout()
-    plt.show()
+#    plt.show()
     return ax.get_figure()
 
 def subset_plot(value_dict,

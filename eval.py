@@ -32,9 +32,29 @@ class FunOuput(object):
     def __init__(self,data_type,data):
         self.data_type=data_type
         self.data=data
+
+    def is_fig(self):
+        return (self.data_type=="fig")
     
     def save(self,out_path):
-        self.data.savefig(out_path)
+        if(self.is_fig()):
+            self.data.savefig(out_path)
+        else:
+            self.data.df.to_csv(out_path, sep='\t', 
+                                encoding='utf-8', 
+                                index=False, header=True)
+
+def save_outputs(fun_outputs,names,out_path):
+    fig_index,df_index=0,0
+    for fun_i in fun_outputs:
+        if(fun_i.is_fig()):
+            name_i=names[fig_index]
+            fun_i.save(f"{out_path}/{name_i}.png")
+            fig_index+=1
+        else:
+            name_i=names[df_index]
+            fun_i.save(f"{out_path}/{name_i}.csv")
+            df_index+=1
 
 def read_conf(in_path):
     conf=utils.read_json(in_path)
@@ -50,9 +70,10 @@ def eval_exp(conf,show=False):
         for conf_i in conf.iter('data'):
             outputs+= eval_exp(conf_i)
         return outputs
-    if(conf['type'] in MULTI_FUN):
-        return fun(conf)
-    return [fun(conf)]
+#    if(conf['type'] in MULTI_FUN):
+#        return fun(conf)
+#    return [fun(conf)]
+    return fun(conf)
 
 def meta_eval(conf):
     if("taboo" in conf):
@@ -66,9 +87,10 @@ def meta_eval(conf):
         fun_out=eval_exp(conf_i)
         if(type(name_i)!=list):
             name_i=[name_i]
-        for j,fun_j in enumerate(fun_out):
-            name_j=name_i[j]
-            fun_j.save(f"{out_i}/{name_j}.png")
+        save_outputs(fun_out,name_i,out_i)
+#        for j,fun_j in enumerate(fun_out):
+#            name_j=name_i[j]
+#            fun_j.save(f"{out_i}/{name_j}.png")
 
 def df_eval(conf):
     if('summary' in conf):
@@ -108,7 +130,7 @@ def df_eval(conf):
                                metric=metric_i,
                                show=s_conf['plot'],
                                out_path=out_i)
-            outputs.append(out_i)
+            outputs+=out_i
         return outputs
 
 def sig_summary(exp_path,
@@ -137,14 +159,15 @@ def sig_summary(exp_path,
     df=dataset.make_df(helper=fun,
                        iterable=enumerate(data),
                        cols=['data']+clf_types)
+    output=[FunOuput("df",df)]
     clf_types=utils.rename(clf_types,old="deep",new='MLP')
     main_clf=utils.rename([main_clf],old="deep",new='MLP')[0]
     fig=plot.heatmap(matrix=sig_matrix.T,
                      x_labels=clf_types,
                      y_labels=data,
                      title=f"Statistical significance ({main_clf}/{metric})")
-    fun= FunOuput("fig",fig)
-    return fun
+    output.append(FunOuput("fig",fig))
+    return output
 
 def xy_plot(conf):
     fig=plot.text_plot(x=utils.read_json(conf["x_plot"]),
