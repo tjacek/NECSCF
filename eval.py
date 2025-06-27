@@ -251,13 +251,16 @@ def desc_plot(conf):
     return FunOuput("fig",fig)
 
 def subsets_plot(conf):
+#    raise Exception(conf)
     subsets=[selection.subset_plot(conf["subset_path"],
                                    ens_type=ens_type_i)
                 for ens_type_i in conf["ens_types"]]
+    size_dict={}
     value_dict={data_i:[] for data_i in subsets[0].keys()}
     for data_i in value_dict.keys():
         for subset_j in subsets:
             ens_j,subset_j=subset_j[data_i]
+            size_dict[data_i]=subset_j.n_clfs()
             values_j=subset_j.mean_values(conf["metric"])
             if(conf["mlp_norm"]):
                 full_i=conf["mlp"][data_i]
@@ -292,20 +295,21 @@ def subsets_plot(conf):
                        cols=['data','ens'],
                        offset="-")
     df.clean("ens")
-#    print(df.to_csv())
-#    if(conf["plot"]):
-    ens_dict={ens_i:{} for ens_i in conf["ens_types"]}
-    for data_i,list_i in value_dict.items():
-        for ens_j,value_j in list_i:
-            ens_dict[ens_j][data_i]=value_j        
-    output=[]
-    for ens_i,dict_i in ens_dict.items():     
-        title = "MLP" if conf["mlp_norm"] else "full ensemble"
-        fig_i=plot.time_series(dict_i,
-                                title=f"{ens_i}/{title}",
-                                x_label='n_clfs',
-                                y_label='Accuracy')
-        output.append(FunOuput("fig",fig_i))
+    output=[FunOuput("df",df)]
+    plot.subset_plot(value_dict,
+                      size_dict)
+    raise Exception(size_dict)
+#    ens_dict={ens_i:{} for ens_i in conf["ens_types"]}
+#    for data_i,list_i in value_dict.items():
+#        for ens_j,value_j in list_i:
+#            ens_dict[ens_j][data_i]=value_j        
+#    for ens_i,dict_i in ens_dict.items():     
+#        title = "MLP" if conf["mlp_norm"] else "full ensemble"
+#        fig_i=plot.time_series(dict_i,
+#                                title=f"{ens_i}/{title}",
+#                                x_label='n_clfs',
+#                                y_label='Accuracy')
+#        output.append(FunOuput("fig",fig_i))
     return output
 
 
