@@ -296,8 +296,11 @@ def subsets_plot(conf):
                        offset="-")
     df.clean("ens")
     output=[FunOuput("df",df)]
+    title = "MLP" if conf["mlp_norm"] else "full ensemble"
     plot.subset_plot(value_dict,
-                      size_dict)
+                     size_dict,
+                     conf["ens_types"],
+                     title=title)
     raise Exception(size_dict)
 #    ens_dict={ens_i:{} for ens_i in conf["ens_types"]}
 #    for data_i,list_i in value_dict.items():

@@ -141,13 +141,13 @@ class ClasicalClfFactory(ClfFactory):
         pass
 
     def __call__(self):
-        return base.get_clf(self.clf_type)
+        return ClasicalClfAdapter(base.get_clf(self.clf_type))
 
     def read(self,model_path):
         raise Exception(f"Clasical Clf {self.clf_type} cannot be serialized ")
 
     def get_info(self):
-        return {"ens":self.clf,"callback":None,"hyper":None}
+        return {"ens":self.clf_type,"callback":None,"hyper":None}
 
 class ClasicalClfAdapter(ClfAdapter):
     def __init__(self,clf):
