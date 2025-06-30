@@ -102,7 +102,7 @@ class DeepFactory(ClfFactory):
                                            custom_objects={"loss":deep.WeightedLoss})
         clf_i=self()
         clf_i.model=model_i
-        return clf_i
+        return clf_i#Deep(clf_i,hyper_params=self.hyper_params,)
 
     def get_info(self):
         return {"ens":"deep","callback":"total","hyper":self.hyper_params}
@@ -132,6 +132,14 @@ class Deep(ClfAdapter):
 
     def save(self,out_path):
         self.model.save(out_path) 
+
+    def eval(self,data,split_i):
+        test_data_i=data.selection(split_i.test_index)
+        raw_partial_i=self.predict(test_data_i.X)
+        result_i=dataset.Result(y_true=test_data_i.y,
+                                y_pred=raw_partial_i)
+        return result_i
+
 
 class ClasicalClfFactory(ClfFactory):
     def __init__(self,clf_type="RF"):

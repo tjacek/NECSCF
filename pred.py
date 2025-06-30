@@ -44,6 +44,7 @@ def pred_clf(data_path:str,
         utils.make_dir(path_dir["ens"])
         clf_factory=ens.get_ens(clf_type)
         split_path=utils.top_files(path_dir['splits'])
+        utils.make_dir(path_dir["results"])
         for i,split_path_i in tqdm(enumerate(split_path)):
             split_i=base.read_split(split_path_i)
             clf_i=clf_factory()
@@ -51,7 +52,7 @@ def pred_clf(data_path:str,
             result_i=clf_i.eval(data,split_i)
             result_i.save(f"{path_dir['results']}/{i}.npz")
         utils.save_json(value=clf_factory.get_info(),
-                        out_path=path_dict['info.js'])
+                        out_path=path_dir['info.js'])
     helper(data_path,exp_path)
 
 def get_paths(path_dir):
@@ -67,6 +68,7 @@ def get_paths(path_dir):
 def pred_from_models(data,
                      paths,
                      clf_factory):
+#    raise Exception(clf_factory)
     for split_path_i,model_path_i,result_path_i in tqdm(paths):
         split_i=base.read_split(split_path_i)
         clf_i=clf_factory.read(model_path_i)
@@ -125,7 +127,10 @@ class EnsSelector(object):
         for word_i in self.words:
             if(word_i in dir_id):
                 return True
-        return False    
+        return False
+
+    def __str__(self):
+        return str(self.words)    
 
 def stat_test(exp_path,
               clf_x,
@@ -161,11 +166,11 @@ def sig_subsets(sig_df):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data_path", type=str, default="../uci")
-    parser.add_argument("--exp_path", type=str, default="new_exp")
+    parser.add_argument("--data_path", type=str, default="automl_exp/automl")
+    parser.add_argument("--exp_path", type=str, default="automl_exp/exp")
     parser.add_argument('--nn', action='store_true')
     parser.add_argument('--clf',  type=str, default=None)
-    parser.add_argument('--pairs', default='purity_ens,class_ens') 
+    parser.add_argument('--pairs', default='separ_purity_ens,deep') 
     args = parser.parse_args()
     print(args)
     if(args.nn):
@@ -174,8 +179,9 @@ if __name__ == '__main__':
     if(args.clf):
         pred_clf(data_path=args.data_path,
                  exp_path=args.exp_path)
-    summary(exp_path=args.exp_path,
+    df=summary(exp_path=args.exp_path,
             metrics=["acc","balance"])
+    df.print()
     if(args.pairs):
         clfs=args.pairs.split(',')
         if(len(clfs)>1):
