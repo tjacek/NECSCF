@@ -165,12 +165,13 @@ def sig_subsets(sig_df):
     return subplots
 
 if __name__ == '__main__':
+    main_dir="binary_exp"
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data_path", type=str, default="automl_exp/automl")
-    parser.add_argument("--exp_path", type=str, default="automl_exp/exp")
+    parser.add_argument("--data_path", type=str, default=f"{main_dir}/data")
+    parser.add_argument("--exp_path", type=str, default=f"{main_dir}/exp")
     parser.add_argument('--nn', action='store_true')
     parser.add_argument('--clf',  type=str, default=None)
-    parser.add_argument('--pairs', default='separ_purity_ens,deep') 
+    parser.add_argument('--pairs', default='RF,deep') 
     args = parser.parse_args()
     print(args)
     if(args.nn):

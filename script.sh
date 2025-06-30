@@ -1,5 +1,5 @@
-data_path='../uci'
-out_path='exp_deep'
+data_path="binary_exp/data"
+out_path="binary_exp/exp"
 
 mkdir ${out_path}
 #step=20
