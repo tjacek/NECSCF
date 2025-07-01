@@ -173,8 +173,9 @@ class ClasicalClfAdapter(ClfAdapter):
 class MultiEnsFactory(ClfFactory):
 
     def __call__(self):
-        return ClassEns(params=self.params,
+        return MultiEns(params=self.params,
                         hyper_params=self.hyper_params,
+                        class_dict=self.class_dict,
                         loss_gen=self.loss_gen)
     
     def read(self,model_path):
@@ -193,12 +194,14 @@ class MultiEns(ClfAdapter):
         data=dataset.Dataset(X,y)
         self.loss_gen.init(data)
         if(self.model is None):
+
             self.model=deep.ensemble_builder(params=self.params,
                                              hyper_params=self.hyper_params,
-                                             loss_gen=self.loss_gen)
+                                             loss_gen=self.loss_gen,
+                                             class_dict=self.class_dict)
         y=[tf.one_hot(y,depth=self.params['n_cats'])
                 for _ in range(data.n_cats()+1)]
-        callback=self.hyper_params["callback"]
+        callback="total"#self.hyper_params["callback"]
         if(type(callback)==str):
             callback=ens_depen.get_callback(callback)(verbose=0)
         callback.init(data.n_cats()+1)
