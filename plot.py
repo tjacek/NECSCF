@@ -5,7 +5,7 @@ import scipy.stats
 import utils
 
 class SimpleColorMap(object):
-    def __init__(self,colors):
+    def __init__(self,colors=None):
         if(colors is None):
             colors=['lime','red','blue',#'tomato'
                     'orange','skyblue','peachpuff', ]
@@ -185,57 +185,34 @@ def heatmap(matrix,
 
 
 def subset_plot(data_dict,
-                size_dict,
+                ts_types,
                 title="Time series",
                 x_label='x',
                 y_label='y'):
-    lenghts=list(set(size_dict.values()))
-    by_lenght= {lenght_i:[] for lenght_i in lenghts }
-    for data_i,len_i in size_dict.items():
-        by_lenght[len_i].append(data_i)
-    raise Exception(by_lenght)
-
-#def subset_plot(value_dict,
-#                data,step=1,
-#                colors=None,
-#                title="Clf selection"):
-#    value_dict={key_i:value_dict[key_i] for key_i in data}
-#    ens_types=[ ens_j
-#                 for ens_j,_ in list(value_dict.values())[0]]
-#    data_step={data_i:(i*len(ens_types)*step) 
-#          for i,data_i in enumerate(value_dict) }
-#    ens_step={ens_i:(i*step) for i,ens_i in enumerate(ens_types)}
-#    color_map=SimpleColorMap(colors)
-#    color_dict=color_map.get_color_dict(ens_types)
-#    plt.figure()
-#    min_value,max_value=np.inf,-np.inf
-#    keys= list(value_dict.keys())
-#    keys.sort()
-#    for key_i in keys:
-#        data_i,dict_i=key_i,value_dict[key_i]
-#        for ens_j,value_j in dict_i:
-#            x_j=data_step[data_i] + ens_step[ens_j]
-#            min_value= min(min_value,np.min(value_j))
-#            max_value= max(max_value,np.max(value_j))
-#            for k,value_k in enumerate(value_j):
-#                plt.text(x=x_j, 
-#                         y=value_k, 
-#                         s=(k+1),
-#                         color=color_dict[ens_j],
-#                         fontdict={'weight': 'bold', 'size': 9})
-#    plt.xlim((0,len(data_step)*len(ens_types)*step+3))
-#    delta=max_value-min_value
-#    plt.ylim((min_value,max_value+ delta*0.05))
-#    labels=data_step.keys()
-#    xticks=[data_step[key_i] for key_i in data_step]
-#    plt.xticks(xticks,data,rotation='vertical')
-#    legend_handles = color_map.get_handlers()
-#    plt.legend(legend_handles,ens_types)
-#    plt.title(title)
-#    plt.ylabel('Accuracy') 
-#    plt.tight_layout()
-#    plt.show()
-
+    size_dict={ data_i: len(list(dict_i.values())[0])
+                  for data_i,dict_i in data_dict.items()}
+    color_map=SimpleColorMap(['b','g','r','k'])
+    color_dict=color_map.get_color_dict(ts_types)
+    ts_types.sort()
+    plt.figure()
+    all_values=[]
+    for data_i,dict_i in data_dict.items():
+        for ts_j in ts_types:
+            value_j=dict_i[ts_j]
+            x_j=np.arange(len(value_j))+1
+            for k,v_k in enumerate(value_j):
+                plt.text(x=k, 
+                         y=v_k, 
+                         s=data_i,
+                     color=color_dict[ts_j],
+                     fontdict={'weight': 'bold', 'size': 9})
+                all_values.append(v_k)
+    legend_handles = color_map.get_handlers()
+    plt.legend(legend_handles,ts_types)
+    plt.xlim((0,max(size_dict.values()) ))
+    plt.ylim((min(all_values),max(all_values)))
+    plt.grid()
+    plt.show()
 
 def time_series(data_dict,
                 title="Time series",

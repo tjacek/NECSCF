@@ -285,6 +285,9 @@ class SubsetDict(object):
                        offset="-")
 
     def data_dict(self,data):
+        if(type(data)==list):
+            return {data_i:self.data_dict(data_i)
+                        for data_i in data}
         data_list=[self.by_id[i]
             for i in self.by_data[data]]
         return { ens_i:value_i for _,ens_i,value_i in data_list}
@@ -299,8 +302,6 @@ class SubsetDict(object):
                 line_i.append(f"{min(v_i)}-{max(v_i)}%")
             return line_i
         cols=['data']+ens_types
-#        for ens_i in ens_types:
-#            cols+=[f"min({ens_i})",f"max({ens_i})"]
         return dataset.make_df(helper=helper,
                        iterable=self.by_data.keys(),
                        cols=cols,
@@ -356,9 +357,14 @@ def subsets_plot(conf):
     diff_dict={ name_i:diff_i
                  for name_i,diff_i in diff_dict.items()
                     if(diff_i>0.035)}
+    for data_i in conf["datasets"]:
+        title = "MLP" if conf["mlp_norm"] else "full ensemble"
+#        print(subset_dict.data_dict(data_i))
+        plot.subset_plot(subset_dict.data_dict(data_i),
+                     conf["ens_types"],
+                     title=title)
     raise Exception(diff_dict)    
     output=[FunOuput("df",df)]
-    title = "MLP" if conf["mlp_norm"] else "full ensemble"
     plot.subset_plot(value_dict,
                      size_dict,
                      conf["ens_types"],
