@@ -334,7 +334,9 @@ def make_df(helper,
             lines+=helper(arg_i)
     else:
         for arg_i in iterable:
-            lines.append(helper(arg_i))
+            line_i=helper(arg_i)
+            if(line_i):
+                lines.append(line_i)
     if(offset):
         line_len=max([len(line_i) for line_i in lines])
         for line_i in lines:

@@ -12,6 +12,7 @@ def pred_neural(data_path:str,
     @utils.MultiDirFun()
     def helper(in_path,exp_path):
         data=None
+        print(in_path)
         for path_i in utils.top_files(exp_path):
             info_path=f"{path_i}/info.js" 
             if(not os.path.isfile(info_path)):
@@ -76,6 +77,8 @@ def pred_from_models(data,
         result_i.save(result_path_i)
 
 def get_result(path_i):
+    if(not os.path.exists(f"{path_i}/info.js")):
+       return None,None
     info_dict=utils.read_json(f"{path_i}/info.js")
     clf_type=info_dict['ens']
     if("ens" in clf_type ):
@@ -101,6 +104,8 @@ def summary(exp_path,
     output_dict=helper(exp_path)
     def make_line(tuple_i):
         data_i,clf_i,result_i=tuple_i
+        if(result_i is None):
+            return None
         line_i=[data_i,clf_i]
         for metric_j in metrics:
             value_j= result_i.get_metric(metric_j)
@@ -108,7 +113,8 @@ def summary(exp_path,
         return line_i
     df=dataset.make_df(helper=make_line,
                        iterable=output_dict,
-                       cols=["dataset","clf"]+metrics)
+                       cols=["dataset","clf"]+metrics,
+                       multi=False)
     return df
 
 def basic_selector(dir_id):
@@ -171,7 +177,7 @@ if __name__ == '__main__':
     parser.add_argument("--exp_path", type=str, default=f"{main_dir}/exp")
     parser.add_argument('--nn', action='store_true')
     parser.add_argument('--clf',  type=str, default=None)
-    parser.add_argument('--pairs', default='RF,deep') 
+    parser.add_argument('--pairs', default='RF,separ_purity_ens') 
     args = parser.parse_args()
     print(args)
     if(args.nn):
