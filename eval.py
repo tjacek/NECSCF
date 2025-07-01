@@ -284,6 +284,38 @@ class SubsetDict(object):
                        cols=['data','ens'],
                        offset="-")
 
+    def data_dict(self,data):
+        data_list=[self.by_id[i]
+            for i in self.by_data[data]]
+        return { ens_i:value_i for _,ens_i,value_i in data_list}
+    
+    def extr(self):
+        ens_types=list(self.by_ens.keys())
+        def helper(key):
+            data_dict=self.data_dict(key)
+            line_i=[key]
+            for ens_i in ens_types:
+                v_i=data_dict[ens_i]
+                line_i.append(f"{min(v_i)}-{max(v_i)}%")
+            return line_i
+        cols=['data']+ens_types
+#        for ens_i in ens_types:
+#            cols+=[f"min({ens_i})",f"max({ens_i})"]
+        return dataset.make_df(helper=helper,
+                       iterable=self.by_data.keys(),
+                       cols=cols,
+                       multi=False)
+
+    def diff_dict(self):
+        diff={}
+        for data_i in self.by_data.keys():
+            all_i=[]
+            for value_j in self.data_dict(data_i).values():
+                all_i+=value_j.tolist()
+            diff[data_i]= max(all_i)-min(all_i)
+        return diff
+
+
 def make_subset_dict(subsets,metric_type):
     subset_dict=SubsetDict()
     for data_i in subsets[0].keys():
@@ -301,26 +333,11 @@ def subsets_plot(conf):
     subset_dict=make_subset_dict(subsets,conf["metric"])
     if(conf["mlp_norm"]):
         def helper(data,ens,value):
-            return value/conf["mlp_norm"][data_]
+            return value/conf["mlp"][data]
         subset_dict.transform(helper)
     else:
         subset_dict.transform(lambda d,e,v:v/v[-1])
     subset_dict.norm()
-#    size_dict={}
-#    value_dict={data_i:[] for data_i in subsets[0].keys()}
-#    for data_i in value_dict.keys():
-#        for subset_j in subsets:
-#            ens_j,subset_j=subset_j[data_i]
-#            size_dict[data_i]=subset_j.n_clfs()
-#            values_j=subset_j.mean_values(conf["metric"])
-#            if(conf["mlp_norm"]):
-#                full_i=conf["mlp"][data_i]
-#                values_j*=100
-#            else:
-#                full_i=values_j[-1]
-#            values_j/=full_i
-#            values_j=np.round(values_j, 4)
-#            value_dict[data_i].append((ens_j,values_j))
     if(conf["var"]):
         def helper(pair_i):
             data_i,ens_variants_i=pair_i
@@ -332,23 +349,14 @@ def subsets_plot(conf):
                            iterable=value_dict.items(),
                            cols=['data']+conf["ens_types"])
         df.print()
-#    def iterator():
-#            for data_i, ens_i in value_dict.items():
-#                for ens_j in ens_i:
-#                    yield data_i,ens_j
-#    def helper(arg_i):
-#        data_i,value_i=arg_i
-#        ens_i,arr_i=value_i
-#        arr_i*=100
-#        return [data_i,ens_i]+arr_i.tolist()
-#    df=dataset.make_df(helper=helper,
-#                       iterable=iterator(),
-#                       cols=['data','ens'],
-#                       offset="-")
-    df.clean("ens")
-    df=subset_dict.to_df()
+    df=subset_dict.extr()
+#    df.clean("ens")
     df.print()
-    raise Exception(subset_dict)    
+    diff_dict=subset_dict.diff_dict()
+    diff_dict={ name_i:diff_i
+                 for name_i,diff_i in diff_dict.items()
+                    if(diff_i>0.035)}
+    raise Exception(diff_dict)    
     output=[FunOuput("df",df)]
     title = "MLP" if conf["mlp_norm"] else "full ensemble"
     plot.subset_plot(value_dict,
