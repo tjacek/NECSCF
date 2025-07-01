@@ -2,6 +2,7 @@ import numpy as np
 from sklearn.model_selection import RepeatedStratifiedKFold
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import GradientBoostingClassifier
 from sklearn import svm
 from tqdm import tqdm
 import dataset,utils
@@ -112,6 +113,9 @@ def get_clf(clf_type):
         return LogisticRegression(solver='liblinear')
     if(clf_type=="SVM"):
         return svm.SVC(kernel='rbf')
+    if(clf_type=="GRAD"):
+        return GradientBoostingClassifier()
+
     raise Exception(f"Unknow clf type:{clf_type}")
 
 def get_splits(data_path,

@@ -22,7 +22,7 @@ def get_ens(ens_type:str,hyper_params=None):
                                    loss_gen=loss_gen)
     if(ens_type=="deep"):
         return DeepFactory()
-    if(ens_type=="RF"):
+    if(ens_type=="RF" or ens_type=="GRAD"):
         return ClasicalClfFactory(ens_type)
     raise Exception(f"Unknown ens type:{ens_type}")
 

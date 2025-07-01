@@ -171,13 +171,13 @@ def sig_subsets(sig_df):
     return subplots
 
 if __name__ == '__main__':
-    main_dir="binary_exp"
+    main_dir="uci_exp"
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_path", type=str, default=f"{main_dir}/data")
     parser.add_argument("--exp_path", type=str, default=f"{main_dir}/exp")
     parser.add_argument('--nn', action='store_true')
     parser.add_argument('--clf',  type=str, default=None)
-    parser.add_argument('--pairs', default='RF,separ_purity_ens') 
+    parser.add_argument('--pairs', default='RF,GRAD') 
     args = parser.parse_args()
     print(args)
     if(args.nn):
@@ -185,7 +185,8 @@ if __name__ == '__main__':
                     exp_path=args.exp_path)
     if(args.clf):
         pred_clf(data_path=args.data_path,
-                 exp_path=args.exp_path)
+                 exp_path=args.exp_path,
+                 clf_type=args.clf)
     df=summary(exp_path=args.exp_path,
             metrics=["acc","balance"])
     df.print()
@@ -194,7 +195,7 @@ if __name__ == '__main__':
         if(len(clfs)>1):
             clf_x,clf_y=clfs[0],clfs[1]
             df_dict={}
-            for metric_i in ["acc","balance"]:
+            for metric_i in ["acc"]:#,"balance"]:
                 df_i=stat_test(exp_path=args.exp_path,
                                clf_x=clf_x,
                                clf_y=clf_y,
