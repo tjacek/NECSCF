@@ -250,11 +250,38 @@ def desc_plot(conf):
                     plt_limts=plt_limts)
     return FunOuput("fig",fig)
 
+class SubsetDict(object):
+    def __init__(self):
+        self.by_id={}
+        self.by_ens=defaultdict(lambda:[])
+        self.by_data=defaultdict(lambda:[])
+    
+    def __len__(self):
+        return len(self.by_id)
+
+    def add(self,data,ens,value):
+        current_id=len(self)+1
+        self.by_id[current_id]=(data,ens,value)
+        self.by_ens[ens].append(current_id)
+        self.by_data[data].append(current_id)
+
+def make_subset_dict(subsets,metric_type):
+    subset_dict=SubsetDict()
+    for data_i in subsets[0].keys():
+        for subset_j in subsets:
+            ens_j,subset_j=subset_j[data_i]
+            values_j=subset_j.mean_values(metric_type)
+            values_j=np.round(values_j, 4)
+            subset_dict.add(data_i,ens_j,values_j)
+    return subset_dict
+
 def subsets_plot(conf):
-#    raise Exception(conf)
     subsets=[selection.subset_plot(conf["subset_path"],
                                    ens_type=ens_type_i)
                 for ens_type_i in conf["ens_types"]]
+    subset_dict=make_subset_dict(subsets,conf["metric"])
+    raise Exception(len(subset_dict))
+
     size_dict={}
     value_dict={data_i:[] for data_i in subsets[0].keys()}
     for data_i in value_dict.keys():
@@ -270,6 +297,7 @@ def subsets_plot(conf):
             values_j/=full_i
             values_j=np.round(values_j, 4)
             value_dict[data_i].append((ens_j,values_j))
+    raise Exception(value_dict)
     if(conf["var"]):
         def helper(pair_i):
             data_i,ens_variants_i=pair_i
