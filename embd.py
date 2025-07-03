@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras import Input, Model
 from tqdm import tqdm
-import re
+import re,os.path
 from sklearn.neighbors import BallTree
 import base,dataset,deep,ens,utils
 
@@ -118,6 +118,8 @@ class ModelIterator(object):
         for index in range(step):
             i=start+index
             model_path_i=f"{self.path_dict['models']}/{i}.keras"
+            if(not os.path.exists(model_path_i)):
+                continue
             ens_i=self.reader(model_path_i)
             raw_split=np.load(f"{self.path_dict['splits']}/{i}.npz")
             split_i=base.UnaggrSplit.Split(train_index=raw_split["arr_0"],
@@ -197,6 +199,7 @@ def single_exp(data_path,
                         ens_type=ens_type,
                         dirs=['models','info.js'])
     model_iter=ModelIterator(path_dict)
+    info_dict=utils.read_json(path_dict['info.js'])
     embd_dict=base.get_paths(out_path=out_path,
                               ens_type=info_dict['ens'],
                               dirs=['results','info.js'])
@@ -257,6 +260,7 @@ def single_hist(data_path,exp_path,ens_type):
 if __name__ == '__main__':
     data='vehicle'
 #    single_hist(f"../uci/{data}",f"new_exp/{data}","separ_purity_ens")
-    multi_hist("../uci","new_exp","new_eval/purity")
-#embd_exp("../uci","new_exp")
+#    multi_hist("../uci","new_exp","new_eval/purity")
+    embd_exp("good_exp/data","good_exp/exp",
+             ens_type="separ_class_ens")
 #simple_exp(f"../uci/{data}",f"new_exp/{data}")
