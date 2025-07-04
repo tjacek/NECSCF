@@ -137,16 +137,18 @@ def sig_summary(exp_path,
     clf_types=[ type_i for type_i in clf_types
                     if(type_i!=main_clf)]
     sig_matrix,data=[],None
-    fun=lambda x: np.sign(x['diff'])*int(x['sig'])
     for i,clf_i in  enumerate(clf_types):
         df_i=pred.stat_test(exp_path=exp_path,
                              clf_x=main_clf,
                              clf_y=clf_i,
                              metric_type=metric)
-        df_i['sig_total']=df_i.apply(fun, axis=1 )
-        sig_matrix.append(df_i['sig_total'].tolist())
+        print(df_i)
+        sig_dict_i={ dict_i['data']:dict_i['sig'] 
+                        for dict_i in df_i.to_dict(orient='records')}
         if(data is None):
-            data=df_i['data'].tolist()
+            data=list(sig_dict_i.keys())
+            data.sort()
+        sig_matrix.append([sig_dict_i[data_i] for data_i in data])    
     sig_matrix= np.array(sig_matrix) 
     def fun(tuple_i):
         i,data_i=tuple_i

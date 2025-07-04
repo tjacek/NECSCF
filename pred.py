@@ -167,6 +167,8 @@ def stat_test(exp_path,
     df=pd.DataFrame.from_records(lines,
                               columns=['data',clf_x,clf_y,"diff","pvalue"])
     df['sig']=df['pvalue'].apply(lambda pvalue_i:pvalue_i<0.05)
+    fun=lambda x: np.sign(x['diff'])*int(x['sig'])
+    df['sig']=df.apply(fun, axis=1 )
     df=df.sort_values(by='diff')
     return df
 
