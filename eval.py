@@ -36,24 +36,14 @@ class FunOuput(object):
     def is_fig(self):
         return (self.data_type=="fig")
     
-    def save(self,out_path):
+    def save(self,out_path,verbose=True):
         if(self.is_fig()):
             self.data.savefig(out_path)
         else:
             with open(out_path, "w") as f:
                 f.write(self.data.to_csv())
-
-def save_outputs(fun_outputs,names,out_path):
-    fig_index,df_index=0,0
-    for fun_i in fun_outputs:
-        if(fun_i.is_fig()):
-            name_i=names[fig_index]
-            fun_i.save(f"{out_path}/{name_i}.png")
-            fig_index+=1
-        else:
-            name_i=names[df_index]
-            fun_i.save(f"{out_path}/{name_i}.csv")
-            df_index+=1
+        if(verbose):
+            print(f"Saved at {out_path}")
 
 def read_conf(in_path):
     conf=utils.read_json(in_path)
@@ -80,10 +70,22 @@ def meta_eval(conf):
     for conf_i,out_i,name_i in fun_desc:
         utils.make_dir(out_i)
         conf_i=read_conf(conf_i)
-        fun_out=eval_exp(conf_i)
+        fun_outputs=eval_exp(conf_i)
         if(type(name_i)!=list):
             name_i=[name_i]
-        save_outputs(fun_out,name_i,out_i)
+        save_outputs(fun_outputs,name_i,out_i)
+
+def save_outputs(fun_outputs,names,out_path):
+    fig_index,df_index=0,0
+    for fun_i in fun_outputs:
+        if(fun_i.is_fig()):
+            name_i=names[fig_index]
+            fun_i.save(f"{out_path}/{name_i}.png")
+            fig_index+=1
+        else:
+            name_i=names[df_index]
+            fun_i.save(f"{out_path}/{name_i}.csv")
+            df_index+=1
 
 def df_eval(conf):
     if('summary' in conf):
@@ -112,7 +114,6 @@ def df_eval(conf):
             utils.make_dir(s_conf['output'])
         outputs=[]
         for i,(main_i,metric_i) in enumerate(s_conf.product("main_clf","metrics")):
-            print(main_i,metric_i)
             if(s_conf['output']):
                 out_i=f"{s_conf['output']}/{i}"
             else:
@@ -121,7 +122,7 @@ def df_eval(conf):
                                main_clf=main_i,
                                clf_types=s_conf['clf_types'],
                                metric=metric_i,
-                               show=s_conf['plot'],
+                               show=False,
                                out_path=out_i)
             outputs+=out_i
         return outputs
@@ -132,6 +133,7 @@ def sig_summary(exp_path,
                 metric=None,
                 show=False,
                 out_path=None):
+    print(main_clf,metric)
     clf_types=[ type_i for type_i in clf_types
                     if(type_i!=main_clf)]
     sig_matrix,data=[],None
@@ -161,6 +163,48 @@ def sig_summary(exp_path,
                      title=f"Statistical significance ({main_clf}/{metric})")
     output.append(FunOuput("fig",fig))
     return output
+
+def box_plot(conf):
+    selector=pred.EnsSelector(words=conf['selector'],
+                             necscf=conf['necscf'])
+    @utils.EnsembleFun(in_path=('in_path',0),selector=selector)
+    def helper(in_path):
+        print(in_path)
+        _,result=pred.get_result(in_path)
+        metric_value=result.get_metric(conf['metric'])
+        if(conf["aggr"]):
+            n_splits=conf["aggr"]
+            n_iters=int(len(metric_value)/n_splits)
+            index=[n_splits*i for i in range(n_iters)]
+            return [np.mean(metric_value[i:(i+1)])  
+                                for i in index]
+        return metric_value 
+    output=helper(conf['exp_path'])
+    output=utils.rename_output(output,{"deep":"MLP"})
+    value_dict=defaultdict(lambda :{})
+    data=set(conf['data'])
+    for data_i,clf_i,value_i in output:
+        if( data_i in data):
+            value_dict[data_i][clf_i]=value_i
+    def df_helper(tuple_i):
+        data_i,dict_i=tuple_i
+        lines=[]
+        for clf_j,value_j in dict_i.items():
+            line_j=[data_i,clf_i,np.mean(value_j),np.std(value_j)]
+            lines.append(line_j)
+        return lines
+    df=dataset.make_df(helper=df_helper,
+                       iterable=value_dict.items(),
+                       cols=["clf","ens","acc","std"],
+                       offset=None,
+                       multi=True)
+    outputs=[FunOuput("df",df)]
+    clf_types=utils.rename(conf['selector'],old="deep",new='MLP')
+    fig=plot.box_plot(value_dict=value_dict,
+                      clf_types=clf_types,
+                      show=conf['show'])
+    outputs.append(FunOuput("fig",fig))
+    return outputs
 
 def xy_plot(conf):
     fig=plot.text_plot(x=utils.read_json(conf["x_plot"]),
@@ -396,46 +440,7 @@ def bar_plot(conf):
     step=len(clf_types)
     plot.bar_plot(acc_dict,data,clf_types,step)
 
-def box_plot(conf):
-    selector=pred.EnsSelector(words=conf['selector'],
-                             necscf=conf['necscf'])
-    @utils.EnsembleFun(in_path=('in_path',0),selector=selector)
-    def helper(in_path):
-        _,result=pred.get_result(in_path)
-        metric_value=result.get_metric(conf['metric'])
-        if(conf["aggr"]):
-            n_splits=conf["aggr"]
-            n_iters=int(len(metric_value)/n_splits)
-            index=[n_splits*i for i in range(n_iters)]
-            return [np.mean(metric_value[i:(i+1)])  
-                                for i in index]
-        return metric_value 
-    output=helper(conf['exp_path'])
-    output=utils.rename_output(output,{"deep":"MLP"})
-    value_dict=defaultdict(lambda :{})
-    data=set(conf['data'])
-    for data_i,clf_i,value_i in output:
-        if( data_i in data):
-            value_dict[data_i][clf_i]=value_i
-    def df_helper(tuple_i):
-        data_i,dict_i=tuple_i
-        lines=[]
-        for clf_j,value_j in dict_i.items():
-            line_j=[data_i,clf_i,np.mean(value_j),np.std(value_j)]
-            lines.append(line_j)
-        return lines
-    df=dataset.make_df(helper=df_helper,
-                       iterable=value_dict.items(),
-                       cols=["clf","ens","acc","std"],
-                       offset=None,
-                       multi=True)
-    outputs=[FunOuput("df",df)]
-    clf_types=utils.rename(conf['selector'],old="deep",new='MLP')
-    fig=plot.box_plot(value_dict=value_dict,
-                      clf_types=clf_types,
-                      show=conf['show'])
-    outputs.append(FunOuput("fig",fig))
-    return outputs
+
 
 FUN_DICT={"meta":meta_eval,"selection":selection_plot,
           "desc":desc_plot,"subsets":subsets_plot,"bar":bar_plot,
@@ -445,4 +450,6 @@ FUN_DICT={"meta":meta_eval,"selection":selection_plot,
 MULTI_FUN=set(["df","shapley","subsets"])
 
 if __name__ == '__main__':
-    eval_exp("conf/meta.js")
+    outputs=eval_exp("uci_exp/conf/meta.js")
+#    for i,out_i in enumerate(outputs):
+#        out_i.save(f"{i}.png")

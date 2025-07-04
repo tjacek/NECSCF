@@ -137,6 +137,7 @@ def box_plot(value_dict,
              y_label='Accuracy',
              colors=None,
              show=True):
+
     color_map=SimpleColorMap(colors)        
     datasets=list(value_dict.keys())
     datasets.sort()
@@ -170,18 +171,19 @@ def heatmap(matrix,
             x_labels,
             y_labels,
             title="Statistical significance (RF)"):
-    plt.clf()
+    fig, ax = plt.subplots()
     ax=sn.heatmap(matrix,
                   cmap="RdBu_r",
                   linewidth=0.5,
-                  cbar=False)
+                  cbar=False,
+                  ax=ax)
     y_labels.sort()
     ax.set_xticklabels(x_labels,rotation = 90)
     ax.set_yticklabels(y_labels,rotation = 0)
     ax.set_title(title,fontsize=10)
     plt.tight_layout()
 #    plt.show()
-    return ax.get_figure()
+    return ax.get_figure()#.copy()
 
 
 def subset_plot(data_dict,
