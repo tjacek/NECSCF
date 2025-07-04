@@ -58,6 +58,8 @@ def pred_clf(data_path:str,
 
 def get_paths(path_dir):
     paths=[] 
+    if(not os.path.exists(path_dir["models"])):
+        return paths
     utils.make_dir(path_dir["results"])
     for i,model_path_i in enumerate(utils.top_files(path_dir["models"])):
         result_path_i=f"{path_dir['results']}/{i}.npz"
