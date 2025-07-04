@@ -99,6 +99,12 @@ def summary(exp_path,
         metrics=['acc','balance']
     @utils.EnsembleFun(in_path=('in_path',0),selector=selector)
     def helper(in_path):
+        if(not os.path.exists(in_path)):
+            print(f"{in_path} don't exist")
+            return None
+        if(not os.path.exists(f"{in_path}/results")):
+            print(f"{in_path}/results don't exist")
+            return None
         _,result=get_result(in_path)
         return result
     output_dict=helper(exp_path)
@@ -171,13 +177,13 @@ def sig_subsets(sig_df):
     return subplots
 
 if __name__ == '__main__':
-    main_dir="uci_exp"
+    main_dir="good_exp"
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_path", type=str, default=f"{main_dir}/data")
     parser.add_argument("--exp_path", type=str, default=f"{main_dir}/exp")
     parser.add_argument('--nn', action='store_true')
     parser.add_argument('--clf',  type=str, default=None)
-    parser.add_argument('--pairs', default='RF,GRAD') 
+    parser.add_argument('--pairs', default='NECSCF(separ_purity_ens),NECSCF(separ_class_ens)') 
     args = parser.parse_args()
     print(args)
     if(args.nn):
